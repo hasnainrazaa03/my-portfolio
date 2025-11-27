@@ -9,41 +9,46 @@ export default async function handler(req, res) {
   }
 
   const apiKey = process.env.HUGGINGFACE_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Server Config Error: API Key missing' });
-  }
+  if (!apiKey) return res.status(500).json({ error: 'Missing API Key' });
+
+  const { inputs } = req.body;
+
+  // Function to call a specific model
+  const queryModel = async (modelUrl) => {
+    return fetch(modelUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        inputs,
+        parameters: { max_new_tokens: 200, return_full_text: false },
+      }),
+    });
+  };
 
   try {
-    const { inputs } = req.body;
+    // ATTEMPT 1: Try Qwen 2.5 (High Quality)
+    // Note: Requires accepting license on HF website
+    let response = await queryModel("https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-7B-Instruct");
 
-    // --- FIX: Using Qwen 2.5 (Ungated, High Performance) ---
-    // This model usually works without needing to accept a license agreement first
-    const response = await fetch(
-      "https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-7B-Instruct",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          inputs,
-          parameters: { 
-            max_new_tokens: 200,
-            return_full_text: false,
-            temperature: 0.7
-          },
-        }),
-      }
-    );
+    // ATTEMPT 2: If Qwen fails (404/503), try TinyLlama (Guaranteed Availability)
+    if (!response.ok) {
+      console.log("Primary model failed, switching to backup...");
+      response = await queryModel("https://router.huggingface.co/hf-inference/models/TinyLlama/TinyLlama-1.1B-Chat-v1.0");
+    }
 
+    // Final Check
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("HF Error:", response.status, errorText);
       return res.status(response.status).json({ error: `Hugging Face Error: ${errorText}` });
     }
 
     const data = await response.json();
+    
+    // Add CORS headers to response
+    res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(200).json(data);
 
   } catch (error) {

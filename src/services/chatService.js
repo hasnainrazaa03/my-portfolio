@@ -19,38 +19,26 @@ Rules:
 export const getChatResponse = async (messages) => {
   const lastUserMessage = messages[messages.length - 1].content;
 
-  // 1. Check for API Key
-  const apiKey = import.meta.env.VITE_HUGGINGFACE_API_KEY;
-
-  if (!apiKey) {
-    console.warn("Missing API Key, using local fallback");
-    return getLocalResponse(lastUserMessage);
-  }
-
-  // 2. Call Hugging Face API Direct
   try {
-    const response = await fetch(
-      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          inputs: `<s>[INST] ${SYSTEM_PROMPT} \n\n Question: ${lastUserMessage} [/INST]`,
-          parameters: { max_new_tokens: 150, return_full_text: false }
-        })
-      }
-    );
+    // Call OUR OWN Vercel Serverless Function
+    // This solves the CORS issue
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        inputs: `<s>[INST] ${SYSTEM_PROMPT} \n\n Question: ${lastUserMessage} [/INST]`,
+      }),
+    });
 
-    if (!response.ok) throw new Error('HF API Error');
+    if (!response.ok) throw new Error('Network response was not ok');
 
     const result = await response.json();
     return result[0]?.generated_text || "I am offline right now.";
 
   } catch (error) {
-    console.error("AI Error:", error);
+    console.error("AI Error (Using Local Fallback):", error);
     return getLocalResponse(lastUserMessage);
   }
 };

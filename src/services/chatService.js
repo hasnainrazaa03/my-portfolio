@@ -20,14 +20,14 @@ export const getChatResponse = async (messages) => {
   const lastUserMessage = messages[messages.length - 1].content;
 
   try {
-    // Call Vercel Proxy
     const response = await fetch('/api/chatbot', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
+      // Zephyr/Mistral Prompt Format
       body: JSON.stringify({
-        inputs: `<s>[INST] ${SYSTEM_PROMPT} \n\n Question: ${lastUserMessage} [/INST]`,
+        inputs: `<|system|>\n${SYSTEM_PROMPT}</s>\n<|user|>\n${lastUserMessage}</s>\n<|assistant|>`
       }),
     });
 

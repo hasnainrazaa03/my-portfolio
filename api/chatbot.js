@@ -20,11 +20,12 @@ export default async function handler(req, res) {
   try {
     const { inputs } = req.body;
 
-    // 3. Call Hugging Face (UPDATED URL)
-    // Old: https://api-inference.huggingface.co/...
-    // New: https://router.huggingface.co/...
+    // --- FIX: UPDATED URL STRUCTURE & MODEL ---
+    // 1. Use 'router.huggingface.co'
+    // 2. Add '/hf-inference' path
+    // 3. Use v0.3 model which is currently very stable
     const response = await fetch(
-      "https://router.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+      "https://router.huggingface.co/hf-inference/models/mistralai/Mistral-7B-Instruct-v0.3",
       {
         method: "POST",
         headers: {
@@ -42,13 +43,15 @@ export default async function handler(req, res) {
       }
     );
 
+    const errorText = await response.text();
+
     if (!response.ok) {
-      const errorText = await response.text();
       console.error("Hugging Face API Error:", response.status, errorText);
       return res.status(response.status).json({ error: `Hugging Face Error: ${errorText}` });
     }
 
-    const data = await response.json();
+    // Success!
+    const data = JSON.parse(errorText); 
     res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(200).json(data);
 

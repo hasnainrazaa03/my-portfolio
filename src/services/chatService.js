@@ -1,44 +1,23 @@
 import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
 
-const MODEL_URL = "https://api-inference.huggingface.co/models/hasnainraza03/portfolio-chatbot-model";
-
 export const getChatResponse = async (messages) => {
   const lastUserMessage = messages[messages.length - 1].content;
 
   try {
-    const apiKey = import.meta.env.VITE_HUGGINGFACE_API_KEY;
-    
-    if (!apiKey) {
-      console.error("Missing API key");
-      return getLocalResponse(lastUserMessage);
-    }
-
-    const response = await fetch(MODEL_URL, {
+    // ✅ CALL YOUR VERCEL API (no CORS issues!)
+    const response = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        inputs: `Q: ${lastUserMessage}\nA:`,
-        parameters: {
-          max_new_tokens: 100,
-          temperature: 0.8,
-          top_p: 0.9,
-        }
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: lastUserMessage })
     });
 
     if (!response.ok) {
-      console.warn("Model API failed, using local fallback");
+      console.warn("API failed, using local fallback");
       return getLocalResponse(lastUserMessage);
     }
 
-    const result = await response.json();
-    const generatedText = result[0]?.generated_text || "";
-    const answer = generatedText.split('A:')[1]?.trim() || getLocalResponse(lastUserMessage);
-    
-    return answer.slice(0, 300);
+    const data = await response.json();
+    return data.reply || getLocalResponse(lastUserMessage);
 
   } catch (error) {
     console.error("Error:", error);

@@ -2,50 +2,62 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { Copy, Check, Mail, AlertCircle, Loader2, Send, CheckCircle2 } from 'lucide-react';
+import emailjs from '@emailjs/browser'; // Import EmailJS
 import { fadeInUp } from '../animations';
 import { PERSONAL_INFO } from '../constants';
 import SocialLinks from './SocialLinks';
 
+
 const errorVariant = {
   hidden: { opacity: 0, y: -10, height: 0 },
-  visible: { 
-    opacity: 1, 
-    y: 0, 
-    height: 'auto',
-    transition: { type: "spring", stiffness: 300, damping: 30 } 
-  },
+  visible: { opacity: 1, y: 0, height: 'auto' },
   exit: { opacity: 0, y: -10, height: 0 }
 };
 
 const Contact = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [sendError, setSendError] = useState(null); // Track send errors
   
   const { 
     register, 
     handleSubmit, 
     reset,
     formState: { errors, isSubmitting } 
-  } = useForm({
-    mode: "onBlur" 
-  });
+  } = useForm({ mode: "onBlur" });
   
   const onSubmit = async (data) => {
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setIsSuccess(true);
-    reset(); 
-    setTimeout(() => setIsSuccess(false), 5000);
+    setSendError(null);
+    try {
+      // REPLACE THESE STRINGS WITH YOUR ACTUAL EMAILJS IDs
+      // Or use import.meta.env.VITE_EMAILJS_SERVICE_ID etc.
+      await emailjs.send(
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,     // e.g. 'service_gmail'
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,    // e.g. 'template_portfolio'
+        {
+          from_name: data.name,
+          from_email: data.email,
+          message: data.message,
+          to_name: 'Hasnain'
+        },
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY      // e.g. 'user_12345'
+      );
+
+      setIsSuccess(true);
+      reset();
+      setTimeout(() => setIsSuccess(false), 8000);
+    } catch (error) {
+      console.error("Email Failed:", error);
+      setSendError("Failed to transmit message. Please try copying my email instead.");
+    }
   };
 
+  // ... keep handleCopyEmail and rest of the UI code exactly the same ...
   const handleCopyEmail = () => {
-    if (navigator.clipboard && window.isSecureContext) {
-      navigator.clipboard.writeText(PERSONAL_INFO.email)
-        .then(() => {
-          setIsCopied(true);
-          setTimeout(() => setIsCopied(false), 2000); 
-        })
-        .catch(err => console.error("Failed to copy:", err));
-    }
+    navigator.clipboard.writeText(PERSONAL_INFO.email).then(() => {
+      setIsCopied(true);
+      setTimeout(() => setIsCopied(false), 2000); 
+    });
   };
 
   return (
@@ -63,31 +75,26 @@ const Contact = () => {
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-6 text-center">
               <span className="text-primary">06.</span> Initialize Contact
             </h2>
-            {/* UPDATED TEXT COLOR TO WHITE */}
             <p className="text-center text-slate-600 dark:text-white mb-8 font-medium opacity-90">
               Systems online. Ready for new opportunities in AI & Aerospace.
             </p>
 
+            {/* Copy & Socials */}
             <div className="flex flex-col items-center justify-center mb-10 gap-6">
               <div className="inline-flex items-center gap-3 p-3 rounded-xl bg-slate-200/50 dark:bg-white/5 border border-slate-300 dark:border-white/10 backdrop-blur-md hover:border-primary/30 transition-colors group">
                 <div className="p-2 rounded-lg bg-primary/10 text-primary">
                   <Mail size={20} />
                 </div>
-                
-                {/* UPDATED EMAIL TEXT TO WHITE */}
                 <span className="text-slate-800 dark:text-white font-mono text-sm sm:text-base mr-2 font-bold">
                   {PERSONAL_INFO.email}
                 </span>
-
                 <div className="relative">
                   <button 
                     onClick={handleCopyEmail}
                     className="p-2 rounded-lg hover:bg-white/10 text-slate-400 dark:text-white hover:text-primary dark:hover:text-primary transition-all active:scale-95"
-                    aria-label="Copy email address"
                   >
                     {isCopied ? <Check size={18} className="text-primary" /> : <Copy size={18} />}
                   </button>
-
                   <AnimatePresence>
                     {isCopied && (
                       <motion.div
@@ -97,13 +104,11 @@ const Contact = () => {
                         className="absolute left-1/2 top-0 -translate-x-1/2 px-3 py-1 bg-primary text-black text-xs font-bold rounded shadow-lg whitespace-nowrap pointer-events-none"
                       >
                         Copied!
-                        <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-primary rotate-45" />
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
               </div>
-              
               <SocialLinks />
             </div>
 
@@ -122,7 +127,7 @@ const Contact = () => {
                     </div>
                     <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Message Transmitted!</h3>
                     <p className="text-slate-600 dark:text-white max-w-sm font-medium">
-                      Thank you for reaching out. I will decode your message and respond shortly.
+                      I've received your signal. Expect a response shortly.
                     </p>
                     <button 
                       onClick={() => setIsSuccess(false)}
@@ -141,15 +146,21 @@ const Contact = () => {
                     className="space-y-6"
                     noValidate
                   >
+                    {/* Error Message Top */}
+                    {sendError && (
+                      <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center font-bold">
+                        {sendError}
+                      </div>
+                    )}
+
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        {/* LABEL: WHITE */}
                         <label className="block text-sm font-bold text-slate-700 dark:text-white mb-1">Name</label>
                         <input 
                           {...register("name", { required: "Name is required" })}
                           className={`w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-[#0F172A]/80 border outline-none transition-all placeholder-slate-400 dark:placeholder-slate-400 text-slate-900 dark:text-white font-medium
                             ${errors.name 
-                              ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 bg-red-500/5' 
+                              ? 'border-red-500 focus:ring-red-500' 
                               : 'border-slate-300 dark:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary'
                             }`}
                           placeholder="Commander Shepard"
@@ -169,7 +180,6 @@ const Contact = () => {
                       </div>
 
                       <div>
-                        {/* LABEL: WHITE */}
                         <label className="block text-sm font-bold text-slate-700 dark:text-white mb-1">Email</label>
                         <input 
                           {...register("email", { 
@@ -181,7 +191,7 @@ const Contact = () => {
                           })}
                           className={`w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-[#0F172A]/80 border outline-none transition-all placeholder-slate-400 dark:placeholder-slate-400 text-slate-900 dark:text-white font-medium
                             ${errors.email 
-                              ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 bg-red-500/5' 
+                              ? 'border-red-500 focus:ring-red-500' 
                               : 'border-slate-300 dark:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary'
                             }`}
                           placeholder="shepard@alliance.nav"
@@ -202,7 +212,6 @@ const Contact = () => {
                     </div>
 
                     <div>
-                      {/* LABEL: WHITE */}
                       <label className="block text-sm font-bold text-slate-700 dark:text-white mb-1">Message</label>
                       <textarea 
                         {...register("message", { 
@@ -215,7 +224,7 @@ const Contact = () => {
                         rows={4}
                         className={`w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-[#0F172A]/80 border outline-none transition-all placeholder-slate-400 dark:placeholder-slate-400 text-slate-900 dark:text-white font-medium resize-none
                           ${errors.message 
-                            ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500 bg-red-500/5' 
+                            ? 'border-red-500 focus:ring-red-500' 
                             : 'border-slate-300 dark:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary'
                           }`}
                         placeholder="Awaiting orders..."
@@ -252,7 +261,6 @@ const Contact = () => {
                 )}
               </AnimatePresence>
             </div>
-            
           </div>
         </motion.div>
       </div>

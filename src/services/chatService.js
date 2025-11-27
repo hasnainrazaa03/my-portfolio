@@ -1,8 +1,8 @@
 import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
 
-const SYSTEM_PROMPT = `
+const SYSTEM_CONTEXT = `
 You are Jarvis, an AI assistant for Hasnain Raza's portfolio.
-Your goal is to answer questions about Hasnain's background, skills, and projects professionally.
+Answer questions about Hasnain's background, skills, and projects professionally.
 
 Context:
 - Bio: ${PERSONAL_INFO.bioHeadline}
@@ -22,18 +22,19 @@ export const getChatResponse = async (messages) => {
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      // Zephyr/Mistral Prompt Format
+      headers: { 'Content-Type': 'application/json' },
+      // Qwen / ChatML Prompt Format
       body: JSON.stringify({
-        inputs: `<|system|>\n${SYSTEM_PROMPT}</s>\n<|user|>\n${lastUserMessage}</s>\n<|assistant|>`
+        inputs: `<|im_start|>system\n${SYSTEM_CONTEXT}<|im_end|>\n<|im_start|>user\n${lastUserMessage}<|im_end|>\n<|im_start|>assistant\n`
       }),
     });
 
-    if (!response.ok) throw new Error('Network response was not ok');
+    if (!response.ok) {
+        throw new Error('Network response was not ok');
+    }
 
     const result = await response.json();
+    // The router API returns an array with 'generated_text'
     return result[0]?.generated_text || "I am offline right now.";
 
   } catch (error) {

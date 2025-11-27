@@ -8,24 +8,18 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
   const apiKey = process.env.HUGGINGFACE_API_KEY;
   if (!apiKey) {
-    return res.status(500).json({ error: 'Server Configuration Error: API Key missing' });
+    return res.status(500).json({ error: 'Server Config Error: API Key missing' });
   }
 
   try {
     const { inputs } = req.body;
 
-    // --- FIX: UPDATED URL STRUCTURE & MODEL ---
-    // 1. Use 'router.huggingface.co'
-    // 2. Add '/hf-inference' path
-    // 3. Use v0.3 model which is currently very stable
+    // --- FIX: Using Qwen 2.5 (Ungated, High Performance) ---
+    // This model usually works without needing to accept a license agreement first
     const response = await fetch(
-      "https://router.huggingface.co/hf-inference/models/mistralai/Mistral-7B-Instruct-v0.3",
+      "https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-7B-Instruct",
       {
         method: "POST",
         headers: {
@@ -34,30 +28,25 @@ export default async function handler(req, res) {
         },
         body: JSON.stringify({
           inputs,
-          parameters: {
-            max_new_tokens: 150,
-            temperature: 0.7,
+          parameters: { 
+            max_new_tokens: 200,
             return_full_text: false,
+            temperature: 0.7
           },
         }),
       }
     );
 
-    const errorText = await response.text();
-
     if (!response.ok) {
-      console.error("Hugging Face API Error:", response.status, errorText);
+      const errorText = await response.text();
+      console.error("HF Error:", response.status, errorText);
       return res.status(response.status).json({ error: `Hugging Face Error: ${errorText}` });
     }
 
-    // Success!
-    const data = JSON.parse(errorText); 
-    res.setHeader('Access-Control-Allow-Origin', '*');
+    const data = await response.json();
     return res.status(200).json(data);
 
   } catch (error) {
-    console.error("Internal Server Error:", error);
-    res.setHeader('Access-Control-Allow-Origin', '*');
     return res.status(500).json({ error: 'Internal Server Error', details: error.message });
   }
 }

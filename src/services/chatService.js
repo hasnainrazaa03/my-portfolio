@@ -1,52 +1,90 @@
 import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
 
-const SYSTEM_CONTEXT = `
-You are Jarvis, an AI assistant for Hasnain Raza's portfolio.
-Answer questions about Hasnain's background, skills, and projects professionally.
-
-Context:
-- Bio: ${PERSONAL_INFO.bioHeadline}
-- Education: MSCS at USC, B.Tech Aerospace.
-- Projects: ${PROJECTS.map(p => p.title).join(', ')}.
-- Experience: ${EXPERIENCE.map(e => e.company).join(', ')}.
-- Skills: Python, PyTorch, MATLAB, CFD Analysis, React.
-
-Rules:
-1. Keep answers short (under 3 sentences).
-2. Be helpful and enthusiastic.
-`;
+const MODEL_URL = "https://api-inference.huggingface.co/models/hasnainraza03/portfolio-chatbot-model";
 
 export const getChatResponse = async (messages) => {
   const lastUserMessage = messages[messages.length - 1].content;
 
   try {
-    const response = await fetch('/api/chat', {
+    const apiKey = import.meta.env.VITE_HUGGINGFACE_API_KEY;
+    
+    if (!apiKey) {
+      console.error("Missing API key");
+      return getLocalResponse(lastUserMessage);
+    }
+
+    const response = await fetch(MODEL_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      // Qwen / ChatML Prompt Format
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify({
-        inputs: `<|im_start|>system\n${SYSTEM_CONTEXT}<|im_end|>\n<|im_start|>user\n${lastUserMessage}<|im_end|>\n<|im_start|>assistant\n`
-      }),
+        inputs: `Q: ${lastUserMessage}\nA:`,
+        parameters: {
+          max_new_tokens: 100,
+          temperature: 0.8,
+          top_p: 0.9,
+        }
+      })
     });
 
     if (!response.ok) {
-        throw new Error('Network response was not ok');
+      console.warn("Model API failed, using local fallback");
+      return getLocalResponse(lastUserMessage);
     }
 
     const result = await response.json();
-    // The router API returns an array with 'generated_text'
-    return result[0]?.generated_text || "I am offline right now.";
+    const generatedText = result[0]?.generated_text || "";
+    const answer = generatedText.split('A:')[1]?.trim() || getLocalResponse(lastUserMessage);
+    
+    return answer.slice(0, 300);
 
   } catch (error) {
-    console.error("AI Error (Using Local Fallback):", error);
+    console.error("Error:", error);
     return getLocalResponse(lastUserMessage);
   }
 };
 
 export const getLocalResponse = (input) => {
   const lower = input.toLowerCase();
-  if (lower.match(/hello|hi/)) return "Greetings. I am Jarvis. Ask me about Hasnain's projects.";
-  if (lower.includes('project')) return `Hasnain has built ${PROJECTS.length} major projects, including ${PROJECTS[0].title}.`;
-  if (lower.includes('contact')) return `You can reach him at ${PERSONAL_INFO.email}.`;
-  return "I can provide intel on Hasnain's Aerospace background, AI projects, or work experience.";
+  
+  if (lower.match(/hello|hi|hey|greetings/)) {
+    return "Greetings. I am Jarvis. Ask me about Hasnain's projects, skills, or experience.";
+  }
+  
+  if (lower.includes('project')) {
+    const projectList = PROJECTS.map(p => p.title).join(', ');
+    return `Hasnain has built: ${projectList}.`;
+  }
+  
+  if (lower.includes('skill') || lower.includes('tech')) {
+    return "Python, PyTorch, TensorFlow, React, Node.js, MATLAB, and SQL.";
+  }
+  
+  if (lower.includes('experience')) {
+    return `Experience at ${EXPERIENCE.map(e => e.company).join(', ')}.`;
+  }
+  
+  if (lower.includes('contact') || lower.includes('email')) {
+    return `Reach out at ${PERSONAL_INFO.email}!`;
+  }
+  
+  if (lower.includes('education')) {
+    return "MSCS at USC. B.Tech in Aerospace Engineering from RVCE.";
+  }
+  
+  if (lower.includes('vimaan')) {
+    return "Project Vimaan: Voice-controlled AI co-pilot for X-Plane flight simulation.";
+  }
+  
+  if (lower.includes('3d') || lower.includes('vision')) {
+    return "SO(3)-equivariant neural networks for 3D object recognition.";
+  }
+  
+  if (lower.includes('recipe')) {
+    return "Full-stack MERN recipe app with Google OAuth and meal planning.";
+  }
+  
+  return "Ask about projects, skills, experience, or education!";
 };

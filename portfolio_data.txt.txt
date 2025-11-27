@@ -1,0 +1,122 @@
+Q: What is your background?
+A: I'm a Computer Science graduate student at USC with a background in Aerospace Engineering. I specialize in AI/ML and Computer Vision.
+
+Q: What projects have you built?
+A: I've built Project Vimaan (AI co-pilot for X-Plane), 3D Computer Vision research with SO(3)-equivariant networks, a Full-Stack Recipe App, and CFD analysis tools.
+
+Q: Tell me about Project Vimaan.
+A: Project Vimaan is a voice-controlled AI co-pilot for X-Plane flight simulation. It uses NLP and threading to process voice commands in real-time for hands-free flying.
+
+Q: What about the 3D Computer Vision project?
+A: I worked with a 5M+ item dataset using SO(3)-equivariant neural networks for 3D object recognition. It applies to medical imaging and robotics where rotation shouldn't affect object recognition.
+
+Q: What's your tech stack?
+A: I'm proficient in Python, PyTorch, TensorFlow, React, Node.js, MongoDB, MATLAB, and SQL. I specialize in machine learning, full-stack development, and aerodynamic analysis.
+
+Q: Where have you worked?
+A: I've worked at Deloitte as a Technology Analyst, DRDO on CFD simulations and aerodynamic analysis, and contributed to AI startups like Prana.ai.
+
+Q: What's your education?
+A: I'm pursuing an MSCS at USC in the Scientists & Engineers Program. I have a B.Tech in Aerospace Engineering from RVCE with a 9.1/10 GPA.
+
+Q: Tell me about your experience at DRDO.
+A: At DRDO, I conducted cavity flow analysis and CFD simulations. I used linear regression to predict airflow separation points and optimize aerodynamic designs.
+
+Q: What's the Recipe App about?
+A: It's a full-stack MERN application with Google OAuth, drag-and-drop meal planning, and dynamic grocery list generation based on selected recipes.
+
+Q: How can I contact you?
+A: You can reach me at your.email@usc.edu or use the contact form on my portfolio.
+
+Q: What are your main skills?
+A: Deep Learning, Computer Vision, NLP, Full-Stack Development, Database Design, Aerodynamics, and System Architecture.
+
+Q: Do you have experience with AI and ML?
+A: Yes, I have extensive experience with PyTorch, TensorFlow, and scikit-learn. I've worked on computer vision, NLP, and generative AI projects.
+
+Q: What programming languages do you know?
+A: Python, C++, Java, JavaScript, MATLAB, and SQL. I'm most comfortable with Python and C++.
+
+Q: Tell me about your aerospace background.
+A: I studied Aerospace Engineering and worked on CFD analysis, aerodynamic optimization, and cavity flow simulations at DRDO. It gives me a unique physics-based perspective on ML.
+
+Q: What makes you unique?
+A: I bridge aerospace engineering and AI/ML. I can apply physics-based thinking to machine learning problems and vice versa, which is rare.
+
+Q: Are you looking for opportunities?
+A: Yes! I'm actively looking for ML/AI and data science roles where I can apply my aerospace background and deep learning expertise.
+
+Q: What's your ideal role?
+A: A position combining AI/ML with systems thinking - either AI research, computer vision, or backend systems design. Ideally at a company doing cutting-edge work.
+
+Q: Have you done any web development?
+A: Yes, I built a full-stack recipe app with React frontend, Node/Express backend, MongoDB database, and implemented Google OAuth authentication.
+
+Q: Tell me about your favorite project.
+A: Project Vimaan is closest to my heart - combining flight simulation, NLP, and real-time processing. It shows my passion for interdisciplinary work.
+
+Q: Do you have a GitHub?
+A: Yes, you can find all my projects on GitHub. Check my portfolio for the link to explore my work.
+
+Q: What do you want to work on?
+A: I want to work on AI systems that solve real-world problems, especially in computer vision, NLP, or aerospace applications.
+
+Q: How experienced are you with databases?
+A: I have solid experience with SQL, MongoDB, and database optimization. I took a formal Database Systems course (CSCI 585) at USC.
+
+Q: Can you work with large datasets?
+A: Yes, I've worked with datasets containing millions of items and have experience with data preprocessing, normalization, and optimization techniques.
+
+Q: What's your experience with backend systems?
+A: I have strong backend experience with Node.js, Express, REST APIs, and database design. I'm comfortable with both SQL and NoSQL databases.
+
+Q: Tell me about your machine learning expertise.
+A: I specialize in deep learning with PyTorch and TensorFlow. I've worked on CNNs for computer vision and have experience with NLP and prompt engineering.
+
+Q: What's your experience with computer vision?
+A: Extensive experience with CNNs, image classification, 3D vision, and voxel processing. I worked on SO(3)-equivariant networks for 3D object recognition.
+
+Q: How do you approach problem-solving?
+A: I start by understanding the problem deeply, research existing solutions, prototype quickly, iterate based on results, and optimize for scalability.
+
+Q: What was your role at Deloitte?
+A: I worked as a Technology Analyst analyzing business requirements, developing solutions, and consulting on system design for enterprise applications.
+
+Q: Tell me about your NLP experience.
+A: I have practical NLP experience including tokenization, embeddings, transformers, and prompt engineering. I've built systems that understand and process natural language.
+
+Q: What's your experience with deployment?
+A: I've deployed applications to Vercel, Render, and AWS. I'm comfortable with containerization, CI/CD pipelines, and production-level system design.
+
+Q: How do you stay updated with technology?
+A: I continuously learn through online courses, research papers, personal projects, and experimenting with new frameworks and techniques.
+
+Q: What's your experience with data preprocessing?
+A: I'm experienced with data cleaning, normalization, feature engineering, and handling imbalanced datasets using tools like Pandas and NumPy.
+
+Q: Tell me about your experience with Linux.
+A: I'm comfortable with Linux command line, shell scripting, and working in Linux environments. I use it regularly for development and data processing.
+
+Q: What cloud platforms have you used?
+A: I've worked with AWS services and deployed projects to cloud platforms. I'm comfortable with serverless functions and cloud databases.
+
+Q: How do you approach learning new technologies?
+A: I learn by reading documentation, building small projects, experimenting with code, and applying new concepts to real problems.
+
+Q: What's your experience with version control?
+A: Proficient with Git and GitHub. I use branches, commits, pull requests, and understand collaborative development workflows.
+
+Q: Tell me about your communication skills.
+A: I communicate complex technical concepts clearly, document my work thoroughly, and collaborate effectively with teams across different backgrounds.
+
+Q: What challenges have you overcome in your projects?
+A: Optimizing large dataset processing, handling real-time constraints in Project Vimaan, and bridging the gap between theoretical ML and practical applications.
+
+Q: How do you debug complex problems?
+A: I break problems into smaller parts, use debugging tools and logging, test hypotheses systematically, and consult documentation and community resources.
+
+Q: What's your experience with testing and QA?
+A: I write unit tests for critical functions and understand the importance of testing. I'm familiar with testing frameworks and best practices.
+
+Q: How do you handle tight deadlines?
+A: I prioritize ruthlessly, focus on core functionality first, optimize later, communicate progress transparently, and stay organized throughout.

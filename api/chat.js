@@ -12,19 +12,19 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  // 2. Debugging: Check if Key exists (Do not log the actual key!)
   const apiKey = process.env.HUGGINGFACE_API_KEY;
   if (!apiKey) {
-    console.error("Error: HUGGINGFACE_API_KEY is missing in Vercel Environment Variables.");
     return res.status(500).json({ error: 'Server Configuration Error: API Key missing' });
   }
 
   try {
     const { inputs } = req.body;
 
-    // 3. Call Hugging Face
+    // 3. Call Hugging Face (UPDATED URL)
+    // Old: https://api-inference.huggingface.co/...
+    // New: https://router.huggingface.co/...
     const response = await fetch(
-      "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
+      "https://router.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2",
       {
         method: "POST",
         headers: {
@@ -42,7 +42,6 @@ export default async function handler(req, res) {
       }
     );
 
-    // 4. Handle Hugging Face Errors specifically
     if (!response.ok) {
       const errorText = await response.text();
       console.error("Hugging Face API Error:", response.status, errorText);

@@ -20,8 +20,7 @@ export const getChatResponse = async (messages) => {
   const lastUserMessage = messages[messages.length - 1].content;
 
   try {
-    // Call OUR OWN Vercel Serverless Function
-    // This solves the CORS issue
+    // Call Vercel Proxy
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {

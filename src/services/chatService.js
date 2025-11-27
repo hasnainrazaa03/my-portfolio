@@ -20,7 +20,7 @@ export const getChatResponse = async (messages) => {
   const lastUserMessage = messages[messages.length - 1].content;
 
   try {
-    const response = await fetch('/api/chatbot', {
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

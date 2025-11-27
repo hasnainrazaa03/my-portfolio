@@ -1,0 +1,54 @@
+import React from 'react';
+
+// Hooks & Config
+import { useContentProtection } from './hooks/useContentProtection';
+import { useDarkMode } from './hooks/useDarkMode';
+import { CONFIG } from './constants';
+
+// Components
+import SpaceBackground from './components/SpaceBackground';
+import Navigation from './components/Navigation';
+import Hero from './components/Hero';
+import About from './components/About';
+import Education from './components/Education';
+import Projects from './components/Projects';
+import GitHubSection from './components/GitHubSection';
+import Experience from './components/Experience';
+import Skills from './components/Skills';
+import Contact from './components/Contact';
+import Footer from './components/Footer';
+import ScrollProgress from './components/ScrollProgress';
+import Chatbot from './components/Chatbot';
+import BackToTop from './components/BackToTop';
+
+export default function App() {
+  useContentProtection(CONFIG.enableContentProtection);
+  const [isDark, setIsDark] = useDarkMode();
+  const toggleTheme = () => setIsDark(!isDark);
+  
+  return (
+    <div className={`relative min-h-screen font-sans selection:bg-primary selection:text-black overflow-hidden ${CONFIG.enableContentProtection ? 'select-none' : ''}`}>
+      <SpaceBackground isDark={isDark} />
+      
+      <ScrollProgress />
+
+      <div className="relative z-10">
+        <Navigation isDark={isDark} toggleTheme={toggleTheme} />
+        <Hero />
+        <About />
+        <Education />
+        <Projects />
+        {/* PASSED isDark PROP HERE */}
+        <GitHubSection isDark={isDark} />
+        <Experience />
+        <Skills />
+        <Contact />
+        <Footer />
+      </div>
+
+      {/* Fixed Position Elements */}
+      <Chatbot />
+      <BackToTop />
+    </div>
+  );
+}

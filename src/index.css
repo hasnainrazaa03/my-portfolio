@@ -1,0 +1,104 @@
+/* ... keep existing imports and global styles ... */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light dark;
+}
+
+html {
+  scroll-behavior: smooth;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+body {
+  @apply bg-slate-50 text-slate-900 dark:bg-[#030014] dark:text-white transition-colors duration-300;
+  overflow-x: hidden;
+}
+
+/* --- GLOBAL SCROLLBAR (Match this style) --- */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px; /* Added height for horizontal global scrollbars */
+}
+::-webkit-scrollbar-track {
+  @apply bg-slate-200 dark:bg-[#030014];
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-primary rounded-full;
+}
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-teal-600;
+}
+
+/* --- COMPONENT SPECIFIC: THIN HORIZONTAL SCROLLBAR --- */
+/* Updated to match Global Theme Colors exactly */
+.thin-scrollbar-x {
+  scrollbar-width: thin;
+  scrollbar-color: #2DD4BF transparent; /* Firefox: Teal Thumb, Transparent Track */
+}
+
+.thin-scrollbar-x::-webkit-scrollbar {
+  height: 6px; /* Keep it thin */
+}
+
+.thin-scrollbar-x::-webkit-scrollbar-track {
+  background: transparent; /* FIX: Removes the black background */
+  margin: 0 20px; /* Add margin so it doesn't touch the edges */
+}
+
+.thin-scrollbar-x::-webkit-scrollbar-thumb {
+  @apply bg-primary/50 rounded-full; /* Teal with opacity */
+}
+
+.thin-scrollbar-x::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary; /* Solid Teal on hover */
+}
+
+/* Glassmorphism Utility */
+.glass-panel {
+  @apply transition-colors duration-300;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: none;
+}
+
+@layer utilities {
+  .animate-gradient-x {
+    background-size: 200% auto;
+    animation: gradient-x 4s linear infinite;
+  }
+}
+
+@keyframes gradient-x {
+  0% { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+@keyframes rocket-fire {
+  0% { transform: scaleX(1) translateX(0); opacity: 0.8; }
+  50% { transform: scaleX(1.5) translateX(-2px); opacity: 1; }
+  100% { transform: scaleX(1) translateX(0); opacity: 0.8; }
+}
+
+@keyframes rocket-pulse {
+  0% { opacity: 0.5; width: 8px; }
+  100% { opacity: 1; width: 12px; }
+}
+
+.animate-rocket-fire {
+  animation: rocket-fire 0.1s ease-in-out infinite alternate;
+}
+
+.animate-rocket-pulse {
+  animation: rocket-pulse 0.2s ease-in-out infinite alternate;
+}

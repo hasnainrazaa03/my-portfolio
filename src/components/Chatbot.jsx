@@ -1,0 +1,205 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { MessageSquare, X, Send, Loader2, User, Bot, Sparkles, Cpu } from 'lucide-react';
+import { getChatResponse } from '../services/chatService';
+
+const Chatbot = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState([
+    { role: 'assistant', content: "Hello, I am Jarvis. I can provide intel on Hasnain's projects, skills, or experience. How may I assist?" }
+  ]);
+  const [input, setInput] = useState('');
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isOpen, isTyping]);
+
+  const handleSend = async (e) => {
+    e.preventDefault();
+    if (!input.trim()) return;
+
+    const userMessage = { role: 'user', content: input };
+    const newHistory = [...messages, userMessage];
+    
+    setMessages(newHistory);
+    setInput('');
+    setIsTyping(true);
+
+    try {
+      const responseText = await getChatResponse(newHistory);
+      setMessages(prev => [...prev, { role: 'assistant', content: responseText }]);
+    } catch (error) {
+      setMessages(prev => [...prev, { role: 'assistant', content: "Connection interrupted. Please try again." }]);
+    } finally {
+      setIsTyping(false);
+    }
+  };
+
+  return (
+    <>
+      {/* Toggle Button - Sci-Fi AI Core Style */}
+      <motion.button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed bottom-6 right-6 z-50 group"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.9 }}
+        aria-label="Toggle Jarvis"
+      >
+        <div className={`relative p-4 rounded-full transition-all duration-500 ${
+          isOpen 
+            ? 'bg-red-500/80 shadow-[0_0_30px_rgba(239,68,68,0.6)] rotate-90' 
+            : 'bg-primary/80 shadow-[0_0_30px_rgba(45,212,191,0.6)] hover:shadow-[0_0_50px_rgba(45,212,191,0.8)]'
+        } backdrop-blur-md border-2 border-white/30`}>
+          
+          {/* Outer glowing ring animation */}
+          {!isOpen && (
+            <div className="absolute inset-0 rounded-full border-2 border-primary/50 scale-110 animate-ping opacity-50"></div>
+          )}
+          
+          {/* Icon */}
+          <AnimatePresence mode='wait'>
+            {isOpen ? (
+              <motion.div
+                key="close"
+                initial={{ opacity: 0, rotate: -90 }}
+                animate={{ opacity: 1, rotate: 0 }}
+                exit={{ opacity: 0, rotate: 90 }}
+              >
+                <X size={28} className="text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]" />
+              </motion.div>
+            ) : (
+              <motion.div
+                key="cpu"
+                initial={{ opacity: 0, scale: 0.5 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.5 }}
+                className="relative"
+              >
+                {/* A cool CPU/Brain icon for AI */}
+                <Cpu size={28} className="text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]" />
+                
+                {/* Tiny orbiting particle */}
+                <motion.div 
+                  className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,1)]"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+                  style={{ originX: "16px", originY: "16px" }}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </motion.button>
+
+      {/* Chat Window */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95, x: 20 }}
+            animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95, x: 20 }}
+            transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-2xl flex flex-col glass-panel border border-slate-200 dark:border-white/10"
+          >
+            {/* Header - Sci-Fi Style */}
+            <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-2 h-2 bg-green-500 rounded-full absolute bottom-0 right-0 z-10 ring-2 ring-[#0F172A]" />
+                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                    <Bot size={20} className="text-primary" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    JARVIS <Sparkles size={12} className="text-amber-400" />
+                  </h3>
+                  <span className="text-xs text-slate-500 dark:text-primary/80 font-mono tracking-wider">SYSTEM ONLINE</span>
+                </div>
+              </div>
+              <button 
+                onClick={() => setMessages([])} 
+                className="text-xs text-slate-400 hover:text-primary transition-colors underline"
+              >
+                Clear
+              </button>
+            </div>
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-slate-50/50 dark:bg-[#030014]/60">
+              {messages.map((msg, idx) => (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+                >
+                  {/* Avatar */}
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
+                    msg.role === 'user' 
+                      ? 'bg-slate-200 dark:bg-white/10 border-transparent' 
+                      : 'bg-primary/10 border-primary/30 text-primary'
+                  }`}>
+                    {msg.role === 'user' ? <User size={14} className="text-slate-600 dark:text-white" /> : <Bot size={14} />}
+                  </div>
+
+                  {/* Bubble */}
+                  <div className={`p-3.5 rounded-2xl text-sm leading-relaxed max-w-[85%] shadow-sm ${
+                    msg.role === 'user' 
+                      ? 'bg-primary text-black font-medium rounded-tr-sm' 
+                      : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-tl-sm'
+                  }`}>
+                    {msg.content}
+                  </div>
+                </motion.div>
+              ))}
+
+              {/* Typing Indicator */}
+              {isTyping && (
+                <div className="flex gap-3">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+                    <Bot size={14} />
+                  </div>
+                  <div className="p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl rounded-tl-sm flex gap-1.5 items-center h-10">
+                    <motion.div className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} />
+                    <motion.div className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} />
+                    <motion.div className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <form onSubmit={handleSend} className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 border-t border-slate-200 dark:border-white/10 backdrop-blur-md">
+              <div className="relative flex items-center gap-2">
+                <input
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Ask about projects..."
+                  className="w-full pl-4 pr-12 py-3 rounded-xl bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all text-sm shadow-inner"
+                />
+                <button 
+                  type="submit"
+                  disabled={!input.trim() || isTyping}
+                  className="absolute right-2 p-2 bg-primary text-black rounded-lg hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-primary/20"
+                >
+                  {isTyping ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} />}
+                </button>
+              </div>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+};
+
+export default Chatbot;

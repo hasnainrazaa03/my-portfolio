@@ -12,25 +12,25 @@ export default async function handler(req, res) {
 
   try {
     const { message } = req.body;
-    const fireworksKey = process.env.FIREWORKS_API_KEY;
+    const hfToken = process.env.HUGGINGFACE_API_KEY;
 
-    if (!fireworksKey) {
-      return res.status(500).json({ error: 'Missing Fireworks API key' });
+    if (!hfToken) {
+      return res.status(500).json({ error: 'Missing HF token' });
     }
 
-    // ✅ FIREWORKS AI - CORRECT MODEL NAME
-    const response = await fetch('https://api.fireworks.ai/inference/v1/chat/completions', {
+    // ✅ HUGGING FACE ROUTER API (OpenAI Compatible, FREE)
+    const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${fireworksKey}`,
+        'Authorization': `Bearer ${hfToken}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-v2-7b-chat',  // ✅ FIXED
+        model: 'mistralai/Mistral-7B-Instruct-v0.3:together',  // ✅ WORKS 100%
         messages: [
           { 
             role: 'user', 
-            content: `Q: ${message}\nProvide a concise answer.` 
+            content: `Q: ${message}\nA:` 
           }
         ],
         max_tokens: 100,
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const error = await response.text();
-      console.error('Fireworks error:', error);
+      console.error('HF Router error:', error);
       return res.status(response.status).json({ error: 'Model API failed' });
     }
 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, User, Bot, Sparkles, Cpu } from 'lucide-react';
-// Added .js extension to resolve import error
 import { getChatResponse } from '../services/chatService.js';
+
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -13,6 +13,7 @@ const Chatbot = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
+
   // Quick Chip Suggestions
   const suggestions = [
     "Tell me about his projects",
@@ -22,13 +23,16 @@ const Chatbot = () => {
     "Summarize your background"
   ];
 
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
+
   useEffect(() => {
     scrollToBottom();
   }, [messages, isOpen, isTyping]);
+
 
   // Unified function to handle sending messages (via click or type)
   const processMessage = async (text) => {
@@ -54,10 +58,12 @@ const Chatbot = () => {
     }
   };
 
+
   const handleFormSubmit = (e) => {
     e.preventDefault();
     processMessage(input);
   };
+
 
   return (
     <>
@@ -112,6 +118,7 @@ const Chatbot = () => {
         </div>
       </motion.button>
 
+
       {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
@@ -146,6 +153,7 @@ const Chatbot = () => {
               </button>
             </div>
 
+
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-slate-50/50 dark:bg-[#030014]/60">
               {messages.map((msg, idx) => (
@@ -173,20 +181,41 @@ const Chatbot = () => {
                 </motion.div>
               ))}
 
+              {/* ✅ TYPING INDICATOR */}
               {isTyping && (
-                <div className="flex gap-3">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="flex gap-3"
+                >
+                  <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary shrink-0">
                     <Bot size={14} />
                   </div>
-                  <div className="p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl rounded-tl-sm flex gap-1.5 items-center h-10">
-                    <motion.div className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} />
-                    <motion.div className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} />
-                    <motion.div className="w-1.5 h-1.5 bg-primary rounded-full" animate={{ y: [0, -5, 0] }} transition={{ repeat: Infinity, duration: 0.6, delay: 0.4 }} />
+                  
+                  <div className="p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl rounded-tl-sm flex gap-2 items-center h-10">
+                    {/* Bouncing Dots */}
+                    <motion.div 
+                      className="w-2 h-2 bg-primary rounded-full" 
+                      animate={{ y: [0, -6, 0] }} 
+                      transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} 
+                    />
+                    <motion.div 
+                      className="w-2 h-2 bg-primary rounded-full" 
+                      animate={{ y: [0, -6, 0] }} 
+                      transition={{ repeat: Infinity, duration: 0.6, delay: 0.1 }} 
+                    />
+                    <motion.div 
+                      className="w-2 h-2 bg-primary rounded-full" 
+                      animate={{ y: [0, -6, 0] }} 
+                      transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} 
+                    />
                   </div>
-                </div>
+                </motion.div>
               )}
+
               <div ref={messagesEndRef} />
             </div>
+
 
             {/* Quick Chips Area */}
             <div className="px-4 pb-2 pt-3 bg-slate-50 dark:bg-[#0F172A] border-t border-slate-200 dark:border-white/10">
@@ -206,6 +235,7 @@ const Chatbot = () => {
                </div>
             </div>
 
+
             {/* Input Area */}
             <form onSubmit={handleFormSubmit} className="p-4 pt-2 bg-slate-50 dark:bg-[#0F172A]">
               <div className="relative flex items-center gap-2">
@@ -215,6 +245,7 @@ const Chatbot = () => {
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about projects..."
                   className="w-full pl-4 pr-12 py-3 rounded-xl bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all text-sm shadow-inner"
+                  disabled={isTyping}
                 />
                 <button 
                   type="submit"
@@ -231,5 +262,6 @@ const Chatbot = () => {
     </>
   );
 };
+
 
 export default Chatbot;

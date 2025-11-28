@@ -13,7 +13,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { message } = req.body;
+    const { message, context } = req.body;
     
     if (!message || typeof message !== 'string') {
       return res.status(400).json({ error: 'Invalid message' });
@@ -28,6 +28,13 @@ export default async function handler(req, res) {
 
     console.log('Making request to HF Router...');
 
+    // Build system prompt with context
+    let systemPrompt = 'You are Jarvis, an AI assistant for Hasnain\'s portfolio website. Be concise, professional, and helpful.';
+    
+    if (context) {
+      systemPrompt += `\n\nHere is information about Hasnain:\n${context}`;
+    }
+
     // Updated API call with better error handling
     const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
       method: 'POST',
@@ -36,18 +43,18 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'meta-llama/Meta-Llama-3-8B-Instruct', // ✅ Verified chat model
+        model: 'meta-llama/Meta-Llama-3-8B-Instruct',
         messages: [
           { 
             role: 'system',
-            content: 'You are Jarvis, an AI assistant for Hasnain\'s portfolio. Be concise, professional, and helpful. Keep responses under 100 words.'
+            content: systemPrompt
           },
           { 
             role: 'user', 
             content: message
           }
         ],
-        max_tokens: 150,
+        max_tokens: 300, // Increased for complete responses
         temperature: 0.7,
         stream: false
       })
@@ -69,7 +76,7 @@ export default async function handler(req, res) {
     const answer = data.choices?.[0]?.message?.content || 'Unable to generate response';
 
     return res.status(200).json({ 
-      reply: answer.trim().slice(0, 400)
+      reply: answer.trim() // Removed the .slice() limit
     });
 
   } catch (error) {

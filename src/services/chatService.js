@@ -1,5 +1,70 @@
 import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
 
+// Build context string from your constants
+const buildContext = () => {
+  let context = [];
+  
+  // Personal info
+  if (PERSONAL_INFO) {
+    context.push(`Name: ${PERSONAL_INFO.name}`);
+    context.push(`Bio: ${PERSONAL_INFO.bioStory}`);
+    context.push(`Email: ${PERSONAL_INFO.email}`);
+    if (PERSONAL_INFO.socials) {
+      context.push(`GitHub: ${PERSONAL_INFO.socials.github}`);
+      context.push(`LinkedIn: ${PERSONAL_INFO.socials.linkedin}`);
+    }
+  }
+  
+  // Education (all institutions)
+  if (EDUCATION && EDUCATION.length > 0) {
+    context.push('\nEducation:');
+    EDUCATION.forEach(edu => {
+      context.push(`- ${edu.degree} at ${edu.school} (${edu.period}) - GPA: ${edu.gpa}`);
+    });
+  }
+  
+  // Projects (all 5 with rich details)
+  if (PROJECTS && PROJECTS.length > 0) {
+    context.push('\nProjects:');
+    PROJECTS.forEach(p => {
+      context.push(`- ${p.title} (${p.category}): ${p.description}`);
+      // Include key tech stack (first 5 items to save tokens)
+      if (p.techStack) {
+        context.push(`  Tech: ${p.techStack.slice(0, 8).join(', ')}`);
+      }
+    });
+  }
+  
+  // Skills (organized by category)
+  if (SKILLS && SKILLS.length > 0) {
+    context.push('\nSkills by Category:');
+    SKILLS.forEach(skillGroup => {
+      const topSkills = skillGroup.items
+        .sort((a, b) => b.pct - a.pct)
+        .slice(0, 5)
+        .map(s => `${s.name} (${s.level})`)
+        .join(', ');
+      context.push(`- ${skillGroup.category}: ${topSkills}`);
+    });
+  }
+  
+  // Experience (all roles with key highlights)
+  if (EXPERIENCE && EXPERIENCE.length > 0) {
+    context.push('\nProfessional Experience:');
+    EXPERIENCE.forEach(exp => {
+      context.push(`- ${exp.role} at ${exp.company} (${exp.period})`);
+      // Include first 2 bullet points for each role
+      if (exp.description && exp.description.length > 0) {
+        exp.description.slice(0, 2).forEach(point => {
+          context.push(`  • ${point}`);
+        });
+      }
+    });
+  }
+  
+  return context.join('\n');
+};
+
 export const getChatResponse = async (messages) => {
   const lastUserMessage = messages[messages.length - 1].content;
   console.log("📨 Sending message:", lastUserMessage);
@@ -7,8 +72,8 @@ export const getChatResponse = async (messages) => {
   try {
     // Determine the correct API URL based on environment
     const apiUrl = process.env.NODE_ENV === 'production' 
-      ? '/api/chat'  // Vercel automatically routes this
-      : 'http://localhost:3000/api/chat'; // Local dev
+      ? '/api/chat'
+      : 'http://localhost:3000/api/chat';
     
     console.log("🔗 API URL:", apiUrl);
 
@@ -17,7 +82,10 @@ export const getChatResponse = async (messages) => {
       headers: { 
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ message: lastUserMessage })
+      body: JSON.stringify({ 
+        message: lastUserMessage,
+        context: buildContext() // Send Hasnain's info to the AI
+      })
     });
 
     console.log("✅ Response status:", response.status);

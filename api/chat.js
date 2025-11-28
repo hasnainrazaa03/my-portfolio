@@ -36,11 +36,11 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'mistralai/Mistral-7B-Instruct-v0.3', // Removed :together suffix
+        model: 'meta-llama/Meta-Llama-3-8B-Instruct', // ✅ Verified chat model
         messages: [
           { 
             role: 'system',
-            content: 'You are Jarvis, an AI assistant for Hasnain\'s portfolio. Be concise and helpful.'
+            content: 'You are Jarvis, an AI assistant for Hasnain\'s portfolio. Be concise, professional, and helpful. Keep responses under 100 words.'
           },
           { 
             role: 'user', 

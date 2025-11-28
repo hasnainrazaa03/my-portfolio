@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageSquare, X, Send, Loader2, User, Bot, Sparkles, Cpu } from 'lucide-react';
-import { getChatResponse } from '../services/chatService';
+import { X, Send, Loader2, User, Bot, Sparkles, Cpu } from 'lucide-react';
+// Added .js extension to resolve import error
+import { getChatResponse } from '../services/chatService.js';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,6 +13,15 @@ const Chatbot = () => {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
+  // Quick Chip Suggestions
+  const suggestions = [
+    "Tell me about his projects",
+    "What is your tech stack?",
+    "Experience at Deloitte?",
+    "How can I contact you?",
+    "Summarize your background"
+  ];
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -20,25 +30,33 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages, isOpen, isTyping]);
 
-  const handleSend = async (e) => {
-    e.preventDefault();
-    if (!input.trim()) return;
+  // Unified function to handle sending messages (via click or type)
+  const processMessage = async (text) => {
+    if (!text.trim()) return;
 
-    const userMessage = { role: 'user', content: input };
-    const newHistory = [...messages, userMessage];
+    const userMessage = { role: 'user', content: text };
     
-    setMessages(newHistory);
+    // 1. Update UI immediately
+    setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
 
+    // 2. Prepare history for API (current state + new message)
+    const historyForApi = [...messages, userMessage];
+
     try {
-      const responseText = await getChatResponse(newHistory);
+      const responseText = await getChatResponse(historyForApi);
       setMessages(prev => [...prev, { role: 'assistant', content: responseText }]);
     } catch (error) {
       setMessages(prev => [...prev, { role: 'assistant', content: "Connection interrupted. Please try again." }]);
     } finally {
       setIsTyping(false);
     }
+  };
+
+  const handleFormSubmit = (e) => {
+    e.preventDefault();
+    processMessage(input);
   };
 
   return (
@@ -81,10 +99,7 @@ const Chatbot = () => {
                 exit={{ opacity: 0, scale: 0.5 }}
                 className="relative"
               >
-                {/* A cool CPU/Brain icon for AI */}
                 <Cpu size={28} className="text-white drop-shadow-[0_0_5px_rgba(255,255,255,0.8)]" />
-                
-                {/* Tiny orbiting particle */}
                 <motion.div 
                   className="absolute -top-1 -right-1 w-2 h-2 bg-white rounded-full shadow-[0_0_10px_rgba(255,255,255,1)]"
                   animate={{ rotate: 360 }}
@@ -107,7 +122,7 @@ const Chatbot = () => {
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-2xl flex flex-col glass-panel border border-slate-200 dark:border-white/10"
           >
-            {/* Header - Sci-Fi Style */}
+            {/* Header */}
             <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
@@ -140,7 +155,6 @@ const Chatbot = () => {
                   animate={{ opacity: 1, y: 0 }}
                   className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
                 >
-                  {/* Avatar */}
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 border ${
                     msg.role === 'user' 
                       ? 'bg-slate-200 dark:bg-white/10 border-transparent' 
@@ -149,7 +163,6 @@ const Chatbot = () => {
                     {msg.role === 'user' ? <User size={14} className="text-slate-600 dark:text-white" /> : <Bot size={14} />}
                   </div>
 
-                  {/* Bubble */}
                   <div className={`p-3.5 rounded-2xl text-sm leading-relaxed max-w-[85%] shadow-sm ${
                     msg.role === 'user' 
                       ? 'bg-primary text-black font-medium rounded-tr-sm' 
@@ -160,7 +173,6 @@ const Chatbot = () => {
                 </motion.div>
               ))}
 
-              {/* Typing Indicator */}
               {isTyping && (
                 <div className="flex gap-3">
                   <div className="w-8 h-8 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center text-primary">
@@ -176,8 +188,26 @@ const Chatbot = () => {
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Quick Chips Area */}
+            <div className="px-4 pb-2 pt-3 bg-slate-50 dark:bg-[#0F172A] border-t border-slate-200 dark:border-white/10">
+               <div className="flex gap-2 overflow-x-auto thin-scrollbar-x pb-2">
+                  {suggestions.map((chip, idx) => (
+                    <motion.button
+                      key={idx}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => processMessage(chip)}
+                      disabled={isTyping}
+                      className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-primary hover:text-black hover:border-primary dark:hover:border-primary transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {chip}
+                    </motion.button>
+                  ))}
+               </div>
+            </div>
+
             {/* Input Area */}
-            <form onSubmit={handleSend} className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 border-t border-slate-200 dark:border-white/10 backdrop-blur-md">
+            <form onSubmit={handleFormSubmit} className="p-4 pt-2 bg-slate-50 dark:bg-[#0F172A]">
               <div className="relative flex items-center gap-2">
                 <input
                   type="text"

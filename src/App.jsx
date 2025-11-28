@@ -6,6 +6,8 @@ import { useDarkMode } from './hooks/useDarkMode';
 import { CONFIG } from './constants';
 
 // Components
+import SEO from './components/SEO';
+import PageTitleUpdater from './components/PageTitleUpdater';
 import SpaceBackground from './components/SpaceBackground';
 import Navigation from './components/Navigation';
 import Hero from './components/Hero';
@@ -28,6 +30,10 @@ export default function App() {
   
   return (
     <div className={`relative min-h-screen font-sans selection:bg-primary selection:text-black overflow-hidden ${CONFIG.enableContentProtection ? 'select-none' : ''}`}>
+      {/* SEO Management */}
+      <SEO /> 
+      <PageTitleUpdater />
+
       <SpaceBackground isDark={isDark} />
       
       <ScrollProgress />
@@ -38,7 +44,6 @@ export default function App() {
         <About />
         <Education />
         <Projects />
-        {/* PASSED isDark PROP HERE */}
         <GitHubSection isDark={isDark} />
         <Experience />
         <Skills />

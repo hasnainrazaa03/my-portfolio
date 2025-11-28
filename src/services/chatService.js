@@ -1,5 +1,6 @@
 import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
 
+
 // Build context string from your constants
 const buildContext = () => {
   let context = [];
@@ -28,7 +29,6 @@ const buildContext = () => {
     context.push('\nProjects:');
     PROJECTS.forEach(p => {
       context.push(`- ${p.title} (${p.category}): ${p.description}`);
-      // Include key tech stack (first 5 items to save tokens)
       if (p.techStack) {
         context.push(`  Tech: ${p.techStack.slice(0, 8).join(', ')}`);
       }
@@ -53,7 +53,6 @@ const buildContext = () => {
     context.push('\nProfessional Experience:');
     EXPERIENCE.forEach(exp => {
       context.push(`- ${exp.role} at ${exp.company} (${exp.period})`);
-      // Include first 2 bullet points for each role
       if (exp.description && exp.description.length > 0) {
         exp.description.slice(0, 2).forEach(point => {
           context.push(`  • ${point}`);
@@ -65,17 +64,14 @@ const buildContext = () => {
   return context.join('\n');
 };
 
+
 export const getChatResponse = async (messages) => {
   const lastUserMessage = messages[messages.length - 1].content;
-  console.log("📨 Sending message:", lastUserMessage);
 
   try {
-    // Determine the correct API URL based on environment
     const apiUrl = process.env.NODE_ENV === 'production' 
       ? '/api/chat'
       : 'http://localhost:3000/api/chat';
-    
-    console.log("🔗 API URL:", apiUrl);
 
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -84,34 +80,28 @@ export const getChatResponse = async (messages) => {
       },
       body: JSON.stringify({ 
         message: lastUserMessage,
-        context: buildContext() // Send Hasnain's info to the AI
+        context: buildContext()
       })
     });
 
-    console.log("✅ Response status:", response.status);
-
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error("❌ API Error:", errorData);
-      console.warn("⚠️ Falling back to local response");
+      await response.json().catch(() => ({}));
       return getLocalResponse(lastUserMessage);
     }
 
     const data = await response.json();
-    console.log("📩 Got reply:", data.reply?.substring(0, 50) + "...");
     
     if (!data.reply) {
-      console.warn("⚠️ Empty reply, using fallback");
       return getLocalResponse(lastUserMessage);
     }
 
     return data.reply;
 
   } catch (error) {
-    console.error("❌ Network error:", error.message);
     return getLocalResponse(lastUserMessage);
   }
 };
+
 
 export const getLocalResponse = (input) => {
   const lower = input.toLowerCase();

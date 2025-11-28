@@ -1,5 +1,5 @@
 // ADDED 'Briefcase' TO THE IMPORT LIST BELOW
-import { Code, Cpu, Database, Globe, Layers, Server, Terminal, Wind, BookOpen, Rocket, Briefcase, GitBranch } from "lucide-react";
+import { Code, Cpu, Database, Terminal, Wind, BookOpen, Rocket, Briefcase, GitBranch } from "lucide-react";
 
 // --- CONFIGURATION SETTINGS ---
 export const CONFIG = {
@@ -12,7 +12,7 @@ export const PERSONAL_INFO = {
   name: "Hasnain Raza",
   title: "Hi | I'm Hasnain...",
   tagline: "Ready for takeoff?",
-  bio: "We’re about to launch into my journey!",
+  bio: "We're about to launch into my journey!",
   bioHeadline: "Lucknow native. Orbiting between code, tea, and whatever rabbit hole currently has gravitational pull.",
   bioStory: "I'm the kind of person who finds debugging weirdly satisfying and spends three hours perfecting a CSS animation that no one will notice. The way you do anything is the way you do everything, so whether I'm building ML models, brewing the perfect cup of tea in true Lucknow style, or falling into a 2 AM reel rabbit hole, I'm doing it with full attention. I oscillate between deep focus and beautiful chaos. I game, I read, I build, I scroll. But whatever I'm doing, I'm doing it right.",
   email: "razam@usc.edu",
@@ -75,7 +75,7 @@ export const PROJECTS = [
       "/Xplane.jpg"
     ],
     techStack: ["Python", "PyTorch", "Hugging Face Transformers", "DistilBERT", "Natural Language Processing", "Intent Classification", "Slot Extraction", "Speech Recognition", "Whisper ASR", "X-Plane SDK", "XPPython3", "Scikit-learn", "Matplotlib", "Seaborn", "NumPy", "Threading", "PyAudio", "Git"],
-    links: { github: "https://github.com/hasnainrazaa03/Project-Vimaan/", demo: "#" }
+    links: { github: "#", demo: "#" }
   },
   {
     id: 2,

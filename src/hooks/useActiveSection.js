@@ -1,31 +1,35 @@
 import { useState, useEffect } from 'react';
 
 export const useActiveSection = (sectionIds) => {
-  const [activeSection, setActiveSection] = useState('');
+  const [activeSection, setActiveSection] = useState('hero');
 
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            setActiveSection(entry.target.id);
+    const handleScroll = () => {
+      const spyLine = window.innerHeight * 0.3;
+      let foundSection = '';
+
+      for (const id of sectionIds) {
+        const element = document.getElementById(id);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          
+          if (rect.top <= spyLine && rect.bottom > spyLine) {
+            foundSection = id;
+            break;
           }
-        });
-      },
-      {
-        // This triggers the observer when the section crosses the middle of the screen
-        rootMargin: '-50% 0px -50% 0px', 
-        threshold: 0
+        }
       }
-    );
 
-    sectionIds.forEach((id) => {
-      const element = document.getElementById(id);
-      if (element) observer.observe(element);
-    });
+      if (foundSection && foundSection !== activeSection) {
+        setActiveSection(foundSection);
+      }
+    };
 
-    return () => observer.disconnect();
-  }, [sectionIds]);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   return activeSection;
 };

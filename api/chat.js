@@ -18,7 +18,7 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Missing Fireworks API key' });
     }
 
-    // ✅ FIREWORKS AI - FREE & FAST
+    // ✅ FIREWORKS AI - CORRECT MODEL NAME
     const response = await fetch('https://api.fireworks.ai/inference/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -26,7 +26,7 @@ export default async function handler(req, res) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'accounts/fireworks/models/llama-v2-7b-chat',
+        model: 'llama-v2-7b-chat',  // ✅ FIXED
         messages: [
           { 
             role: 'user', 

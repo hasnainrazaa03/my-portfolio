@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, User, Bot, Sparkles, Cpu } from 'lucide-react';
+import { X, Send, Loader2, User, Bot, Sparkles, Cpu, Trash2 } from 'lucide-react';
 import { getChatResponse } from '../services/chatService.js';
 
 const Chatbot = () => {
@@ -29,6 +29,96 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages, isOpen, isTyping]);
 
+  /**
+   * Get conversation summary for better context
+   * Extracts key topics from recent messages
+   */
+  const getConversationContext = () => {
+    if (messages.length <= 1) return "";
+    
+    // Get last 5 messages for context (excluding initial greeting)
+    const recentMessages = messages.slice(-5);
+    const userMessages = recentMessages
+      .filter(m => m.role === 'user')
+      .map(m => m.content)
+      .join("; ");
+    
+    return userMessages ? `User's recent questions: ${userMessages}` : "";
+  };
+
+  /**
+   * Extract key topics from conversation
+   * Used for better API context
+   */
+  const extractTopics = () => {
+    const userMessages = messages
+      .filter(m => m.role === 'user')
+      .map(m => m.content.toLowerCase());
+    
+    const topics = [];
+    
+    // Check for project mentions
+    if (userMessages.some(m => m.includes('project') || m.includes('vimaan') || m.includes('tumor'))) {
+      topics.push('projects');
+    }
+    // Check for skill mentions
+    if (userMessages.some(m => m.includes('skill') || m.includes('tech') || m.includes('language'))) {
+      topics.push('skills');
+    }
+    // Check for experience mentions
+    if (userMessages.some(m => m.includes('experience') || m.includes('work') || m.includes('deloitte'))) {
+      topics.push('experience');
+    }
+    // Check for education mentions
+    if (userMessages.some(m => m.includes('education') || m.includes('usc') || m.includes('university'))) {
+      topics.push('education');
+    }
+    
+    return topics;
+  };
+
+  /**
+   * Prepare conversation history for API
+   * Keeps last 10 messages to prevent token overflow
+   * Includes conversation context in system message
+   */
+  const prepareHistoryForAPI = (newUserMessage) => {
+    // Create full history with new message
+    const fullHistory = [...messages, newUserMessage];
+    
+    // Keep last 10 messages (5 exchanges) to stay within token limits
+    // But always keep the initial greeting for context
+    const maxHistoryLength = 10;
+    let historyToSend;
+    
+    if (fullHistory.length <= maxHistoryLength) {
+      historyToSend = fullHistory;
+    } else {
+      // Keep first message (initial greeting) + last N messages
+      historyToSend = [
+        fullHistory[0],
+        ...fullHistory.slice(-(maxHistoryLength - 1))
+      ];
+    }
+    
+    return historyToSend;
+  };
+
+  /**
+   * Format conversation history for display
+   * Shows message count and recent topics
+   */
+  const getHistoryStats = () => {
+    const userMessageCount = messages.filter(m => m.role === 'user').length;
+    const topics = extractTopics();
+    
+    return {
+      messageCount: messages.length,
+      userQuestions: userMessageCount,
+      topics: topics
+    };
+  };
+
   // Unified function to handle sending messages (via click or type)
   const processMessage = async (text) => {
     if (!text.trim()) return;
@@ -40,8 +130,8 @@ const Chatbot = () => {
     setInput('');
     setIsTyping(true);
 
-    // 2. Prepare history for API (current state + new message)
-    const historyForApi = [...messages, userMessage];
+    // 2. Prepare history for API with context
+    const historyForApi = prepareHistoryForAPI(userMessage);
 
     try {
       const responseText = await getChatResponse(historyForApi);
@@ -57,6 +147,17 @@ const Chatbot = () => {
     e.preventDefault();
     processMessage(input);
   };
+
+  /**
+   * Clear conversation history
+   */
+  const clearHistory = () => {
+    setMessages([
+      { role: 'assistant', content: "Hello, I am Jarvis. I can provide intel on Hasnain's projects, skills, or experience. How may I assist?" }
+    ]);
+  };
+
+  const stats = getHistoryStats();
 
   return (
     <>
@@ -121,28 +222,42 @@ const Chatbot = () => {
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-2xl flex flex-col glass-panel border border-slate-200 dark:border-white/10"
           >
-            {/* Header */}
-            <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-2 h-2 bg-green-500 rounded-full absolute bottom-0 right-0 z-10 ring-2 ring-[#0F172A]" />
-                  <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
-                    <Bot size={20} className="text-primary" />
+            {/* Header with History Stats */}
+            <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div className="w-2 h-2 bg-green-500 rounded-full absolute bottom-0 right-0 z-10 ring-2 ring-[#0F172A]" />
+                    <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center border border-primary/30">
+                      <Bot size={20} className="text-primary" />
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      JARVIS <Sparkles size={12} className="text-amber-400" />
+                    </h3>
+                    <span className="text-xs text-slate-500 dark:text-primary/80 font-mono tracking-wider">SYSTEM ONLINE</span>
                   </div>
                 </div>
-                <div>
-                  <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                    JARVIS <Sparkles size={12} className="text-amber-400" />
-                  </h3>
-                  <span className="text-xs text-slate-500 dark:text-primary/80 font-mono tracking-wider">SYSTEM ONLINE</span>
-                </div>
+                <button 
+                  onClick={clearHistory} 
+                  className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-red-500 transition-colors"
+                  title="Clear conversation"
+                >
+                  <Trash2 size={16} />
+                </button>
               </div>
-              <button 
-                onClick={() => setMessages([])} 
-                className="text-xs text-slate-400 hover:text-primary transition-colors underline"
-              >
-                Clear
-              </button>
+              
+              {/* Conversation Stats */}
+              {messages.length > 1 && (
+                <div className="text-xs text-slate-600 dark:text-slate-400 font-mono space-y-0.5">
+                  <div>💬 {stats.messageCount} messages</div>
+                  <div>🧠 {stats.userQuestions} questions</div>
+                  {stats.topics.length > 0 && (
+                    <div>🏷️ Topics: {stats.topics.join(', ')}</div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Messages Area */}
@@ -172,7 +287,7 @@ const Chatbot = () => {
                 </motion.div>
               ))}
 
-              {/* ✅ ENHANCED TYPING INDICATOR */}
+              {/* Enhanced Typing Indicator */}
               {isTyping && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}

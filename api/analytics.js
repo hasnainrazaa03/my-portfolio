@@ -1,11 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 // Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY; // Use service role key
+const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET');
@@ -20,12 +20,10 @@ export default async function handler(req, res) {
     try {
       const { question, response, sessionId, timestamp, userAgent, referrer } = req.body;
 
-      // Validate required fields
       if (!question || !response) {
         return res.status(400).json({ error: 'Missing required fields' });
       }
 
-      // Insert into Supabase
       const { data, error } = await supabase
         .from('jarvis_analytics')
         .insert([
@@ -55,11 +53,9 @@ export default async function handler(req, res) {
   // Handle GET request (fetching analytics - requires auth)
   if (req.method === 'GET') {
     try {
-      // Check for authentication header
       const authHeader = req.headers.authorization;
       const expectedToken = process.env.ANALYTICS_SECRET_TOKEN;
 
-      // If no auth token provided, deny access
       if (!authHeader || authHeader !== `Bearer ${expectedToken}`) {
         return res.status(401).json({ 
           error: 'Unauthorized',
@@ -67,7 +63,6 @@ export default async function handler(req, res) {
         });
       }
 
-      // Fetch all analytics (last 1000 entries)
       const { data, error } = await supabase
         .from('jarvis_analytics')
         .select('*')
@@ -79,7 +74,6 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: error.message });
       }
 
-      // Process data for insights
       const insights = processAnalyticsData(data);
 
       return res.status(200).json({
@@ -94,13 +88,9 @@ export default async function handler(req, res) {
     }
   }
 
-  // Invalid method
   return res.status(405).json({ error: 'Method not allowed' });
-}
+};
 
-/**
- * Process raw analytics data into insights
- */
 function processAnalyticsData(data) {
   if (!data || data.length === 0) {
     return {
@@ -113,7 +103,6 @@ function processAnalyticsData(data) {
     };
   }
 
-  // Extract topics and entities from each question
   const topicBreakdown = {};
   const entityMentions = {};
   const hourlyBreakdown = {};
@@ -123,33 +112,27 @@ function processAnalyticsData(data) {
     const entities = extractEntities(interaction.question);
     const hour = new Date(interaction.timestamp).getHours();
 
-    // Count topics
     topics.forEach(topic => {
       topicBreakdown[topic] = (topicBreakdown[topic] || 0) + 1;
     });
 
-    // Count entities
     entities.forEach(entity => {
       entityMentions[entity] = (entityMentions[entity] || 0) + 1;
     });
 
-    // Hourly breakdown
     const hourKey = `${hour}:00`;
     hourlyBreakdown[hourKey] = (hourlyBreakdown[hourKey] || 0) + 1;
   });
 
-  // Most asked topics
   const mostAskedTopics = Object.entries(topicBreakdown)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5)
     .map(([topic, count]) => ({ topic, count }));
 
-  // Top entities
   const topEntities = Object.entries(entityMentions)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10);
 
-  // Get unique sessions
   const uniqueSessions = new Set(data.map(d => d.session_id)).size;
 
   return {
@@ -162,9 +145,6 @@ function processAnalyticsData(data) {
   };
 }
 
-/**
- * Extract topics from a question
- */
 function extractTopics(question) {
   const lower = question.toLowerCase();
   const topics = [];
@@ -194,9 +174,6 @@ function extractTopics(question) {
   return topics;
 }
 
-/**
- * Extract key entities mentioned
- */
 function extractEntities(question) {
   const lower = question.toLowerCase();
   const entities = [];

@@ -127,19 +127,21 @@ HOBBIES:
 - Match user's tone (casual → casual, formal → formal)
 - Never use bullet points unless specifically requested
 
-=== CONCISE RESPONSE FORMAT ===
-Keep responses SHORT and CONCISE (1-2 sentences max):
-- Answer the question directly
-- Avoid long explanations
-- End with 1-2 suggested follow-up questions in brackets
-- Format: [Ask about: X, Y, or Z?]
+🚨 MANDATORY FORMAT - YOU MUST FOLLOW THIS EXACTLY:
+Your response MUST be 1-2 sentences maximum.
+MUST end with "[Ask about: X, Y, or Z?]"
+NO EXCEPTIONS. NO LONG ANSWERS.
 
-EXAMPLES:
+EXAMPLE FORMAT:
 User: "What projects have you built?"
-Response: "I've built Project Vimaan (voice-controlled X-Plane co-pilot), Brain Tumor Segmentation (deep learning), and Recipe Vault (MERN app). [Ask about: specific tech stack, project details, or achievements?]"
+Response: "I've built Project Vimaan (voice X-Plane), Brain Tumor Segmentation (deep learning), Recipe Vault (MERN), and Expense Tracker (React). [Ask about: specific tech stack or project details?]"
 
 User: "Tell me about Deloitte"
-Response: "I was a Technology Analyst at Deloitte, analyzing workflows and optimizing processes. [Ask about: specific achievements, other experiences, or skills used?]"`;
+Response: "I was a Technology Analyst analyzing workflows and optimizing processes. [Ask about: specific achievements, other experiences, or skills used?]"
+
+USER QUESTION: "${message}"
+
+RESPOND IN EXACT FORMAT. ONE OR TWO SENTENCES MAX. END WITH SUGGESTED QUESTIONS.`;
     
     if (context) {
       systemPrompt += `\n\n=== ADDITIONAL DATA ===\n${context}`;
@@ -152,6 +154,7 @@ Response: "I was a Technology Analyst at Deloitte, analyzing workflows and optim
     }
 
 
+    // FORCE concise format with stricter parameters
     const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -170,9 +173,10 @@ Response: "I was a Technology Analyst at Deloitte, analyzing workflows and optim
             content: message
           }
         ],
-        max_tokens: 120,  // Reduced from 150
-        temperature: 0.6,
-        top_p: 0.85,
+        max_tokens: 90,  // Further reduced from 120 to force short answers
+        temperature: 0.4,  // Lower temperature = more deterministic
+        top_p: 0.7,        // Lower top_p = less random
+        stop: ["\n\n", "\n\n\n"],  // Stop on double line breaks
         stream: false
       })
     });
@@ -193,15 +197,27 @@ Response: "I was a Technology Analyst at Deloitte, analyzing workflows and optim
     let answer = data.choices?.[0]?.message?.content || 'Unable to generate response';
 
 
-    const words = answer.trim().split(/\s+/);
-    if (words.length > 100) {
-      answer = words.slice(0, 100).join(' ') + '...';
+    // ENFORCE format post-processing
+    // If answer is too long or doesn't end with bracket, truncate and add suggestions
+    if (!answer.includes('[') || answer.split('[')[0].trim().split(/[.!?]/).length > 2) {
+      const sentences = answer.split(/[.!?]/);
+      const shortAnswer = sentences.slice(0, 2).join('. ').trim();
+      
+      // Add suggested questions if missing
+      const suggestedQuestions = [
+        "specific tech stack used",
+        "project details or achievements",
+        "other work experience",
+        "skills or technologies"
+      ];
+      
+      const randomSuggestions = suggestedQuestions
+        .sort(() => 0.5 - Math.random())
+        .slice(0, 2)
+        .join(' or ');
+      
+      answer = `${shortAnswer}. [Ask about: ${randomSuggestions}?]`;
     }
-
-
-    answer = answer
-      .replace(/^(Here's|Here are|So|Well,|Basically,)\s+/i, '')
-      .trim();
 
 
     return res.status(200).json({ 
@@ -210,6 +226,7 @@ Response: "I was a Technology Analyst at Deloitte, analyzing workflows and optim
 
 
   } catch (error) {
+    console.error('Chat API error:', error);
     return res.status(500).json({ 
       error: 'Internal server error'
     });

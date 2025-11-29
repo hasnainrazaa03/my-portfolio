@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, User, Bot, Sparkles, Cpu } from 'lucide-react';
 import { getChatResponse } from '../services/chatService.js';
 
-
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -12,7 +11,6 @@ const Chatbot = () => {
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
-
 
   // Quick Chip Suggestions
   const suggestions = [
@@ -23,16 +21,13 @@ const Chatbot = () => {
     "Summarize your background"
   ];
 
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-
   useEffect(() => {
     scrollToBottom();
   }, [messages, isOpen, isTyping]);
-
 
   // Unified function to handle sending messages (via click or type)
   const processMessage = async (text) => {
@@ -58,12 +53,10 @@ const Chatbot = () => {
     }
   };
 
-
   const handleFormSubmit = (e) => {
     e.preventDefault();
     processMessage(input);
   };
-
 
   return (
     <>
@@ -118,7 +111,6 @@ const Chatbot = () => {
         </div>
       </motion.button>
 
-
       {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
@@ -153,7 +145,6 @@ const Chatbot = () => {
               </button>
             </div>
 
-
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-slate-50/50 dark:bg-[#030014]/60">
               {messages.map((msg, idx) => (
@@ -181,7 +172,7 @@ const Chatbot = () => {
                 </motion.div>
               ))}
 
-              {/* ✅ TYPING INDICATOR */}
+              {/* ✅ ENHANCED TYPING INDICATOR */}
               {isTyping && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -192,23 +183,45 @@ const Chatbot = () => {
                     <Bot size={14} />
                   </div>
                   
-                  <div className="p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl rounded-tl-sm flex gap-2 items-center h-10">
+                  <div className="p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl rounded-tl-sm flex items-center gap-3 h-10">
                     {/* Bouncing Dots */}
-                    <motion.div 
-                      className="w-2 h-2 bg-primary rounded-full" 
-                      animate={{ y: [0, -6, 0] }} 
-                      transition={{ repeat: Infinity, duration: 0.6, delay: 0 }} 
-                    />
-                    <motion.div 
-                      className="w-2 h-2 bg-primary rounded-full" 
-                      animate={{ y: [0, -6, 0] }} 
-                      transition={{ repeat: Infinity, duration: 0.6, delay: 0.1 }} 
-                    />
-                    <motion.div 
-                      className="w-2 h-2 bg-primary rounded-full" 
-                      animate={{ y: [0, -6, 0] }} 
-                      transition={{ repeat: Infinity, duration: 0.6, delay: 0.2 }} 
-                    />
+                    <div className="flex gap-1.5 items-center">
+                      <motion.div 
+                        className="w-2 h-2 bg-primary rounded-full" 
+                        animate={{ y: [0, -8, 0] }} 
+                        transition={{ 
+                          repeat: Infinity, 
+                          duration: 0.8, 
+                          delay: 0,
+                          ease: "easeInOut"
+                        }} 
+                      />
+                      <motion.div 
+                        className="w-2 h-2 bg-primary rounded-full" 
+                        animate={{ y: [0, -8, 0] }} 
+                        transition={{ 
+                          repeat: Infinity, 
+                          duration: 0.8, 
+                          delay: 0.1,
+                          ease: "easeInOut"
+                        }} 
+                      />
+                      <motion.div 
+                        className="w-2 h-2 bg-primary rounded-full" 
+                        animate={{ y: [0, -8, 0] }} 
+                        transition={{ 
+                          repeat: Infinity, 
+                          duration: 0.8, 
+                          delay: 0.2,
+                          ease: "easeInOut"
+                        }} 
+                      />
+                    </div>
+                    
+                    {/* "Jarvis is thinking..." text */}
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
+                      Jarvis is thinking...
+                    </span>
                   </div>
                 </motion.div>
               )}
@@ -216,25 +229,23 @@ const Chatbot = () => {
               <div ref={messagesEndRef} />
             </div>
 
-
             {/* Quick Chips Area */}
             <div className="px-4 pb-2 pt-3 bg-slate-50 dark:bg-[#0F172A] border-t border-slate-200 dark:border-white/10">
-               <div className="flex gap-2 overflow-x-auto thin-scrollbar-x pb-2">
-                  {suggestions.map((chip, idx) => (
-                    <motion.button
-                      key={idx}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      onClick={() => processMessage(chip)}
-                      disabled={isTyping}
-                      className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-primary hover:text-black hover:border-primary dark:hover:border-primary transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {chip}
-                    </motion.button>
-                  ))}
-               </div>
+              <div className="flex gap-2 overflow-x-auto thin-scrollbar-x pb-2">
+                {suggestions.map((chip, idx) => (
+                  <motion.button
+                    key={idx}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => processMessage(chip)}
+                    disabled={isTyping}
+                    className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-primary hover:text-black hover:border-primary dark:hover:border-primary transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {chip}
+                  </motion.button>
+                ))}
+              </div>
             </div>
-
 
             {/* Input Area */}
             <form onSubmit={handleFormSubmit} className="p-4 pt-2 bg-slate-50 dark:bg-[#0F172A]">
@@ -262,6 +273,5 @@ const Chatbot = () => {
     </>
   );
 };
-
 
 export default Chatbot;

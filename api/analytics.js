@@ -16,39 +16,41 @@ export default async function handler(req, res) {
   }
 
   // Handle POST request (saving analytics)
-  if (req.method === 'POST') {
-    try {
-      const { question, response, sessionId, timestamp, userAgent, referrer } = req.body;
+    if (req.method === 'POST') {
+        try {
+            const { question, response, sessionId, timestamp, userAgent, referrer } = req.body;
 
-      if (!question || !response) {
-        return res.status(400).json({ error: 'Missing required fields' });
-      }
+            if (!question || !response) {
+                return res.status(400).json({ error: 'Missing required fields' });
+            }
 
-      const { data, error } = await supabase
-        .from('jarvis_analytics')
-        .insert([
-          {
-            question,
-            response,
-            session_id: sessionId,
-            timestamp: timestamp || new Date().toISOString(),
-            user_agent: userAgent,
-            referrer: referrer || 'direct',
-            ip_address: req.headers['x-forwarded-for'] || req.socket.remoteAddress
-          }
-        ]);
+            const { data, error } = await supabase
+                .from('jarvis_analytics')
+                .insert([
+                    {
+                        id: `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+                        question,
+                        response,
+                        session_id: sessionId,
+                        timestamp: timestamp || new Date().toISOString(),
+                        user_agent: userAgent,
+                        referrer: referrer || 'direct',
+                        ip_address: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+                    }
+                ]);
 
-      if (error) {
-        console.error('Supabase error:', error);
-        return res.status(500).json({ error: error.message });
-      }
+            if (error) {
+                console.error('Supabase error:', error);
+                return res.status(500).json({ error: error.message });
+            }
 
-      return res.status(200).json({ success: true, data });
-    } catch (error) {
-      console.error('Analytics API error:', error);
-      return res.status(500).json({ error: error.message });
+            return res.status(200).json({ success: true, data });
+        } catch (error) {
+            console.error('Analytics API error:', error);
+            return res.status(500).json({ error: error.message });
+        }
     }
-  }
+
 
   // Handle GET request (fetching analytics - requires auth)
   if (req.method === 'GET') {

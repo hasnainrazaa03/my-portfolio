@@ -3,22 +3,52 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, User, Bot, Sparkles, Cpu, Trash2 } from 'lucide-react';
 import { getChatResponse } from '../services/chatService.js';
 
+/**
+ * Parse and render emoji-enhanced messages
+ * Handles emoji line breaks and formatting
+ */
+const renderMessageWithEmojis = (content) => {
+  // Split by emoji lines for better visual hierarchy
+  const lines = content.split('\n');
+  
+  return (
+    <div className="space-y-2">
+      {lines.map((line, idx) => {
+        if (!line.trim()) return null;
+        
+        // Check if line starts with emoji
+        const emojiRegex = /^([🤖💼💻🛠️🎓📧🚀💡🎯🏢📚🐙⚡🎨🧠🛸⚙️🌬️🐍🎨✨⚛️🍳🏋️✈️📊🔧🎬🎭🎪🎨🖼️🎯])\s/;
+        const hasEmoji = emojiRegex.test(line);
+        
+        return (
+          <div 
+            key={idx}
+            className={hasEmoji ? 'pl-1' : ''}
+          >
+            {line}
+          </div>
+        );
+      })}
+    </div>
+  );
+};
+
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: "Hello, I am Jarvis. I can provide intel on Hasnain's projects, skills, or experience. How may I assist?" }
+    { role: 'assistant', content: "🤖 Hello! I am Jarvis, Hasnain's AI assistant. Ask me about his 💻 projects, 🛠️ skills, 💼 experience, or 🎓 education. How may I assist?" }
   ]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Quick Chip Suggestions
+  // Quick Chip Suggestions with emojis
   const suggestions = [
-    "Tell me about his projects",
-    "What is your tech stack?",
-    "Experience at Deloitte?",
-    "How can I contact you?",
-    "Summarize your background"
+    "🚀 Tell me about his projects",
+    "⚡ What is your tech stack?",
+    "💼 Experience at Deloitte?",
+    "📧 How can I contact you?",
+    "📚 Summarize your background"
   ];
 
   const scrollToBottom = () => {
@@ -29,89 +59,56 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages, isOpen, isTyping]);
 
-  /**
-   * Get conversation summary for better context
-   * Extracts key topics from recent messages
-   */
   const getConversationContext = () => {
     if (messages.length <= 1) return "";
-    
-    // Get last 5 messages for context (excluding initial greeting)
     const recentMessages = messages.slice(-5);
     const userMessages = recentMessages
       .filter(m => m.role === 'user')
       .map(m => m.content)
       .join("; ");
-    
     return userMessages ? `User's recent questions: ${userMessages}` : "";
   };
 
-  /**
-   * Extract key topics from conversation
-   * Used for better API context
-   */
   const extractTopics = () => {
     const userMessages = messages
       .filter(m => m.role === 'user')
       .map(m => m.content.toLowerCase());
     
     const topics = [];
-    
-    // Check for project mentions
     if (userMessages.some(m => m.includes('project') || m.includes('vimaan') || m.includes('tumor'))) {
-      topics.push('projects');
+      topics.push('💻 Projects');
     }
-    // Check for skill mentions
     if (userMessages.some(m => m.includes('skill') || m.includes('tech') || m.includes('language'))) {
-      topics.push('skills');
+      topics.push('⚡ Skills');
     }
-    // Check for experience mentions
     if (userMessages.some(m => m.includes('experience') || m.includes('work') || m.includes('deloitte'))) {
-      topics.push('experience');
+      topics.push('💼 Experience');
     }
-    // Check for education mentions
     if (userMessages.some(m => m.includes('education') || m.includes('usc') || m.includes('university'))) {
-      topics.push('education');
+      topics.push('🎓 Education');
     }
-    
     return topics;
   };
 
-  /**
-   * Prepare conversation history for API
-   * Keeps last 10 messages to prevent token overflow
-   * Includes conversation context in system message
-   */
   const prepareHistoryForAPI = (newUserMessage) => {
-    // Create full history with new message
     const fullHistory = [...messages, newUserMessage];
-    
-    // Keep last 10 messages (5 exchanges) to stay within token limits
-    // But always keep the initial greeting for context
     const maxHistoryLength = 10;
     let historyToSend;
     
     if (fullHistory.length <= maxHistoryLength) {
       historyToSend = fullHistory;
     } else {
-      // Keep first message (initial greeting) + last N messages
       historyToSend = [
         fullHistory[0],
         ...fullHistory.slice(-(maxHistoryLength - 1))
       ];
     }
-    
     return historyToSend;
   };
 
-  /**
-   * Format conversation history for display
-   * Shows message count and recent topics
-   */
   const getHistoryStats = () => {
     const userMessageCount = messages.filter(m => m.role === 'user').length;
     const topics = extractTopics();
-    
     return {
       messageCount: messages.length,
       userQuestions: userMessageCount,
@@ -119,25 +116,21 @@ const Chatbot = () => {
     };
   };
 
-  // Unified function to handle sending messages (via click or type)
   const processMessage = async (text) => {
     if (!text.trim()) return;
 
     const userMessage = { role: 'user', content: text };
-    
-    // 1. Update UI immediately
     setMessages(prev => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
 
-    // 2. Prepare history for API with context
     const historyForApi = prepareHistoryForAPI(userMessage);
 
     try {
       const responseText = await getChatResponse(historyForApi);
       setMessages(prev => [...prev, { role: 'assistant', content: responseText }]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Connection interrupted. Please try again." }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "🤖 Connection interrupted. Please try again. 🔄" }]);
     } finally {
       setIsTyping(false);
     }
@@ -148,12 +141,9 @@ const Chatbot = () => {
     processMessage(input);
   };
 
-  /**
-   * Clear conversation history
-   */
   const clearHistory = () => {
     setMessages([
-      { role: 'assistant', content: "Hello, I am Jarvis. I can provide intel on Hasnain's projects, skills, or experience. How may I assist?" }
+      { role: 'assistant', content: "🤖 Hello! I am Jarvis, Hasnain's AI assistant. Ask me about his 💻 projects, 🛠️ skills, 💼 experience, or 🎓 education. How may I assist?" }
     ]);
   };
 
@@ -175,12 +165,10 @@ const Chatbot = () => {
             : 'bg-primary/80 shadow-[0_0_30px_rgba(45,212,191,0.6)] hover:shadow-[0_0_50px_rgba(45,212,191,0.8)]'
         } backdrop-blur-md border-2 border-white/30`}>
           
-          {/* Outer glowing ring animation */}
           {!isOpen && (
             <div className="absolute inset-0 rounded-full border-2 border-primary/50 scale-110 animate-ping opacity-50"></div>
           )}
           
-          {/* Icon */}
           <AnimatePresence mode='wait'>
             {isOpen ? (
               <motion.div
@@ -248,13 +236,13 @@ const Chatbot = () => {
                 </button>
               </div>
               
-              {/* Conversation Stats */}
+              {/* Conversation Stats with Emojis */}
               {messages.length > 1 && (
                 <div className="text-xs text-slate-600 dark:text-slate-400 font-mono space-y-0.5">
                   <div>💬 {stats.messageCount} messages</div>
                   <div>🧠 {stats.userQuestions} questions</div>
                   {stats.topics.length > 0 && (
-                    <div>🏷️ Topics: {stats.topics.join(', ')}</div>
+                    <div>Topics: {stats.topics.join(' • ')}</div>
                   )}
                 </div>
               )}
@@ -282,7 +270,10 @@ const Chatbot = () => {
                       ? 'bg-primary text-black font-medium rounded-tr-sm' 
                       : 'bg-white dark:bg-white/5 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-white/10 rounded-tl-sm'
                   }`}>
-                    {msg.content}
+                    {msg.role === 'assistant' 
+                      ? renderMessageWithEmojis(msg.content)
+                      : msg.content
+                    }
                   </div>
                 </motion.div>
               ))}
@@ -299,7 +290,6 @@ const Chatbot = () => {
                   </div>
                   
                   <div className="p-4 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl rounded-tl-sm flex items-center gap-3 h-10">
-                    {/* Bouncing Dots */}
                     <div className="flex gap-1.5 items-center">
                       <motion.div 
                         className="w-2 h-2 bg-primary rounded-full" 
@@ -332,8 +322,6 @@ const Chatbot = () => {
                         }} 
                       />
                     </div>
-                    
-                    {/* "Jarvis is thinking..." text */}
                     <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
                       Jarvis is thinking...
                     </span>
@@ -344,7 +332,7 @@ const Chatbot = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick Chips Area */}
+            {/* Quick Chips Area with Emojis */}
             <div className="px-4 pb-2 pt-3 bg-slate-50 dark:bg-[#0F172A] border-t border-slate-200 dark:border-white/10">
               <div className="flex gap-2 overflow-x-auto thin-scrollbar-x pb-2">
                 {suggestions.map((chip, idx) => (
@@ -352,7 +340,7 @@ const Chatbot = () => {
                     key={idx}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => processMessage(chip)}
+                    onClick={() => processMessage(chip.replace(/^[🚀⚡💼📧📚]\s/, ''))}
                     disabled={isTyping}
                     className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-primary hover:text-black hover:border-primary dark:hover:border-primary transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >
@@ -369,7 +357,7 @@ const Chatbot = () => {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  placeholder="Ask about projects..."
+                  placeholder="Ask about projects... 💭"
                   className="w-full pl-4 pr-12 py-3 rounded-xl bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all text-sm shadow-inner"
                   disabled={isTyping}
                 />

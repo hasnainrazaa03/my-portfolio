@@ -5,7 +5,6 @@ import { getChatResponse } from '../services/chatService.js';
 import { analyticsService } from '../services/analyticsService';
 import AnalyticsViewer from './AnalyticsViewer';
 
-
 /**
  * Parse and render emoji-enhanced messages
  * Handles emoji line breaks and formatting
@@ -36,7 +35,6 @@ const renderMessageWithEmojis = (content) => {
   );
 };
 
-
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([
@@ -47,7 +45,6 @@ const Chatbot = () => {
   const [showAnalyticsVault, setShowAnalyticsVault] = useState(false);
   const messagesEndRef = useRef(null);
 
-
   // Quick Chip Suggestions with emojis
   const suggestions = [
     "🚀 Tell me about his projects",
@@ -57,16 +54,38 @@ const Chatbot = () => {
     "📚 Summarize your background"
   ];
 
-
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
-
 
   useEffect(() => {
     scrollToBottom();
   }, [messages, isOpen, isTyping]);
 
+  // ✅ CLOSE ANALYTICS WHEN CHATBOT CLOSES
+  useEffect(() => {
+    if (!isOpen) {
+      setShowAnalyticsVault(false);
+    }
+  }, [isOpen]);
+
+  // ✅ CLOSE ANALYTICS WHEN CLICKING OUTSIDE
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (showAnalyticsVault) {
+        const analyticsElement = document.querySelector('.analytics-vault');
+        const chatbotElement = document.querySelector('.chatbot-container');
+        
+        if (analyticsElement && !analyticsElement.contains(e.target) && 
+            chatbotElement && !chatbotElement.contains(e.target)) {
+          setShowAnalyticsVault(false);
+        }
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showAnalyticsVault]);
 
   const getConversationContext = () => {
     if (messages.length <= 1) return "";
@@ -77,7 +96,6 @@ const Chatbot = () => {
       .join("; ");
     return userMessages ? `User's recent questions: ${userMessages}` : "";
   };
-
 
   const extractTopics = () => {
     const userMessages = messages
@@ -100,7 +118,6 @@ const Chatbot = () => {
     return topics;
   };
 
-
   const prepareHistoryForAPI = (newUserMessage) => {
     const fullHistory = [...messages, newUserMessage];
     const maxHistoryLength = 10;
@@ -117,7 +134,6 @@ const Chatbot = () => {
     return historyToSend;
   };
 
-
   const getHistoryStats = () => {
     const userMessageCount = messages.filter(m => m.role === 'user').length;
     const topics = extractTopics();
@@ -127,7 +143,6 @@ const Chatbot = () => {
       topics: topics
     };
   };
-
 
   /**
    * Process message with analytics logging
@@ -166,12 +181,10 @@ const Chatbot = () => {
     }
   };
 
-
   const handleFormSubmit = (e) => {
     e.preventDefault();
     processMessage(input);
   };
-
 
   const clearHistory = () => {
     setMessages([
@@ -179,9 +192,7 @@ const Chatbot = () => {
     ]);
   };
 
-
   const stats = getHistoryStats();
-
 
   return (
     <>
@@ -235,6 +246,7 @@ const Chatbot = () => {
       </motion.button>
 
 
+
       {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
@@ -243,7 +255,7 @@ const Chatbot = () => {
             animate={{ opacity: 1, y: 0, scale: 1, x: 0 }}
             exit={{ opacity: 0, y: 20, scale: 0.95, x: 20 }}
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
-            className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-2xl flex flex-col glass-panel border border-slate-200 dark:border-white/10"
+            className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-2xl flex flex-col glass-panel border border-slate-200 dark:border-white/10 chatbot-container"
           >
             {/* Header with History Stats and Analytics Button */}
             <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
@@ -295,6 +307,7 @@ const Chatbot = () => {
             </div>
 
 
+
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-slate-50/50 dark:bg-[#030014]/60">
               {messages.map((msg, idx) => (
@@ -313,6 +326,7 @@ const Chatbot = () => {
                   </div>
 
 
+
                   <div className={`p-3.5 rounded-2xl text-sm leading-relaxed max-w-[85%] shadow-sm ${
                     msg.role === 'user' 
                       ? 'bg-primary text-black font-medium rounded-tr-sm' 
@@ -325,6 +339,7 @@ const Chatbot = () => {
                   </div>
                 </motion.div>
               ))}
+
 
 
               {/* Enhanced Typing Indicator */}
@@ -379,8 +394,10 @@ const Chatbot = () => {
               )}
 
 
+
               <div ref={messagesEndRef} />
             </div>
+
 
 
             {/* Quick Chips Area with Emojis */}
@@ -400,6 +417,7 @@ const Chatbot = () => {
                 ))}
               </div>
             </div>
+
 
 
             {/* Input Area */}
@@ -426,14 +444,15 @@ const Chatbot = () => {
         )}
       </AnimatePresence>
 
+
       {/* 📊 Analytics Dashboard Component - New! */}
       <AnalyticsViewer 
         isOpen={showAnalyticsVault}
         onClose={() => setShowAnalyticsVault(false)}
+        className="analytics-vault"
       />
     </>
   );
 };
-
 
 export default Chatbot;

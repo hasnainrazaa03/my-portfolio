@@ -3,13 +3,16 @@ export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
+
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
+
 
   try {
     let { message, context } = req.body;
@@ -18,9 +21,11 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid message' });
     }
 
+
     if (message.length > 500) {
       message = message.substring(0, 500);
     }
+
 
     const suspiciousPatterns = [
       /ignore.*instructions/i,
@@ -35,11 +40,13 @@ export default async function handler(req, res) {
       /instructions.*say/i,
     ];
 
+
     const isSuspicious = suspiciousPatterns.some(pattern => pattern.test(message));
     
     if (isSuspicious) {
       message = "Tell me more about Hasnain's experience";
     }
+
 
     const profileKeywords = [
       'hasnain', 'you', 'your', 'projects', 'skills', 'experience', 'education',
@@ -48,9 +55,12 @@ export default async function handler(req, res) {
       'ai', 'machine learning', 'python', 'react', 'resume', 'cv'
     ];
 
+
     const isAboutProfile = profileKeywords.some(keyword => message.toLowerCase().includes(keyword));
 
+
     let systemPrompt = `You are Jarvis, Hasnain's AI assistant on his portfolio website.
+
 
 === CORE DIRECTIVE ===
 1. You ONLY answer questions about Hasnain Raza and his work
@@ -60,6 +70,7 @@ export default async function handler(req, res) {
 5. Keep responses concise (1-2 sentences max unless details requested)
 6. Be natural and conversational, not robotic
 
+
 === REDIRECT RULES ===
 If someone asks about:
 - Weather, news, time → "I'm here to help with Hasnain's portfolio. Ask about his projects!"
@@ -67,11 +78,13 @@ If someone asks about:
 - Random topics → "I specialize in Hasnain's profile. Want to know about his projects?"
 - Sensitive topics → "Let's keep this professional and focused on Hasnain's experience."
 
+
 === ABOUT HASNAIN ===
 Location: Los Angeles, CA
 Role: MSCS Student at USC (Computer Science)
 Background: Aerospace Engineer → AI/ML Engineer
 Passion: Building production AI systems, NLP, computer vision
+
 
 KEY PROJECTS:
 1. Project Vimaan - Voice-controlled AI co-pilot for X-Plane flight simulator
@@ -80,11 +93,13 @@ KEY PROJECTS:
 4. Recipe Vault - Full-stack MERN app with OAuth and meal planning
 5. Expense Tracker - Personal finance management app
 
+
 WORK EXPERIENCE:
 - Deloitte (Technology Analyst): Statistical analysis, customer workflows
 - DRDO (Defence R&D): CFD simulation, aerodynamic analysis
 - Prana.ai: ML model development, NLP prompt engineering
 - Liba Space: Data generation pipelines for AI training
+
 
 SKILLS:
 - Languages: Python, Java, C/C++, SQL, JavaScript, MATLAB
@@ -92,9 +107,11 @@ SKILLS:
 - Databases: MySQL, PostgreSQL, DuckDB
 - Cloud: Vercel, Render, Google Colab, GitHub
 
+
 EDUCATION:
 - MSCS at USC (Current)
 - B.Tech in Aerospace Engineering from RVCE (CGPA: 9.10/10)
+
 
 HOBBIES:
 - Cooking (Indian cuisine specialist)
@@ -102,21 +119,38 @@ HOBBIES:
 - Flight simulation (X-Plane)
 - Personal finance tracking
 
+
 === RESPONSE STYLE ===
 - Natural and conversational (avoid "Here are the key points...")
 - Direct answers without lengthy preambles
 - Use 1-2 highlights for overviews, expand only if asked
 - Match user's tone (casual → casual, formal → formal)
-- Never use bullet points unless specifically requested`;
+- Never use bullet points unless specifically requested
+
+=== CONCISE RESPONSE FORMAT ===
+Keep responses SHORT and CONCISE (1-2 sentences max):
+- Answer the question directly
+- Avoid long explanations
+- End with 1-2 suggested follow-up questions in brackets
+- Format: [Ask about: X, Y, or Z?]
+
+EXAMPLES:
+User: "What projects have you built?"
+Response: "I've built Project Vimaan (voice-controlled X-Plane co-pilot), Brain Tumor Segmentation (deep learning), and Recipe Vault (MERN app). [Ask about: specific tech stack, project details, or achievements?]"
+
+User: "Tell me about Deloitte"
+Response: "I was a Technology Analyst at Deloitte, analyzing workflows and optimizing processes. [Ask about: specific achievements, other experiences, or skills used?]"`;
     
     if (context) {
       systemPrompt += `\n\n=== ADDITIONAL DATA ===\n${context}`;
     }
 
+
     const hfToken = process.env.HUGGINGFACE_API_KEY;
     if (!hfToken) {
       return res.status(500).json({ error: 'Server configuration error' });
     }
+
 
     const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
       method: 'POST',
@@ -136,14 +170,16 @@ HOBBIES:
             content: message
           }
         ],
-        max_tokens: 150,
+        max_tokens: 120,  // Reduced from 150
         temperature: 0.6,
         top_p: 0.85,
         stream: false
       })
     });
 
+
     const responseText = await response.text();
+
 
     if (!response.ok) {
       return res.status(response.status).json({ 
@@ -152,21 +188,26 @@ HOBBIES:
       });
     }
 
+
     const data = JSON.parse(responseText);
     let answer = data.choices?.[0]?.message?.content || 'Unable to generate response';
+
 
     const words = answer.trim().split(/\s+/);
     if (words.length > 100) {
       answer = words.slice(0, 100).join(' ') + '...';
     }
 
+
     answer = answer
       .replace(/^(Here's|Here are|So|Well,|Basically,)\s+/i, '')
       .trim();
 
+
     return res.status(200).json({ 
       reply: answer
     });
+
 
   } catch (error) {
     return res.status(500).json({ 

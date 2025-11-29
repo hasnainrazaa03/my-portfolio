@@ -1,34 +1,54 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ExternalLink } from 'lucide-react';
+import { ExternalLink, CheckCircle, Zap } from 'lucide-react';
 import { scaleIn } from '../animations';
 
 const ProjectCard = ({ project, onClick }) => {
+  const isInProgress = project.status === "In Progress";
+  
   return (
     <motion.div 
       variants={scaleIn}
       onClick={() => onClick(project)}
-      // GLOW CARD STYLE APPLIED
       className="group rounded-2xl overflow-hidden p-6 h-full flex flex-col bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] cursor-pointer hover:-translate-y-2"
     >
       <div className="flex justify-between items-start mb-4">
         <span className="text-xs font-bold text-accent uppercase tracking-wider px-2 py-1 bg-accent/10 rounded">
           {project.category}
         </span>
-        <ExternalLink size={16} className="text-slate-400 dark:text-white group-hover:text-primary transition-colors" />
+        <div className="flex items-center gap-2">
+          <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
+            isInProgress 
+              ? 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-400 border border-yellow-400/30' 
+              : 'bg-green-400/20 text-green-600 dark:text-green-400 border border-green-400/30'
+          }`}>
+            {isInProgress ? (
+              <>
+                <Zap size={12} />
+                <span>In Progress</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle size={12} />
+                <span>Completed</span>
+              </>
+            )}
+          </div>
+          <ExternalLink size={16} className="text-slate-400 dark:text-white group-hover:text-primary transition-colors" />
+        </div>
       </div>
       
-      <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors">
+      <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2 group-hover:text-primary transition-colors line-clamp-2">
         {project.title}
       </h3>
       
-      <p className="text-slate-600 dark:text-white text-sm mb-4 flex-grow line-clamp-3 font-medium opacity-90">
+      <p className="text-slate-600 dark:text-white text-sm mb-4 flex-1 line-clamp-3 font-medium opacity-90">
         {project.description}
       </p>
       
-      <div className="flex flex-wrap gap-2 mt-auto">
+      <div className="flex flex-wrap gap-2 flex-none">
         {project.techStack?.slice(0, 3).map(tag => (
-          <span key={tag} className="px-3 py-1 bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-primary text-xs rounded-full font-semibold">
+          <span key={tag} className="px-2 py-0.5 bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-primary text-xs rounded-full font-semibold">
             {tag}
           </span>
         ))}

@@ -6,7 +6,7 @@ class AnalyticsService {
     this.interactions = [];
     this.sessionStart = new Date();
     this.sessionId = this.generateSessionId();
-    this.backendUrl = '/api/analytics'; // Vercel serverless function
+    this.backendUrl = '/api/analytics';
   }
 
 
@@ -14,10 +14,6 @@ class AnalyticsService {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
 
-
-  /**
-   * Log interaction and send to backend
-   */
   async logInteraction(question, response, metadata = {}) {
     const interaction = {
       id: `interaction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -37,7 +33,6 @@ class AnalyticsService {
     this.interactions.push(interaction);
 
 
-    // 📡 Send to backend
     try {
       const response = await fetch(this.backendUrl, {
         method: 'POST',
@@ -50,7 +45,6 @@ class AnalyticsService {
 
       if (!response.ok) {
         console.warn('Failed to send analytics to backend');
-        // Still store locally as fallback
         this.persistToLocalStorage();
       }
     } catch (error) {
@@ -111,10 +105,6 @@ class AnalyticsService {
     return [...new Set(entities)];
   }
 
-
-  /**
-   * Get local analytics (fallback if backend unavailable)
-   */
   getLocalAnalytics() {
     return this.getAnalyticsSummary();
   }
@@ -168,11 +158,6 @@ class AnalyticsService {
     };
   }
 
-
-  /**
-   * Fetch analytics from backend (for owner only)
-   * Requires authentication token
-   */
   async fetchAnalyticsFromBackend(token) {
     try {
       const response = await fetch(this.backendUrl, {
@@ -205,11 +190,6 @@ class AnalyticsService {
     localStorage.removeItem(`jarvis_analytics_${this.sessionId}`);
   }
 
-
-  /**
-   * Export analytics as JSON
-   * For downloading and analysis
-   */
   exportAsJSON() {
     return {
       sessionId: this.sessionId,

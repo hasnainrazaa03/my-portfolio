@@ -16,12 +16,9 @@ const Education = () => (
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
-            // Updated classes: added transform-gpu and explicitly set background colors on hover to override glass-panel defaults
             className="p-8 rounded-2xl relative overflow-hidden group transition-all duration-300 flex flex-col h-full bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/50 shadow-lg hover:shadow-2xl hover:shadow-primary/10 transform-gpu hover:-translate-y-2"
           >
-            {/* Header: Logo & Year */}
             <div className="flex justify-between items-start mb-6">
-              {/* Logo Box */}
               <a 
                 href={edu.url}
                 target="_blank"
@@ -45,14 +42,12 @@ const Education = () => (
                 </div>
               </a>
               
-              {/* Period Badge */}
               <span className="text-accent font-mono text-xs border border-accent/20 px-2 py-1 rounded bg-accent/5">
                 {edu.period}
               </span>
             </div>
 
             <div className="relative z-10 flex flex-col h-full">
-              {/* Degree & School */}
               <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-1 leading-tight">
                 {edu.degree}
               </h3>
@@ -60,7 +55,6 @@ const Education = () => (
                 {edu.school}
               </h4>
 
-              {/* GPA Badge */}
               {edu.gpa && (
                 <div className="mb-6">
                   <span className="text-xs font-bold text-slate-700 dark:text-white bg-slate-200 dark:bg-white/10 px-3 py-1 rounded-full border border-slate-300 dark:border-white/10">
@@ -69,7 +63,6 @@ const Education = () => (
                 </div>
               )}
 
-              {/* Coursework Section */}
               <div className="mt-auto pt-4 border-t border-slate-200 dark:border-white/10">
                 <h5 className="text-xs font-bold text-slate-500 dark:text-primary uppercase tracking-wider mb-2">
                   Coursework

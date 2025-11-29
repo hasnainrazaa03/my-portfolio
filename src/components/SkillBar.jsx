@@ -2,7 +2,6 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 const SkillBar = ({ skill, index }) => {
-  // Convert text level to "Signal Strength" (1-4)
   const getLevel = (level) => {
     switch (level) {
       case "Expert": return 4;
@@ -23,7 +22,6 @@ const SkillBar = ({ skill, index }) => {
       transition={{ delay: index * 0.05 }}
     >
       <div className="flex items-center gap-3">
-        {/* Tech Logo Container */}
         <div className="w-8 h-8 rounded-lg bg-white p-1.5 flex items-center justify-center shadow-sm">
           {skill.image && (
             <img 
@@ -40,7 +38,6 @@ const SkillBar = ({ skill, index }) => {
         </span>
       </div>
 
-      {/* Signal Strength Indicator */}
       <div className="flex items-end gap-1 h-4" title={skill.level}>
         {[1, 2, 3, 4].map((bar) => (
           <motion.div

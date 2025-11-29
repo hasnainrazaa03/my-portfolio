@@ -10,7 +10,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
   const [authToken, setAuthToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
-  // Check if owner is viewing
   useEffect(() => {
     const token = localStorage.getItem('jarvis_analytics_token');
     if (token) {
@@ -19,7 +18,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     }
   }, []);
 
-  // Load analytics when opened
   useEffect(() => {
     if (isOpen) {
       if (isOwner && authToken) {
@@ -30,7 +28,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     }
   }, [isOpen, isOwner, authToken]);
 
-  // Load from backend (owner only)
   const loadBackendAnalytics = async () => {
     setIsLoading(true);
     try {
@@ -39,7 +36,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
         setAllData(result.data);
         setAggregated(result.insights);
       } else {
-        // Fallback to local
         loadLocalAnalytics();
       }
     } catch (error) {
@@ -50,14 +46,12 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Load from localStorage (any visitor)
   const loadLocalAnalytics = () => {
     const localSummary = analyticsService.getLocalAnalytics();
     setAllData([]);
     setAggregated(localSummary);
   };
 
-  // Authenticate as owner
   const handleAuthenticate = () => {
     const token = prompt('Enter your analytics secret token:');
     if (token) {
@@ -67,7 +61,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Logout as owner
   const handleLogout = () => {
     localStorage.removeItem('jarvis_analytics_token');
     setAuthToken('');
@@ -75,7 +68,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     loadLocalAnalytics();
   };
 
-  // Export local analytics (anyone can export their own)
   const handleExportLocal = () => {
     const data = analyticsService.exportAsJSON();
     const json = JSON.stringify(data, null, 2);
@@ -90,7 +82,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     URL.revokeObjectURL(url);
   };
 
-  // Export ALL analytics (owner only)
   const handleExportAll = async () => {
     if (!isOwner) {
       alert('You must be authenticated as the owner to export all analytics.');
@@ -120,7 +111,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Clear local analytics
   const handleClearLocal = () => {
     if (confirm('Clear your local analytics data?')) {
       analyticsService.clearAnalytics();
@@ -128,7 +118,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     }
   };
 
-  // Show authentication view if not owner
   if (!isOwner) {
     return (
       <AnimatePresence>
@@ -170,7 +159,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Local Analytics Section */}
             <div className="p-4 bg-slate-50/50 dark:bg-[#030014]/60 max-h-64 overflow-y-auto">
               <h4 className="text-sm font-bold text-slate-900 dark:text-white mb-3">Your Local Analytics</h4>
               {analyticsService.getLocalAnalytics().totalInteractions === 0 ? (
@@ -203,7 +191,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     );
   }
 
-  // Show loading state
   if (isLoading) {
     return (
       <AnimatePresence>
@@ -217,7 +204,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     );
   }
 
-  // Show full analytics (owner view)
   return (
     <AnimatePresence>
       {isOpen && (
@@ -228,7 +214,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
           className="fixed bottom-24 left-6 z-50 w-[440px] max-w-[calc(100vw-48px)] max-h-[700px] rounded-2xl shadow-2xl flex flex-col glass-panel border border-slate-200 dark:border-white/10 overflow-hidden"
         >
-          {/* Header with Logout */}
           <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
               <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -244,9 +229,7 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          {/* Content */}
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
-            {/* Summary Cards */}
             <div className="grid grid-cols-2 gap-2">
               <div className="p-3 rounded-lg bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
                 <div className="text-xs text-slate-600 dark:text-slate-400">📊 Sessions</div>
@@ -262,7 +245,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Date Range */}
             <div className="p-3 rounded-lg bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
               <div className="text-xs text-slate-600 dark:text-slate-400 font-mono">📅 Date Range</div>
               <div className="text-sm font-medium text-slate-900 dark:text-white mt-1">
@@ -270,7 +252,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
               </div>
             </div>
 
-            {/* Top Topics */}
             {aggregated.mostAskedTopics && aggregated.mostAskedTopics.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white">🔝 Top Topics</h4>
@@ -294,7 +275,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
               </div>
             )}
 
-            {/* Top Entities */}
             {aggregated.entityMentions && aggregated.entityMentions.length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white">🎯 Most Mentioned</h4>
@@ -311,7 +291,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
               </div>
             )}
 
-            {/* Hourly Activity */}
             {aggregated.hourlyBreakdown && Object.keys(aggregated.hourlyBreakdown).length > 0 && (
               <div className="space-y-2">
                 <h4 className="text-sm font-bold text-slate-900 dark:text-white">⏰ Hourly Activity</h4>
@@ -329,7 +308,6 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
             )}
           </div>
 
-          {/* Footer Actions */}
           <div className="p-3 bg-slate-50/50 dark:bg-white/5 border-t border-slate-200 dark:border-white/10 flex flex-col gap-2">
             <div className="flex gap-2">
               <motion.button

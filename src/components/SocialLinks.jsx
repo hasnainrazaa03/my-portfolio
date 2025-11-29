@@ -1,13 +1,13 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Github, Linkedin, Instagram } from 'lucide-react'; // Changed Twitter to Instagram
+import { Github, Linkedin, Instagram } from 'lucide-react'; 
 import { PERSONAL_INFO } from '../constants';
 
 const SocialLinks = ({ className = "" }) => {
   const socialIcons = [
     { name: 'GitHub', icon: Github, url: PERSONAL_INFO.socials.github },
     { name: 'LinkedIn', icon: Linkedin, url: PERSONAL_INFO.socials.linkedin },
-    { name: 'Instagram', icon: Instagram, url: PERSONAL_INFO.socials.instagram }, // Updated mapping
+    { name: 'Instagram', icon: Instagram, url: PERSONAL_INFO.socials.instagram },
   ];
 
   return (

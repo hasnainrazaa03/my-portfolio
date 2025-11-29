@@ -1,7 +1,7 @@
 import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
 import jarvisQnA from '../data/jarvisQnA.json';
 
-// Build context string from your constants
+// Build context string from constants
 const buildContext = () => {
   let context = [];
 
@@ -13,10 +13,11 @@ const buildContext = () => {
     if (PERSONAL_INFO.socials) {
       context.push(`🐙 GitHub: ${PERSONAL_INFO.socials.github}`);
       context.push(`💼 LinkedIn: ${PERSONAL_INFO.socials.linkedin}`);
+      context.push(`🐙 Instagram: ${PERSONAL_INFO.socials.instagram}`);
     }
   }
 
-  // Education (all institutions)
+  // Education
   if (EDUCATION && EDUCATION.length > 0) {
     context.push('\n🎓 EDUCATION:');
     EDUCATION.forEach(edu => {
@@ -24,7 +25,7 @@ const buildContext = () => {
     });
   }
 
-  // Projects (all 5 with rich details)
+  // Projects
   if (PROJECTS && PROJECTS.length > 0) {
     context.push('\n💻 PROJECTS:');
     PROJECTS.forEach(p => {
@@ -35,7 +36,7 @@ const buildContext = () => {
     });
   }
 
-  // Skills (organized by category)
+  // Skills
   if (SKILLS && SKILLS.length > 0) {
     context.push('\n⚡ SKILLS BY CATEGORY:');
     SKILLS.forEach(skillGroup => {
@@ -48,7 +49,7 @@ const buildContext = () => {
     });
   }
 
-  // Experience (all roles with key highlights)
+  // Experience
   if (EXPERIENCE && EXPERIENCE.length > 0) {
     context.push('\n💼 PROFESSIONAL EXPERIENCE:');
     EXPERIENCE.forEach(exp => {
@@ -104,10 +105,6 @@ export const getChatResponse = async (messages) => {
   }
 };
 
-/**
- * Local fallback responses with strategic emoji usage
- * Each emoji has a clear purpose for visual hierarchy
- */
 export const getLocalResponse = (input) => {
   const lower = input.toLowerCase();
 

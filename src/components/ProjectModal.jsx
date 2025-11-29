@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Github, ExternalLink, X, ChevronLeft, ChevronRight, 
-  Code, Terminal, Cpu, Database, Globe, Layers, Wind, Server 
+  Code, Terminal, Cpu, Database, Globe, Layers, Wind, Server,
+  FileText
 } from 'lucide-react';
+
 
 const getTechIcon = (tech) => {
   const lowerTech = tech.toLowerCase();
@@ -16,8 +18,10 @@ const getTechIcon = (tech) => {
   return Code; 
 };
 
+
 const ProjectModal = ({ project, onClose }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+
 
   useEffect(() => {
     const handleKeyDown = (e) => {
@@ -29,12 +33,15 @@ const ProjectModal = ({ project, onClose }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => { document.body.style.overflow = 'unset'; };
   }, []);
 
+
   if (!project) return null;
+
 
   const nextImage = (e) => {
     e?.stopPropagation();
@@ -43,12 +50,25 @@ const ProjectModal = ({ project, onClose }) => {
     }
   };
 
+
   const prevImage = (e) => {
     e?.stopPropagation();
     if (project.images?.length > 1) {
       setCurrentImageIndex((prev) => (prev - 1 + project.images.length) % project.images.length);
     }
   };
+
+
+  const getDemoButtonProps = () => {
+    const demoLink = project.links?.demo || '';
+    const isDocument = demoLink.includes('.pdf') || demoLink.includes('/document/') || demoLink.includes('/paper/');
+    
+    return {
+      label: isDocument ? 'View Documentation' : 'Live Demo',
+      icon: isDocument ? FileText : ExternalLink
+    };
+  };
+
 
   return (
     <motion.div 
@@ -76,7 +96,7 @@ const ProjectModal = ({ project, onClose }) => {
           <X size={24} />
         </button>
 
-        {/* IMAGE CAROUSEL - REDUCED HEIGHT */}
+
         <div className="relative h-48 sm:h-64 bg-gray-900 shrink-0 border-b border-slate-200 dark:border-white/10">
           {project.images && project.images.length > 0 ? (
             <>
@@ -122,7 +142,6 @@ const ProjectModal = ({ project, onClose }) => {
           )}
         </div>
         
-        {/* CONTENT AREA */}
         <div className="p-6 sm:p-8 overflow-y-auto custom-scrollbar bg-slate-50 dark:bg-[#0F172A]">
           <div className="flex justify-between items-start mb-4">
             <span className="text-accent font-bold tracking-wider uppercase text-xs sm:text-sm px-3 py-1 bg-accent/10 rounded-full">
@@ -138,7 +157,7 @@ const ProjectModal = ({ project, onClose }) => {
             {project.longDescription || project.description}
           </p>
 
-          {/* Tech Stack */}
+
           <div className="mb-8">
             <h4 className="text-sm font-bold text-slate-500 dark:text-primary uppercase tracking-wider mb-4">Technology Stack</h4>
             <div className="flex flex-wrap gap-3">
@@ -159,29 +178,40 @@ const ProjectModal = ({ project, onClose }) => {
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-200 dark:border-white/10">
-             <a 
-               href={project.links.github} 
-               target="_blank" 
-               rel="noreferrer" 
-               className="flex justify-center items-center gap-2 px-6 py-3 bg-slate-200 dark:bg-white/5 hover:bg-slate-300 dark:hover:bg-white/10 rounded-xl text-slate-900 dark:text-white font-bold transition-colors border border-slate-300 dark:border-white/10"
-             >
-                <Github size={20} /> View Source
-             </a>
-             <a 
-               href={project.links.demo} 
-               target="_blank" 
-               rel="noreferrer" 
-               className="flex justify-center items-center gap-2 px-6 py-3 bg-primary hover:bg-teal-400 rounded-xl text-black font-bold transition-all shadow-lg hover:shadow-primary/25"
-             >
-                <ExternalLink size={20} /> Live Deployment
-             </a>
-          </div>
+
+          {(project.links?.github || project.links?.demo) && (
+            <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-slate-200 dark:border-white/10">
+              {project.links?.github && (
+                <a 
+                  href={project.links.github} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="flex justify-center items-center gap-2 px-6 py-3 bg-slate-200 dark:bg-white/5 hover:bg-slate-300 dark:hover:bg-white/10 rounded-xl text-slate-900 dark:text-white font-bold transition-colors border border-slate-300 dark:border-white/10"
+                >
+                  <Github size={20} /> View Source
+                </a>
+              )}
+              
+              {project.links?.demo && (
+                <a 
+                  href={project.links.demo} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="flex justify-center items-center gap-2 px-6 py-3 bg-primary hover:bg-teal-400 rounded-xl text-black font-bold transition-all shadow-lg hover:shadow-primary/25"
+                >
+                  {(() => {
+                    const { icon: Icon, label } = getDemoButtonProps();
+                    return <><Icon size={20} /> {label}</>;
+                  })()}
+                </a>
+              )}
+            </div>
+          )}
         </div>
       </motion.div>
     </motion.div>
   );
 };
+
 
 export default ProjectModal;

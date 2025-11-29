@@ -6,7 +6,6 @@ import { PERSONAL_INFO } from '../constants';
 import { fadeInUp } from '../animations';
 import SocialLinks from './SocialLinks';
 
-// Lazy Load the Heavy 3D Component
 const Hero3D = React.lazy(() => import('./Hero3D'));
 
 const Hero = () => {
@@ -29,14 +28,12 @@ const Hero = () => {
 
   return (
     <section id="hero" className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
-      {/* Background Glows */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-[100px] -z-10" />
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] -z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10">
         <div className="grid md:grid-cols-2 gap-12 items-center">
           
-          {/* Text Content */}
           <motion.div 
             variants={fadeInUp}
             initial="hidden"
@@ -54,20 +51,16 @@ const Hero = () => {
               </span>
             </h1>
 
-            {/* SPLIT TAGLINE AND BIO */}
             <div className="max-w-lg space-y-2">
-              {/* Tagline (Static White/Gray) */}
               <p className="text-xl font-medium text-slate-600 dark:text-slate-300">
                 {PERSONAL_INFO.tagline}
               </p>
               
-              {/* Bio (Moving Gradient) */}
               <p className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-400 to-primary animate-gradient-x pb-1">
                 {PERSONAL_INFO.bio.split('.')[0]}
               </p>
             </div>
             
-            {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <motion.button 
                 onClick={handleDownload}
@@ -119,7 +112,6 @@ const Hero = () => {
             </div>
           </motion.div>
 
-          {/* 3D Visual Side */}
           <motion.div 
             style={{ y: y1 }} 
             initial={{ opacity: 0, scale: 0.8 }}

@@ -144,7 +144,6 @@ const GitHubFeed = () => {
   }, []);
 
   return (
-    // GLOW CARD STYLE APPLIED HERE
     <div className="rounded-2xl border border-slate-200 dark:border-white/10 max-w-md w-full overflow-hidden flex flex-col h-[500px] bg-slate-50/50 dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
       <div className="p-6 pb-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#0F172A]/50 backdrop-blur-sm z-10">
         <div className="flex items-center justify-between">

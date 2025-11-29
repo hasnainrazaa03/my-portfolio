@@ -1,4 +1,3 @@
-// ADDED 'Briefcase' TO THE IMPORT LIST BELOW
 import { Code, Cpu, Database, Terminal, Wind, BookOpen, Rocket, Briefcase, GitBranch } from "lucide-react";
 
 // --- CONFIGURATION SETTINGS ---
@@ -68,10 +67,10 @@ export const PROJECTS = [
     id: 1,
     title: "Project Vimaan",
     category: "AI/ML",
+    status: "In Progress",
     description: "A voice-controlled AI co-pilot assistant for X-Plane flight simulator.",
     longDescription: "Project Vimaan is a bridge between simulation and natural language. Using NLP and threading, it intercepts voice commands to control cockpit instruments in real-time within X-Plane, allowing for a hands-free flight experience.",
     images: [
-      "/Xplane.jpg",
       "/Xplane.jpg"
     ],
     techStack: ["Python", "PyTorch", "Hugging Face Transformers", "DistilBERT", "Natural Language Processing", "Intent Classification", "Slot Extraction", "Speech Recognition", "Whisper ASR", "X-Plane SDK", "XPPython3", "Scikit-learn", "Matplotlib", "Seaborn", "NumPy", "Threading", "PyAudio", "Git"],
@@ -81,19 +80,20 @@ export const PROJECTS = [
     id: 2,
     title: "Brain Tumor Segmentation",
     category: "AI/ML",
+    status: "Completed",
     description: "End-to-end deep learning pipeline for automated brain tumor segmentation from MRI/CT scans.",
     longDescription: "Brain Tumor Segmentation leverages advanced CNN architectures and geometric deep learning to automatically identify and segment tumors from medical imaging data. The project processes millions of scans with depthwise separable CNNs for real-time inference and SO(3)-equivariant techniques for enhanced image clarity, supporting clinical workflows in diagnosis and treatment planning.",
     images: [
-      "/BTS.png",
-      "/BTS2.jpg"
+      "/BTS.png"
     ],
     techStack: ["Python", "PyTorch", "TensorFlow", "Keras", "Convolutional Neural Networks (CNN)", "Depthwise Separable Convolutions", "SO(3)-Equivariant Networks", "Super-Resolution", "Medical Image Processing", "MRI/CT Image Analysis", "Data Augmentation", "Normalization Techniques", "Patch Extraction", "Data Balancing", "3D Segmentation", "Real-time Inference Optimization", "NumPy", "Pandas", "Scikit-learn", "OpenCV", "Matplotlib", "Seaborn", "Git"],
-    links: { github: "#", demo: "#" }
+    links: { github: null, demo: null }
   },
   {
     id: 3,
     title: "Numerical Investigation of Store Separation from a Rectangular Cavity",
     category: "CFD",
+    status: "Completed",
     description: "Computational study of weapons-bay store separation dynamics using CFD and statistical analysis.",
     longDescription: "This research investigates the complex aerodynamic phenomena governing store separation from a rectangular cavity (L/D=5) in weapons-bay environments. By combining transient CFD simulations with data-driven statistical methods, the project quantifies the relationship between aerodynamic coefficients and separation trajectories, providing critical insights into release behavior and flight-path predictability for aerospace applications.",
     images: [
@@ -102,7 +102,7 @@ export const PROJECTS = [
     ],
     techStack: ["Python", "MATLAB", "ANSYS Fluent", "PyFluent", "Computational Fluid Dynamics (CFD)", "Transient Simulations", "k-w SST Turbulence Model", "Linear Regression", "Statistical Analysis", "Aerodynamic Coefficient Analysis", "Lift and Drag Calculations", "Data Cleaning", "Z-score Outlier Detection", "Pressure Field Analysis", "Velocity Field Analysis", "3D Trajectory Animation", "Time-History Plotting", "Post-processing", "Numerical Methods", "Scikit-learn", "NumPy", "Pandas", "Matplotlib", "Git"],
     links: { 
-      github: "#", 
+      github: null, 
       demo: "#"
     }
   },
@@ -110,6 +110,7 @@ export const PROJECTS = [
     id: 4,
     title: "Manzil Recipe Vault",
     category: "Web Dev",
+    status: "In Progress",
     description: "A modern, minimalist recipe platform with Google OAuth and Drag-and-Drop.",
     longDescription: "Built a robust MERN stack application. Features include secure Google Authentication, a drag-and-drop meal planner, and dynamic grocery list generation based on selected recipes.",
     images: [
@@ -122,6 +123,7 @@ export const PROJECTS = [
     id: 5,
     title: "Intelligent Expense Tracker",
     category: "Web Dev",
+    status: "In Progress",
     description: "AI-powered expense management PWA for international students with multi-currency support and intelligent financial insights.",
     longDescription: "The Intelligent Expense Tracker is a comprehensive financial management platform designed for international students. It combines real-time expense tracking, AI-powered financial analysis using Google Gemini, multi-currency transactions (USD/INR), and specialized tools like tuition payment tracking. The application delivers actionable financial insights through interactive dashboards, budget monitoring, and predictive spending analysis—all within a responsive, offline-capable PWA.",
     images: [
@@ -132,8 +134,59 @@ export const PROJECTS = [
       github: "#", 
       demo: "#"
     }
-  }
-
+  },
+  {
+  id: 6,
+  title: "Numerical Investigation of Influence of Vortices on Trailing NACA 4412 Airfoil Generated by Curtailing an Airfoil",
+  category: "CFD",
+  status: "Completed",
+  description: "CFD simulation investigating vortex effects on airfoil performance.",
+  longDescription: "Numerical investigation of how vortices generated by a leading NACA 0012 airfoil affect the performance of a trailing NACA 4412 airfoil. Studied wake turbulence impact on lift and drag coefficients using computational fluid dynamics.",
+  images: [
+    "/CFD.jpg"
+  ],
+  techStack: ["Python", "pyFluent", "Matplotlib", "Computational Fluid Dynamics", "ANSYS Fluent", "NACA Airfoils", "Vortex Modeling", "Aerodynamic Analysis", "Data Visualization"],
+  links: { github: null, demo: "#" }
+},
+{
+  id: 7,
+  title: "Efficient Training of Group Equivariant Vision Transformer",
+  category: "AI/ML",
+  status: "Completed",
+  description: "Medical image segmentation tool for brain tumor detection and treatment planning.",
+  longDescription: "Created an ML tool for effective brain tumor segmentation used in pre-surgery planning and radiofrequency ablation. Trained a vision transformer based architecture for 3D segmentation integrating FEM, achieving #4 placement out of 200+ teams in the Brain Tumor Segmentation Challenge 2021.",
+  images: [
+    "/BrainTumor.jpg"
+  ],
+  techStack: ["Python", "Vision Transformer", "Medical Image Segmentation", "FEM", "3D Segmentation", "PyTorch", "Medical Imaging", "Brain Tumor Detection", "Challenge Winner"],
+  links: { github: null, demo: null }
+},
+{
+  id: 8,
+  title: "RVSAT-1 - Team Antariksh",
+  category: "Aerospace",
+  status: "Completed",
+  description: "2U CubeSat mission for microbiological research in microgravity.",
+  longDescription: "Developed a 1.88kg 2U CubeSat to perform microbiological growth experiments under microgravity conditions in Low Earth Orbit. Engineered five mission-critical subsystems (ECL, Thermal, Fluids, Structures, Microbiology) for the ISRO PSLV stage 4 platform, achieving a 2-day orbital mission at 350km altitude.",
+  images: [
+    "/RVSAT1.jpg"
+  ],
+  techStack: ["CubeSat Design", "Microgravity Experiments", "Onboard Computer", "Thermal Control", "Fluid Dynamics", "Structural Analysis", "Microbiology", "PSLV Platform", "Space Systems Engineering"],
+  links: { github: null, demo: "#" }
+},
+{
+  id: 9,
+  title: "Sounding Rocket - Team Antariksh",
+  category: "Aerospace",
+  status: "Completed",
+  description: "High-power sounding rocket development program with multiple successful launches.",
+  longDescription: "Led a 100+ member team developing high-power sounding rockets including Insight 1 (117m apogee), Insight 1.5 (208m), Insight 2 (3,300ft AGL for Latin America Space Challenge), and TARA-I (10,000ft AGL for Spaceport America Cup 2024). Engineered five critical subsystems: Aerostructures, Avionics, Propulsion, Recovery, and Payload integration with 4kg capacity for electro-mechanical battery testing experiments.",
+  images: [
+    "/Rocket.jpg"
+  ],
+  techStack: ["Solid Propulsion", "Aerodynamic Simulation", "Avionics", "Telemetry", "Recovery Systems", "Payload Integration", "CFD Analysis", "Structural Engineering", "Rocket Design", "Spaceport America Cup"],
+  links: { github: null, demo: "#" }
+}
 ];
 
 export const SKILLS = [
@@ -142,7 +195,8 @@ export const SKILLS = [
     icon: Terminal,
     items: [
       { name: "Python", level: "Expert", pct: 95, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" },
-      { name: "C++", level: "Intermediate", pct: 75, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg" },
+      { name: "C++", level: "Expert", pct: 90, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg" },
+      { name: "C", level: "Expert", pct: 88, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg" },
       { name: "MATLAB", level: "Expert", pct: 90, image: "https://upload.wikimedia.org/wikipedia/commons/2/21/Matlab_Logo.png" },
       { name: "Java", level: "Intermediate", pct: 70, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" },
       { name: "JavaScript", level: "Intermediate", pct: 65, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" }
@@ -153,9 +207,9 @@ export const SKILLS = [
     icon: Cpu,
     items: [
       { name: "PyTorch", level: "Expert", pct: 92, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/pytorch/pytorch-original.svg" },
-      { name: "Computer Vision", level: "Expert", pct: 88, image: "https://cdn-icons-png.flaticon.com/512/2103/2103633.png" }, // Generic CV icon
+      { name: "Computer Vision", level: "Expert", pct: 88, image: "https://cdn-icons-png.flaticon.com/512/2103/2103633.png" },
       { name: "TensorFlow", level: "Intermediate", pct: 75, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tensorflow/tensorflow-original.svg" },
-      { name: "NLP", level: "Intermediate", pct: 70, image: "https://cdn-icons-png.flaticon.com/512/10435/10435171.png" }, // Generic NLP icon
+      { name: "NLP", level: "Intermediate", pct: 70, image: "https://cdn-icons-png.flaticon.com/512/10435/10435171.png" },
       { name: "Scikit-learn", level: "Expert", pct: 85, image: "https://upload.wikimedia.org/wikipedia/commons/0/05/Scikit_learn_logo_small.svg" }
     ]
   },
@@ -175,6 +229,8 @@ export const SKILLS = [
     icon: Wind,
     items: [
       { name: "CFD Analysis", level: "Expert", pct: 95, image: "https://cdn-icons-png.flaticon.com/512/5405/5405929.png" },
+      { name: "Ansys", level: "Expert", pct: 95, image: "https://cdn-icons-png.flaticon.com/512/5405/5405929.png" },
+      { name: "CATIA", level: "Expert", pct: 95, image: "https://cdn-icons-png.flaticon.com/512/5405/5405929.png" },
       { name: "Simulink", level: "Expert", pct: 90, image: "https://upload.wikimedia.org/wikipedia/commons/8/87/Simulink_Logo.png" },
       { name: "SolidWorks", level: "Intermediate", pct: 70, image: "https://www.vectorlogo.zone/logos/solidworks/solidworks-icon.svg" },
       { name: "Git", level: "Expert", pct: 88, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg" },
@@ -224,4 +280,15 @@ export const EXPERIENCE = [
       "Developed SO(3)-equivariant CNN-based super-resolution techniques, improving image clarity by ~35%."
     ] 
   },
+  {
+    id: 4,
+    role: "Project Head and Engineer",
+    company: "Team Antariksh",
+    period: "Sep 2018 - Aug 2022",
+    location: "Remote",
+    logo: "/ta.svg", 
+    description: [
+      "Led a 100+ member team for the development of RVSAT-1 2U CubeSat (launched Dec 2024 on ISRO PSLV C-60) and the design of ReSOLV-1 sounding rocket."
+    ] 
+  }
 ];

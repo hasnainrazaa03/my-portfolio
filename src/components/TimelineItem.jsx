@@ -15,16 +15,13 @@ const TimelineItem = ({ exp, index }) => {
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => setIsHovered(!isHovered)}
     >
-      {/* Spacer for Desktop Layout */}
       <div className="hidden md:block w-5/12" />
 
-      {/* CENTER LOGO NODE - UPDATED SIZE */}
       <div className="absolute left-4 md:left-1/2 transform -translate-x-1/2 flex items-center justify-center z-10">
         <motion.div 
           initial={{ scale: 0 }}
           whileInView={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 260, damping: 20 }}
-          // Changed w-16 h-16 to w-20 h-20 (80px) and increased padding to p-4
           className="w-20 h-20 rounded-full bg-white dark:bg-[#0F172A] border-2 border-slate-200 dark:border-primary/30 shadow-[0_0_0_4px_rgba(255,255,255,0.1)] dark:shadow-[0_0_0_4px_rgba(45,212,191,0.1)] flex items-center justify-center overflow-hidden p-4 group-hover:scale-110 transition-transform duration-300"
         >
           {exp.logo ? (
@@ -39,7 +36,6 @@ const TimelineItem = ({ exp, index }) => {
         </motion.div>
       </div>
 
-      {/* CONTENT CARD */}
       <motion.div 
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
@@ -49,12 +45,10 @@ const TimelineItem = ({ exp, index }) => {
           isEven ? "md:mr-auto" : "md:ml-auto"
         }`}
       >
-        {/* Connector Line */}
         <div className={`hidden md:block absolute top-6 w-8 h-[2px] bg-primary/30 group-hover:bg-primary/80 transition-colors ${
           isEven ? "-right-8" : "-left-8"
         }`} />
 
-        {/* Card Header */}
         <div className="flex flex-col gap-1 mb-3">
           <div className="flex justify-between items-start">
             <h3 className="text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
@@ -68,7 +62,6 @@ const TimelineItem = ({ exp, index }) => {
             </span>
             
             <div className="flex items-center gap-3">
-              {/* Location Tag */}
               {exp.location && (
                 <div className="flex items-center gap-1 text-slate-500 dark:text-gray-300 text-xs">
                   <MapPin size={12} className="text-primary" />
@@ -76,7 +69,6 @@ const TimelineItem = ({ exp, index }) => {
                 </div>
               )}
               
-              {/* Date Tag */}
               <div className="flex items-center gap-1.5 text-slate-500 dark:text-gray-300 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md font-mono text-xs">
                 <Calendar size={12} />
                 {exp.period}
@@ -85,7 +77,6 @@ const TimelineItem = ({ exp, index }) => {
           </div>
         </div>
         
-        {/* Expandable Description */}
         <motion.div
           initial={false}
           animate={{ 
@@ -108,7 +99,6 @@ const TimelineItem = ({ exp, index }) => {
           </div>
         </motion.div>
         
-        {/* Hint Text */}
         {!isHovered && (
            <div className="md:hidden flex items-center gap-1 text-xs text-slate-400 mt-2 italic">
              Tap to reveal details <ChevronRight size={12} />

@@ -1,12 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Supabase client
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 export default async function handler(req, res) {
-  // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -15,7 +13,6 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  // Handle POST request (saving analytics)
     if (req.method === 'POST') {
         try {
             const { question, response, sessionId, timestamp, userAgent, referrer } = req.body;
@@ -52,7 +49,6 @@ export default async function handler(req, res) {
     }
 
 
-  // Handle GET request (fetching analytics - requires auth)
   if (req.method === 'GET') {
     try {
       const authHeader = req.headers.authorization;

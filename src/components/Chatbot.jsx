@@ -5,12 +5,7 @@ import { getChatResponse } from '../services/chatService.js';
 import { analyticsService } from '../services/analyticsService';
 import AnalyticsViewer from './AnalyticsViewer';
 
-/**
- * Parse and render emoji-enhanced messages
- * Handles emoji line breaks and formatting
- */
 const renderMessageWithEmojis = (content) => {
-  // Split by emoji lines for better visual hierarchy
   const lines = content.split('\n');
   
   return (
@@ -18,7 +13,6 @@ const renderMessageWithEmojis = (content) => {
       {lines.map((line, idx) => {
         if (!line.trim()) return null;
         
-        // Check if line starts with emoji
         const emojiRegex = /^([🤖💼💻🛠️🎓📧🚀💡🎯🏢📚🐙⚡🎨🧠🛸⚙️🌬️🐍🎨✨⚛️🍳🏋️✈️📊🔧🎬🎭🎪🎨🖼️🎯])\s/;
         const hasEmoji = emojiRegex.test(line);
         
@@ -45,7 +39,6 @@ const Chatbot = () => {
   const [showAnalyticsVault, setShowAnalyticsVault] = useState(false);
   const messagesEndRef = useRef(null);
 
-  // Quick Chip Suggestions with emojis
   const suggestions = [
     "🚀 Tell me about his projects",
     "⚡ What is your tech stack?",
@@ -62,14 +55,12 @@ const Chatbot = () => {
     scrollToBottom();
   }, [messages, isOpen, isTyping]);
 
-  // ✅ CLOSE ANALYTICS WHEN CHATBOT CLOSES
   useEffect(() => {
     if (!isOpen) {
       setShowAnalyticsVault(false);
     }
   }, [isOpen]);
 
-  // ✅ CLOSE ANALYTICS WHEN CLICKING OUTSIDE
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (showAnalyticsVault) {
@@ -144,10 +135,6 @@ const Chatbot = () => {
     };
   };
 
-  /**
-   * Process message with analytics logging
-   * 📊 NEW: Logs every interaction to analyticsService
-   */
   const processMessage = async (text) => {
     if (!text.trim()) return;
 
@@ -162,7 +149,6 @@ const Chatbot = () => {
       const responseText = await getChatResponse(historyForApi);
       setMessages(prev => [...prev, { role: 'assistant', content: responseText }]);
       
-      // 📊 LOG TO ANALYTICS - New feature!
       analyticsService.logInteraction(text, responseText, {
         success: true,
         interactionType: 'user_query'
@@ -171,7 +157,6 @@ const Chatbot = () => {
       const errorResponse = "🤖 Connection interrupted. Please try again. 🔄";
       setMessages(prev => [...prev, { role: 'assistant', content: errorResponse }]);
       
-      // 📊 LOG FAILED INTERACTION
       analyticsService.logInteraction(text, errorResponse, {
         success: false,
         interactionType: 'error'
@@ -196,7 +181,6 @@ const Chatbot = () => {
 
   return (
     <>
-      {/* Toggle Button - Sci-Fi AI Core Style */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
         className="fixed bottom-6 right-6 z-50 group"
@@ -247,7 +231,6 @@ const Chatbot = () => {
 
 
 
-      {/* Chat Window */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -257,7 +240,6 @@ const Chatbot = () => {
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
             className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-2xl flex flex-col glass-panel border border-slate-200 dark:border-white/10 chatbot-container"
           >
-            {/* Header with History Stats and Analytics Button */}
             <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-3">
@@ -275,7 +257,6 @@ const Chatbot = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  {/* 📊 ANALYTICS BUTTON - New! */}
                   <motion.button 
                     whileHover={{ scale: 1.1 }}
                     onClick={() => setShowAnalyticsVault(!showAnalyticsVault)} 
@@ -294,7 +275,6 @@ const Chatbot = () => {
                 </div>
               </div>
               
-              {/* Conversation Stats with Emojis */}
               {messages.length > 1 && (
                 <div className="text-xs text-slate-600 dark:text-slate-400 font-mono space-y-0.5">
                   <div>💬 {stats.messageCount} messages</div>
@@ -308,7 +288,6 @@ const Chatbot = () => {
 
 
 
-            {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-6 custom-scrollbar bg-slate-50/50 dark:bg-[#030014]/60">
               {messages.map((msg, idx) => (
                 <motion.div
@@ -342,7 +321,6 @@ const Chatbot = () => {
 
 
 
-              {/* Enhanced Typing Indicator */}
               {isTyping && (
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
@@ -400,7 +378,6 @@ const Chatbot = () => {
 
 
 
-            {/* Quick Chips Area with Emojis */}
             <div className="px-4 pb-2 pt-3 bg-slate-50 dark:bg-[#0F172A] border-t border-slate-200 dark:border-white/10">
               <div className="flex gap-2 overflow-x-auto thin-scrollbar-x pb-2">
                 {suggestions.map((chip, idx) => (
@@ -420,7 +397,6 @@ const Chatbot = () => {
 
 
 
-            {/* Input Area */}
             <form onSubmit={handleFormSubmit} className="p-4 pt-2 bg-slate-50 dark:bg-[#0F172A]">
               <div className="relative flex items-center gap-2">
                 <input
@@ -445,7 +421,6 @@ const Chatbot = () => {
       </AnimatePresence>
 
 
-      {/* 📊 Analytics Dashboard Component - New! */}
       <AnalyticsViewer 
         isOpen={showAnalyticsVault}
         onClose={() => setShowAnalyticsVault(false)}

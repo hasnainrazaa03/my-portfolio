@@ -29,7 +29,6 @@ export default function App() {
   
   return (
     <div className={`relative min-h-screen font-sans selection:bg-primary selection:text-black overflow-hidden ${CONFIG.enableContentProtection ? 'select-none' : ''}`}>
-      {/* Dynamic Page Title (updates as you scroll sections) */}
       <PageTitleUpdater />
 
       <SpaceBackground isDark={isDark} />
@@ -49,7 +48,6 @@ export default function App() {
         <Footer />
       </div>
 
-      {/* Fixed Position Elements */}
       <Chatbot />
       <BackToTop />
     </div>

@@ -1,5 +1,3 @@
-/* ... keep existing imports and global styles ... */
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -18,10 +16,10 @@ body {
   overflow-x: hidden;
 }
 
-/* --- GLOBAL SCROLLBAR (Match this style) --- */
+/* --- GLOBAL SCROLLBAR --- */
 ::-webkit-scrollbar {
   width: 8px;
-  height: 8px; /* Added height for horizontal global scrollbars */
+  height: 8px;
 }
 ::-webkit-scrollbar-track {
   @apply bg-slate-200 dark:bg-[#030014];
@@ -34,27 +32,26 @@ body {
 }
 
 /* --- COMPONENT SPECIFIC: THIN HORIZONTAL SCROLLBAR --- */
-/* Updated to match Global Theme Colors exactly */
 .thin-scrollbar-x {
   scrollbar-width: thin;
-  scrollbar-color: #2DD4BF transparent; /* Firefox: Teal Thumb, Transparent Track */
+  scrollbar-color: #2DD4BF transparent;
 }
 
 .thin-scrollbar-x::-webkit-scrollbar {
-  height: 6px; /* Keep it thin */
+  height: 6px;
 }
 
 .thin-scrollbar-x::-webkit-scrollbar-track {
-  background: transparent; /* FIX: Removes the black background */
-  margin: 0 20px; /* Add margin so it doesn't touch the edges */
+  background: transparent;
+  margin: 0 20px;
 }
 
 .thin-scrollbar-x::-webkit-scrollbar-thumb {
-  @apply bg-primary/50 rounded-full; /* Teal with opacity */
+  @apply bg-primary/50 rounded-full;
 }
 
 .thin-scrollbar-x::-webkit-scrollbar-thumb:hover {
-  @apply bg-primary; /* Solid Teal on hover */
+  @apply bg-primary;
 }
 
 /* Glassmorphism Utility */

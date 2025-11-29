@@ -35,7 +35,6 @@ const GitHubSection = ({ isDark }) => {
     <section id="github" className="py-20 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Section Header */}
         <motion.div 
           initial="hidden"
           whileInView="visible"
@@ -50,18 +49,14 @@ const GitHubSection = ({ isDark }) => {
           <p className="mt-4 text-slate-600 dark:text-white font-medium text-lg">Real-time contribution data from GitHub</p>
         </motion.div>
 
-        {/* Main Grid: Stacks on mobile (1 col), Side-by-side on desktop (3 cols) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           
-          {/* LEFT COLUMN: Activity Feed */}
           <div className="w-full order-2 lg:order-1 flex justify-center lg:block">
             <GitHubFeed />
           </div>
 
-          {/* RIGHT COLUMN: Real Commit Calendar */}
           <div className="w-full order-1 lg:order-2 space-y-6 lg:col-span-2">
             
-            {/* Calendar Card */}
             <motion.div 
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
@@ -88,7 +83,6 @@ const GitHubSection = ({ isDark }) => {
                 </a>
               </div>
 
-              {/* The Real Calendar - Scrollable Container */}
               <div className="flex justify-start sm:justify-center w-full overflow-x-auto pb-4 thin-scrollbar-x">
                 <div className="min-w-[700px] pr-4"> 
                   <GitHubCalendar 
@@ -111,10 +105,8 @@ const GitHubSection = ({ isDark }) => {
               </div>
             </motion.div>
 
-            {/* Bottom Row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
-              {/* Languages Card */}
               <div className="p-6 rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col justify-center bg-slate-50/50 dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
                 <h4 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                   <Code size={18} className="text-primary" />
@@ -132,7 +124,6 @@ const GitHubSection = ({ isDark }) => {
                 </div>
               </div>
 
-              {/* Active Status Card */}
               <div className="p-6 rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col justify-center items-center text-center bg-slate-50/50 dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
                 <div className="mb-2 p-3 bg-primary/10 rounded-full text-primary animate-pulse">
                   <Star size={24} />

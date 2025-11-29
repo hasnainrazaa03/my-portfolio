@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { Copy, Check, Mail, AlertCircle, Loader2, Send, CheckCircle2 } from 'lucide-react';
-import emailjs from '@emailjs/browser'; // Import EmailJS
+import emailjs from '@emailjs/browser'; 
 import { fadeInUp } from '../animations';
 import { PERSONAL_INFO } from '../constants';
 import SocialLinks from './SocialLinks';
@@ -17,7 +17,7 @@ const errorVariant = {
 const Contact = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [sendError, setSendError] = useState(null); // Track send errors
+  const [sendError, setSendError] = useState(null);
   
   const { 
     register, 
@@ -29,18 +29,16 @@ const Contact = () => {
   const onSubmit = async (data) => {
     setSendError(null);
     try {
-      // REPLACE THESE STRINGS WITH YOUR ACTUAL EMAILJS IDs
-      // Or use import.meta.env.VITE_EMAILJS_SERVICE_ID etc.
       await emailjs.send(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID,     // e.g. 'service_gmail'
-        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,    // e.g. 'template_portfolio'
+        import.meta.env.VITE_EMAILJS_SERVICE_ID,
+        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
         {
           from_name: data.name,
           from_email: data.email,
           message: data.message,
           to_name: 'Hasnain'
         },
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY      // e.g. 'user_12345'
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
       );
 
       setIsSuccess(true);
@@ -52,7 +50,6 @@ const Contact = () => {
     }
   };
 
-  // ... keep handleCopyEmail and rest of the UI code exactly the same ...
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(PERSONAL_INFO.email).then(() => {
       setIsCopied(true);
@@ -79,7 +76,6 @@ const Contact = () => {
               Systems online. Ready for new opportunities in AI & Aerospace.
             </p>
 
-            {/* Copy & Socials */}
             <div className="flex flex-col items-center justify-center mb-10 gap-6">
               <div className="inline-flex items-center gap-3 p-3 rounded-xl bg-slate-200/50 dark:bg-white/5 border border-slate-300 dark:border-white/10 backdrop-blur-md hover:border-primary/30 transition-colors group">
                 <div className="p-2 rounded-lg bg-primary/10 text-primary">
@@ -146,7 +142,6 @@ const Contact = () => {
                     className="space-y-6"
                     noValidate
                   >
-                    {/* Error Message Top */}
                     {sendError && (
                       <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-500 text-sm text-center font-bold">
                         {sendError}

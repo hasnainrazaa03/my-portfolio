@@ -30,13 +30,11 @@ const Navigation = ({ isDark, toggleTheme }) => {
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 dark:bg-[#030014]/80 backdrop-blur-md shadow-lg border-b border-gray-200 dark:border-white/10 py-4' : 'bg-transparent py-6'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        {/* Logo */}
         <Link to="hero" smooth={true} className="text-2xl font-bold text-primary tracking-tighter flex items-center gap-2 cursor-pointer z-50">
           <Rocket size={24} className="text-accent transform -rotate-45" />
           <span>{PERSONAL_INFO.name.split(' ')[0]}<span className="text-accent">.</span></span>
         </Link>
 
-        {/* Desktop Menu */}
         <div className="hidden md:flex items-center space-x-1">
           {navLinks.map((item) => (
             <Link 
@@ -58,7 +56,6 @@ const Navigation = ({ isDark, toggleTheme }) => {
             </Link>
           ))}
           
-          {/* Theme Toggle Button */}
           <button 
             onClick={toggleTheme}
             className="ml-4 p-2 rounded-full bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-yellow-400 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
@@ -68,7 +65,6 @@ const Navigation = ({ isDark, toggleTheme }) => {
           </button>
         </div>
 
-        {/* Mobile Actions */}
         <div className="md:hidden flex items-center gap-4 z-50">
           <button 
             onClick={toggleTheme}
@@ -83,7 +79,6 @@ const Navigation = ({ isDark, toggleTheme }) => {
         </div>
       </div>
 
-      {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
           <motion.div 

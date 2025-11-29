@@ -83,22 +83,21 @@ If someone asks about:
 Location: Los Angeles, CA
 Role: MSCS Student at USC (Computer Science)
 Background: Aerospace Engineer → AI/ML Engineer
-Passion: Building production AI systems, NLP, computer vision
+Passion: Building production AI systems, NLP, computer vision, CFD
 
 
 KEY PROJECTS:
 1. Project Vimaan - Voice-controlled AI co-pilot for X-Plane flight simulator
 2. Brain Tumor Segmentation - Deep learning pipeline for medical imaging
-3. SO(3)-Equivariant Networks - 3D object recognition (5M+ items)
+3. Team Antariksh - RVSAT 2U nanosatellite project and sounding rocket projects
 4. Recipe Vault - Full-stack MERN app with OAuth and meal planning
 5. Expense Tracker - Personal finance management app
 
 
 WORK EXPERIENCE:
-- Deloitte (Technology Analyst): Statistical analysis, customer workflows
-- DRDO (Defence R&D): CFD simulation, aerodynamic analysis
+- Deloitte (Technology Analyst)
+- DRDO (Defence R&D)
 - Prana.ai: ML model development, NLP prompt engineering
-- Liba Space: Data generation pipelines for AI training
 
 
 SKILLS:
@@ -110,14 +109,15 @@ SKILLS:
 
 EDUCATION:
 - MSCS at USC (Current)
-- B.Tech in Aerospace Engineering from RVCE (CGPA: 9.10/10)
+- B.E in Aerospace Engineering from RVCE (CGPA: 9.10/10)
 
 
 HOBBIES:
 - Cooking (Indian cuisine specialist)
 - Fitness & gym training
 - Flight simulation (X-Plane)
-- Personal finance tracking
+- Playning guitar
+- Music and movies
 
 
 === RESPONSE STYLE ===
@@ -154,7 +154,6 @@ RESPOND IN EXACT FORMAT. ONE OR TWO SENTENCES MAX. END WITH SUGGESTED QUESTIONS.
     }
 
 
-    // FORCE concise format with stricter parameters
     const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -173,10 +172,10 @@ RESPOND IN EXACT FORMAT. ONE OR TWO SENTENCES MAX. END WITH SUGGESTED QUESTIONS.
             content: message
           }
         ],
-        max_tokens: 90,  // Further reduced from 120 to force short answers
-        temperature: 0.4,  // Lower temperature = more deterministic
-        top_p: 0.7,        // Lower top_p = less random
-        stop: ["\n\n", "\n\n\n"],  // Stop on double line breaks
+        max_tokens: 90, 
+        temperature: 0.4,  
+        top_p: 0.7, 
+        stop: ["\n\n", "\n\n\n"], 
         stream: false
       })
     });
@@ -197,13 +196,10 @@ RESPOND IN EXACT FORMAT. ONE OR TWO SENTENCES MAX. END WITH SUGGESTED QUESTIONS.
     let answer = data.choices?.[0]?.message?.content || 'Unable to generate response';
 
 
-    // ENFORCE format post-processing
-    // If answer is too long or doesn't end with bracket, truncate and add suggestions
     if (!answer.includes('[') || answer.split('[')[0].trim().split(/[.!?]/).length > 2) {
       const sentences = answer.split(/[.!?]/);
       const shortAnswer = sentences.slice(0, 2).join('. ').trim();
       
-      // Add suggested questions if missing
       const suggestedQuestions = [
         "specific tech stack used",
         "project details or achievements",

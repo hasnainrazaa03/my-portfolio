@@ -1,4 +1,5 @@
 import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
+import jarvisQnA from '../data/jarvisQnA.json';
 
 // Build context string from your constants
 const buildContext = () => {
@@ -59,6 +60,12 @@ const buildContext = () => {
       }
     });
   }
+
+  context.push('\n--- KNOWLEDGE BASE (Use for accurate responses) ---\n');
+  jarvisQnA.qaData.forEach((pair) => {
+    context.push(`Q: ${pair.q}`);
+    context.push(`A: ${pair.a}\n`);
+  });
 
   return context.join('\n');
 };

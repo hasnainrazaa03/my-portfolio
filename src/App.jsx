@@ -6,7 +6,6 @@ import { useDarkMode } from './hooks/useDarkMode';
 import { CONFIG } from './constants';
 
 // Components
-import SEO from './components/SEO';
 import PageTitleUpdater from './components/PageTitleUpdater';
 import SpaceBackground from './components/SpaceBackground';
 import Navigation from './components/Navigation';
@@ -30,8 +29,7 @@ export default function App() {
   
   return (
     <div className={`relative min-h-screen font-sans selection:bg-primary selection:text-black overflow-hidden ${CONFIG.enableContentProtection ? 'select-none' : ''}`}>
-      {/* SEO Management */}
-      <SEO /> 
+      {/* Dynamic Page Title (updates as you scroll sections) */}
       <PageTitleUpdater />
 
       <SpaceBackground isDark={isDark} />

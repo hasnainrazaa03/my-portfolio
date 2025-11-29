@@ -71,7 +71,7 @@ export const getChatResponse = async (messages) => {
   try {
     const apiUrl = process.env.NODE_ENV === 'production' 
       ? '/api/chat'
-      : 'http://localhost:3000/api/chat';
+      : 'http://localhost:5173/api/chat';
 
     const response = await fetch(apiUrl, {
       method: 'POST',

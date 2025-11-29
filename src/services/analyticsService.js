@@ -1,5 +1,6 @@
 import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
 
+
 class AnalyticsService {
   constructor() {
     this.interactions = [];
@@ -8,9 +9,11 @@ class AnalyticsService {
     this.backendUrl = '/api/analytics'; // Vercel serverless function
   }
 
+
   generateSessionId() {
     return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
 
   /**
    * Log interaction and send to backend
@@ -30,7 +33,9 @@ class AnalyticsService {
       ...metadata
     };
 
+
     this.interactions.push(interaction);
+
 
     // 📡 Send to backend
     try {
@@ -42,6 +47,7 @@ class AnalyticsService {
         body: JSON.stringify(interaction)
       });
 
+
       if (!response.ok) {
         console.warn('Failed to send analytics to backend');
         // Still store locally as fallback
@@ -52,8 +58,10 @@ class AnalyticsService {
       this.persistToLocalStorage();
     }
 
+
     return interaction;
   }
+
 
   persistToLocalStorage() {
     try {
@@ -66,9 +74,11 @@ class AnalyticsService {
     }
   }
 
+
   extractTopics(question) {
     const lower = question.toLowerCase();
     const topics = [];
+
 
     if (lower.includes('project') || lower.includes('vimaan')) topics.push('projects');
     if (lower.includes('skill') || lower.includes('tech')) topics.push('skills');
@@ -78,23 +88,29 @@ class AnalyticsService {
     if (lower.includes('ai') || lower.includes('machine learning')) topics.push('ai_ml');
     if (lower.includes('aerospace') || lower.includes('cfd')) topics.push('aerospace');
 
+
     return topics;
   }
+
 
   extractEntities(question) {
     const lower = question.toLowerCase();
     const entities = [];
 
+
     const projects = ['vimaan', 'brain tumor', 'segmentation', 'recipe vault', 'expense tracker'];
     const skills = ['python', 'pytorch', 'tensorflow', 'react', 'nodejs', 'matlab'];
     const companies = ['deloitte', 'drdo', 'prana', 'usc', 'rvce'];
+
 
     [...projects, ...skills, ...companies].forEach(item => {
       if (lower.includes(item)) entities.push(item);
     });
 
+
     return [...new Set(entities)];
   }
+
 
   /**
    * Get local analytics (fallback if backend unavailable)
@@ -102,6 +118,7 @@ class AnalyticsService {
   getLocalAnalytics() {
     return this.getAnalyticsSummary();
   }
+
 
   getAnalyticsSummary() {
     if (this.interactions.length === 0) {
@@ -115,8 +132,10 @@ class AnalyticsService {
       };
     }
 
+
     const topicBreakdown = {};
     const entityMentions = {};
+
 
     this.interactions.forEach(interaction => {
       interaction.topics?.forEach(topic => {
@@ -127,12 +146,15 @@ class AnalyticsService {
       });
     });
 
+
     const mostAskedTopics = Object.entries(topicBreakdown)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([topic, count]) => ({ topic, count }));
 
+
     const sessionDuration = Date.now() - this.sessionStart.getTime();
+
 
     return {
       totalInteractions: this.interactions.length,
@@ -145,6 +167,7 @@ class AnalyticsService {
       sessionId: this.sessionId
     };
   }
+
 
   /**
    * Fetch analytics from backend (for owner only)
@@ -160,12 +183,14 @@ class AnalyticsService {
         }
       });
 
+
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Unauthorized: Invalid or missing token');
         }
         throw new Error(`HTTP error! status: ${response.status}`);
       }
+
 
       return await response.json();
     } catch (error) {
@@ -174,10 +199,27 @@ class AnalyticsService {
     }
   }
 
+
   clearAnalytics() {
     this.interactions = [];
     localStorage.removeItem(`jarvis_analytics_${this.sessionId}`);
   }
+
+
+  /**
+   * Export analytics as JSON
+   * For downloading and analysis
+   */
+  exportAsJSON() {
+    return {
+      sessionId: this.sessionId,
+      sessionStart: this.sessionStart.toISOString(),
+      exportTime: new Date().toISOString(),
+      summary: this.getAnalyticsSummary(),
+      interactions: this.interactions
+    };
+  }
 }
+
 
 export const analyticsService = new AnalyticsService();

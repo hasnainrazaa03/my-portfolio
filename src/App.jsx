@@ -1,4 +1,5 @@
 import React from 'react';
+import { Analytics } from "@vercel/analytics/react";
 
 // Hooks & Config
 import { useContentProtection } from './hooks/useContentProtection';
@@ -50,6 +51,7 @@ export default function App() {
 
       <Chatbot />
       <BackToTop />
+      <Analytics />
     </div>
   );
 }

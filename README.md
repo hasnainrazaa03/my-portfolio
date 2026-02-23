@@ -24,7 +24,7 @@ This portfolio is intentionally **opinionated, high‑performance, and immersive
 
 ## 🛠️ Engineering Challenges (and Solutions)
 
-### 1. The **"Jarvis" Contextual AI Engine**
+### 1. The **Contextual AI Engine**
 
 Embedding an LLM into a static portfolio often introduces serious issues.
 
@@ -43,7 +43,7 @@ Embedding an LLM into a static portfolio often introduces serious issues.
   - Entire portfolio content is injected into the system prompt at runtime
   - Enables accurate, non‑hallucinatory answers about projects, skills, and experience
 
-Result: **Jarvis works 100% of the time—even if external APIs fail.**
+Result: **It works 100% of the time—even if external APIs fail.**
 
 ---
 

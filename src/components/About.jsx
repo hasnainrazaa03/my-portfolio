@@ -16,6 +16,28 @@ const About = () => (
       >
         <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-10"><span className="text-primary">01.</span> About Me</h2>
         
+        {/* Portrait — circular avatar with glass accent */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          whileHover={{ y: -4, scale: 1.02 }}
+          transition={{ type: 'spring', stiffness: 200, damping: 18 }}
+          className="relative group mx-auto mb-12 w-36 h-36 md:w-48 md:h-48"
+        >
+          {/* Glass accent card behind the avatar */}
+          <div className="absolute inset-0 -rotate-3 rounded-xl bg-white/[0.03] dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/40 dark:border-white/10 shadow-md -z-10 transition-transform duration-300 group-hover:rotate-0" />
+
+          <div className="rounded-full overflow-hidden w-full h-full ring-0 group-hover:ring-2 group-hover:ring-neon-500/30 transition-all duration-300 shadow-xl">
+            <img
+              src="/me.jpg"
+              alt="Hasnain Raza"
+              className="w-full h-full object-cover rounded-full"
+              onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.classList.add('bg-primary/20'); }}
+            />
+          </div>
+        </motion.div>
+
         <div className="p-8 md:p-10 rounded-2xl shadow-xl max-w-4xl mx-auto mb-16 bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
           
           <p className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 mb-8 leading-relaxed tracking-tight">

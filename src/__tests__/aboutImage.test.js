@@ -38,7 +38,8 @@ describe('About — Portrait Image', () => {
     expect(aboutSource).toMatch(/ring-neon-500/);
   });
 
-  it('should apply glass/backdrop-blur accent styling', () => {
-    expect(aboutSource).toMatch(/backdrop-blur/);
+  it('should apply decorative glow accent behind the avatar', () => {
+    expect(aboutSource).toMatch(/blur-md/);
+    expect(aboutSource).toMatch(/bg-gradient-to-br/);
   });
 });

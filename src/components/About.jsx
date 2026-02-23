@@ -16,7 +16,7 @@ const About = () => (
       >
         <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-10"><span className="text-primary">01.</span> About Me</h2>
         
-        {/* Portrait — circular avatar with glass accent */}
+        {/* Portrait — circular avatar with glow accent */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -25,10 +25,10 @@ const About = () => (
           transition={{ type: 'spring', stiffness: 200, damping: 18 }}
           className="relative group mx-auto mb-12 w-36 h-36 md:w-48 md:h-48"
         >
-          {/* Glass accent card behind the avatar */}
-          <div className="absolute inset-0 -rotate-3 rounded-xl bg-white/[0.03] dark:bg-white/[0.04] backdrop-blur-sm border border-slate-200/40 dark:border-white/10 shadow-md -z-10 transition-transform duration-300 group-hover:rotate-0" />
+          {/* Decorative glow ring behind the avatar */}
+          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 via-neon-500/20 to-primary/10 blur-md scale-110 -z-10 opacity-60 group-hover:opacity-100 group-hover:scale-[1.15] transition-all duration-500" aria-hidden="true" />
 
-          <div className="rounded-full overflow-hidden w-full h-full ring-0 group-hover:ring-2 group-hover:ring-neon-500/30 transition-all duration-300 shadow-xl">
+          <div className="rounded-full overflow-hidden w-full h-full ring-2 ring-white/10 group-hover:ring-neon-500/30 transition-all duration-300 shadow-xl">
             <img
               src="/me.jpg"
               alt="Hasnain Raza"

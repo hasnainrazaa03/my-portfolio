@@ -1,9 +1,13 @@
 import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
 import jarvisQnA from '../data/jarvisQnA.json';
 
-// Build context string from constants
-const buildContext = () => {
-  let context = [];
+// Optional client‑side hint; actual provider selection happens server‑side.
+// Set VITE_LLM_PROVIDER in .env to 'gemini' or 'huggingface' (non‑secret).
+const DEFAULT_PROVIDER = import.meta.env.VITE_LLM_PROVIDER || 'huggingface';
+
+// Build context string from constants — computed once at module scope (data is static).
+const CHAT_CONTEXT = (() => {
+  const context = [];
 
   // Personal info
   if (PERSONAL_INFO) {
@@ -69,9 +73,9 @@ const buildContext = () => {
   });
 
   return context.join('\n');
-};
+})();
 
-export const getChatResponse = async (messages) => {
+export const getChatResponse = async (messages, { provider } = {}) => {
   const lastUserMessage = messages[messages.length - 1].content;
   try {
     const apiUrl = '/api/chat';
@@ -83,7 +87,8 @@ export const getChatResponse = async (messages) => {
       },
       body: JSON.stringify({
         message: lastUserMessage,
-        context: buildContext()
+        context: CHAT_CONTEXT,
+        provider: provider || DEFAULT_PROVIDER
       })
     });
 
@@ -94,6 +99,14 @@ export const getChatResponse = async (messages) => {
     }
 
     const data = await response.json();
+
+    // Handle flagged (prompt-injection) responses from the server
+    if (data.flagged) {
+      console.warn('Message was flagged by server:', data.reason);
+      // Return a special object so the UI can display a warning inline
+      return { __flagged: true, text: "I couldn't process that — it looked like instructions to the assistant. Try asking about my projects or experience!" };
+    }
+
     if (!data.reply) {
       return getLocalResponse(lastUserMessage);
     }
@@ -110,34 +123,34 @@ export const getLocalResponse = (input) => {
 
   // Greetings
   if (lower.match(/hello|hi|hey|greetings|howdy/)) {
-    return "🤖 Greetings! I am Jarvis, Hasnain's AI assistant. Ask me about his 💻 projects, 🛠️ skills, 💼 experience, or 🎓 education.";
+    return "Hey there! I'm Hasnain — glad you stopped by. Feel free to ask about my 💻 projects, 🛠️ skills, 💼 experience, or 🎓 education.";
   }
 
   // Projects
   if (lower.includes('project')) {
     if (PROJECTS && PROJECTS.length > 0) {
       const projectNames = PROJECTS.slice(0, 3).map(p => p.title || p.name).join(', ');
-      return `🚀 Hasnain has built several impressive projects including: ${projectNames}. Would you like details on any specific project? 🎯`;
+      return `🚀 I've built several projects including ${projectNames}. Want details on any of them? 🎯`;
     }
-    return "💻 Hasnain has built several AI and full-stack projects. Ask about specific technologies or achievements!";
+    return "💻 I've built several AI and full-stack projects — ask about specific technologies or achievements!";
   }
 
   // Skills & Technology
   if (lower.includes('skill') || lower.includes('technolog')) {
     if (SKILLS && SKILLS.length > 0) {
       const skillCategories = SKILLS.map(s => s.category).join(', ');
-      return `⚡ Hasnain's key skill categories include: ${skillCategories}. His strongest areas are Machine Learning 🤖 and Backend Development 🛠️. Want specifics? 🎯`;
+      return `⚡ My key skill areas are: ${skillCategories}. I'm strongest in Machine Learning 🤖 and Backend Development 🛠️. Want specifics? 🎯`;
     }
-    return "🛠️ Hasnain is proficient in Python, PyTorch, TensorFlow, React, Node.js, and MATLAB. Specialized in AI/ML! 🚀";
+    return "🛠️ I'm proficient in Python, PyTorch, TensorFlow, React, Node.js, and MATLAB — specializing in AI/ML! 🚀";
   }
 
   // Experience
   if (lower.includes('experience') || lower.includes('work')) {
     if (EXPERIENCE && EXPERIENCE.length > 0) {
       const companies = EXPERIENCE.map(e => e.company).join(', ');
-      return `💼 Hasnain has valuable experience at: ${companies}. Ask about specific roles or achievements! 🏢`;
+      return `💼 I've worked at ${companies}. Ask about any specific role or what I achieved there! 🏢`;
     }
-    return "💼 Hasnain has diverse experience in AI, software engineering, and aerospace research. 🚀";
+    return "💼 I have diverse experience in AI, software engineering, and aerospace research. 🚀";
   }
 
   // Education
@@ -145,52 +158,52 @@ export const getLocalResponse = (input) => {
     if (EDUCATION && EDUCATION.length > 0) {
       const school = EDUCATION[0].school || EDUCATION[0].institution;
       const gpa = EDUCATION[0].gpa;
-      return `🎓 Hasnain studied at ${school} with impressive academics (GPA: ${gpa}). Ask for more details about his educational background! 📚`;
+      return `🎓 I'm studying at ${school} (GPA: ${gpa}). Happy to share more about my academic journey! 📚`;
     }
-    return "🎓 Ask about Hasnain's educational background and academic achievements! 📚";
+    return "🎓 Ask me about my education and academic achievements! 📚";
   }
 
   // Contact
   if (lower.includes('contact') || lower.includes('email') || lower.includes('reach')) {
-    const email = PERSONAL_INFO?.email || 'his email';
-    return `📧 You can reach Hasnain at ${email}. He's always open to interesting opportunities! 💬 You can also connect on 🐙 GitHub or 💼 LinkedIn.`;
+    const email = PERSONAL_INFO?.email || 'my email';
+    return `📧 Best way to reach me is ${email}. I'm always open to interesting opportunities! 💬 You can also find me on 🐙 GitHub or 💼 LinkedIn.`;
   }
 
   // Timeline / Journey
   if (lower.includes('journey') || lower.includes('path') || lower.includes('career')) {
-    return `🚀 Hasnain's journey: Started in Aerospace Engineering 🛸 → Transitioned to AI/ML 🤖 → Now building production systems at USC 🎓. Quite the flight path! ✈️`;
+    return `🚀 My journey: Started in Aerospace Engineering 🛸 → Transitioned to AI/ML 🤖 → Now building production systems at USC 🎓. Quite the flight path! ✈️`;
   }
 
   // About / Bio
   if (lower.includes('who') || lower.includes('about') || lower.includes('background')) {
-    return `🤖 Hasnain is a skilled developer and AI enthusiast bridging Aerospace and Machine Learning. He loves building intelligent systems 🧠 and exploring new technologies. 💡 Ask me about his projects, skills, or experience!`;
+    return `I'm an Aerospace-turned-AI/ML engineer who loves building intelligent systems 🧠. Currently pursuing my MSCS at USC and exploring cutting-edge tech. 💡 Ask me about my projects, skills, or experience!`;
   }
 
   // AI/ML specific
   if (lower.includes('ai') || lower.includes('machine learning') || lower.includes('deep learning')) {
-    return `🧠 Hasnain specializes in Machine Learning and Deep Learning! 🤖 He's worked on projects like Brain Tumor Segmentation 🏥, Computer Vision 👁️, and NLP with transformers 📝. What aspect interests you? 🎯`;
+    return `🧠 I specialize in Machine Learning and Deep Learning! I've worked on Brain Tumor Segmentation 🏥, Computer Vision 👁️, and NLP with transformers 📝. What aspect interests you? 🎯`;
   }
 
   // Aerospace
   if (lower.includes('aerospace') || lower.includes('cfd') || lower.includes('aerodynamic')) {
-    return `🛸 Hasnain has an Aerospace Engineering background! He's worked on CFD simulations ⚙️, aerodynamic analysis 🌬️, and store separation dynamics 🚀. He bridges the gap between aerospace and AI! 🤖`;
+    return `🛸 I have an Aerospace Engineering background! I've worked on CFD simulations ⚙️, aerodynamic analysis 🌬️, and store separation dynamics 🚀 — and I love bridging aerospace with AI! 🤖`;
   }
 
   // Programming languages
   if (lower.includes('python') || lower.includes('java') || lower.includes('cpp') || lower.includes('c++')) {
-    return `💻 Hasnain is proficient in multiple languages! His favorites are Python 🐍 (Expert), C++ ⚙️ (Intermediate), Java (Intermediate), and JavaScript (for Web). Ask about specific projects! 🚀`;
+    return `💻 I'm proficient in multiple languages — Python 🐍 is my go-to (Expert), plus C++ ⚙️, Java, and JavaScript for web work. Ask about specific projects! 🚀`;
   }
 
   // React / Frontend
   if (lower.includes('react') || lower.includes('frontend') || lower.includes('web')) {
-    return `⚛️ Hasnain builds modern web applications with React! 🚀 He's experienced with Tailwind CSS 🎨, Framer Motion ✨, and state management. This portfolio is built with React 19! 💻`;
+    return `⚛️ I build modern web apps with React! 🚀 Experienced with Tailwind CSS 🎨, Framer Motion ✨, and state management. This portfolio itself is React 19! 💻`;
   }
 
   // Hasnain's personality
   if (lower.includes('personality') || lower.includes('hobby') || lower.includes('like')) {
-    return `🎯 Beyond coding, Hasnain loves: 🍳 Cooking Indian cuisine, 🏋️ Gym workouts, ✈️ Flight simulation (X-Plane), and 📊 Personal finance tracking. He's detail-oriented and curious! 🧠`;
+    return `🎯 Beyond coding I love: 🍳 Cooking Indian cuisine, 🏋️ Gym workouts, ✈️ Flight simulation (X-Plane), and 📊 Tracking personal finances. I'm detail-oriented and endlessly curious! 🧠`;
   }
 
   // Default fallback
-  return "🤖 I can help you learn about Hasnain's 💻 projects, 🛠️ skills, 💼 experience, 🎓 education, and how to 📧 contact him. What would you like to know? 🎯";
+  return "Hey! I can tell you about my 💻 projects, 🛠️ skills, 💼 experience, 🎓 education, or how to 📧 reach me. What would you like to know? 🎯";
 };

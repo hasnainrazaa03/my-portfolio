@@ -7,7 +7,7 @@ import GitHubFeed from './GitHubFeed';
 import { fadeInUp } from '../animations';
 
 const GitHubSection = ({ isDark }) => {
-  const username = "hasnainrazaa03"; 
+  const username = PERSONAL_INFO.socials.github.split('/').pop(); 
   
   const [isMobile, setIsMobile] = useState(false);
 

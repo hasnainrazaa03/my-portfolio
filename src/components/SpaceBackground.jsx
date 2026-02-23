@@ -90,6 +90,16 @@ const SpaceBackground = ({ isDark }) => {
 
     animate();
 
+    // Pause rAF when the tab is hidden to save CPU/battery.
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        cancelAnimationFrame(animationFrameId);
+      } else {
+        animate();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
     const handleResize = () => {
       if (resizeTimeout) clearTimeout(resizeTimeout);
       
@@ -110,6 +120,7 @@ const SpaceBackground = ({ isDark }) => {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
       cancelAnimationFrame(animationFrameId);
       if (resizeTimeout) clearTimeout(resizeTimeout);
     };

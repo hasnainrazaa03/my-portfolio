@@ -5,13 +5,29 @@ import { scaleIn } from '../animations';
 
 const ProjectCard = ({ project, onClick }) => {
   const isInProgress = project.status === "In Progress";
+  const thumbnail = project.images?.[0];
   
   return (
     <motion.div 
       variants={scaleIn}
       onClick={() => onClick(project)}
-      className="group rounded-2xl overflow-hidden p-6 h-full flex flex-col bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] cursor-pointer hover:-translate-y-2"
+      className="group rounded-2xl overflow-hidden h-full flex flex-col bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] cursor-pointer hover:-translate-y-2"
     >
+      {/* Thumbnail */}
+      {thumbnail && (
+        <div className="relative h-40 overflow-hidden bg-slate-200 dark:bg-white/5 shrink-0">
+          <img
+            src={thumbnail}
+            alt={project.title}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+            onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+        </div>
+      )}
+
+      <div className="p-6 flex flex-col flex-1">
       <div className="flex justify-between items-start mb-4">
         <span className="text-xs font-bold text-accent uppercase tracking-wider px-2 py-1 bg-accent/10 rounded">
           {project.category}
@@ -52,6 +68,7 @@ const ProjectCard = ({ project, onClick }) => {
             {tag}
           </span>
         ))}
+      </div>
       </div>
     </motion.div>
   );

@@ -1,1 +1,5 @@
-User-agent: *Allow: /Sitemap location (generate one later at https://www.xml-sitemaps.com/)Sitemap: https://www.google.com/search?q=https://yourportfolio.com/sitemap.xml
+User-agent: *
+Allow: /
+
+# TODO: Generate a real sitemap at https://www.xml-sitemaps.com/ and host it.
+Sitemap: https://hasnainraza.vercel.app/sitemap.xml

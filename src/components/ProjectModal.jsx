@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Github, ExternalLink, X, ChevronLeft, ChevronRight, 
@@ -21,6 +21,23 @@ const getTechIcon = (tech) => {
 
 const ProjectModal = ({ project, onClose }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const modalRef = useRef(null);
+
+
+  const nextImage = useCallback((e) => {
+    e?.stopPropagation();
+    if (project?.images?.length > 1) {
+      setCurrentImageIndex((prev) => (prev + 1) % project.images.length);
+    }
+  }, [project]);
+
+
+  const prevImage = useCallback((e) => {
+    e?.stopPropagation();
+    if (project?.images?.length > 1) {
+      setCurrentImageIndex((prev) => (prev - 1 + project.images.length) % project.images.length);
+    }
+  }, [project]);
 
 
   useEffect(() => {
@@ -31,32 +48,18 @@ const ProjectModal = ({ project, onClose }) => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [onClose, prevImage, nextImage]);
 
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
+    // Focus trap: focus the modal on mount
+    modalRef.current?.focus();
     return () => { document.body.style.overflow = 'unset'; };
   }, []);
 
 
   if (!project) return null;
-
-
-  const nextImage = (e) => {
-    e?.stopPropagation();
-    if (project.images?.length > 1) {
-      setCurrentImageIndex((prev) => (prev + 1) % project.images.length);
-    }
-  };
-
-
-  const prevImage = (e) => {
-    e?.stopPropagation();
-    if (project.images?.length > 1) {
-      setCurrentImageIndex((prev) => (prev - 1 + project.images.length) % project.images.length);
-    }
-  };
 
 
   const getDemoButtonProps = () => {
@@ -79,6 +82,8 @@ const ProjectModal = ({ project, onClose }) => {
       onClick={onClose}
       role="dialog"
       aria-modal="true"
+      ref={modalRef}
+      tabIndex={-1}
     >
       <motion.div 
         initial={{ y: "100%", opacity: 0 }}

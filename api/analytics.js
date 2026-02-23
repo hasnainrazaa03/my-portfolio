@@ -4,16 +4,75 @@ const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
+// TODO: Replace with your actual deployed domain before production deploy.
+const ALLOWED_ORIGIN = process.env.ALLOWED_ORIGIN || 'https://yourdomain.com';
+
+// --- Basic in-memory rate limiter (per cold-start instance) ---
+// NOTE: On Vercel serverless each invocation may be a fresh instance,
+// so this only limits burst abuse within a single warm instance.
+// For production, use Vercel Edge Middleware or a third-party rate-limiter
+// (e.g., Upstash @upstash/ratelimit) for persistent, distributed limiting.
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 minute
+const RATE_LIMIT_MAX = 30; // max writes per IP per window
+const rateLimitMap = new Map();
+
+function isRateLimited(ip) {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
+    rateLimitMap.set(ip, { windowStart: now, count: 1 });
+    return false;
+  }
+  entry.count += 1;
+  if (entry.count > RATE_LIMIT_MAX) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Constant-time string comparison to prevent timing attacks on token checks.
+ */
+function timingSafeEqual(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  if (a.length !== b.length) return false;
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, GET');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Access-Control-Allow-Origin', ALLOWED_ORIGIN);
+  res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, x-analytics-token');
 
   if (req.method === 'OPTIONS') {
     return res.status(200).end();
   }
 
     if (req.method === 'POST') {
+        // --- Write auth: require x-analytics-token header ---
+        // TODO: Set ANALYTICS_WRITE_TOKEN env var on your deployment platform.
+        const writeToken = req.headers['x-analytics-token'];
+        const expectedWriteToken = process.env.ANALYTICS_WRITE_TOKEN;
+
+        if (!expectedWriteToken) {
+          console.warn('[analytics] ANALYTICS_WRITE_TOKEN env var not set — rejecting all writes');
+          return res.status(500).json({ error: 'Server misconfigured: write token not set' });
+        }
+
+        if (!writeToken || !timingSafeEqual(writeToken, expectedWriteToken)) {
+          return res.status(401).json({ error: 'Unauthorized: invalid or missing analytics write token' });
+        }
+
+        // Rate limiting
+        const clientIp = req.headers['x-forwarded-for']?.split(',')[0]?.trim() || req.socket?.remoteAddress || 'unknown';
+        if (isRateLimited(clientIp)) {
+          return res.status(429).json({ error: 'Too many requests. Please try again later.' });
+        }
+
         try {
             const { question, response, sessionId, timestamp, userAgent, referrer } = req.body;
 
@@ -32,7 +91,7 @@ export default async function handler(req, res) {
                         timestamp: timestamp || new Date().toISOString(),
                         user_agent: userAgent,
                         referrer: referrer || 'direct',
-                        ip_address: req.headers['x-forwarded-for'] || req.socket.remoteAddress
+                        ip_address: clientIp
                     }
                 ]);
 

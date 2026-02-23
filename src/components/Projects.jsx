@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PROJECTS } from '../constants';
 import { staggerContainer } from '../animations';
@@ -10,11 +10,12 @@ const Projects = () => {
   const [activeTab, setActiveTab] = useState("All");
   const [currentPage, setCurrentPage] = useState(0);
 
-  const categories = ["All", ...new Set(PROJECTS.map(p => p.category))];
+  const categories = useMemo(() => ["All", ...new Set(PROJECTS.map(p => p.category))], []);
   
-  const filteredProjects = activeTab === "All" 
-    ? PROJECTS 
-    : PROJECTS.filter(project => project.category === activeTab);
+  const filteredProjects = useMemo(
+    () => activeTab === "All" ? PROJECTS : PROJECTS.filter(project => project.category === activeTab),
+    [activeTab]
+  );
 
   const projectsPerPage = 3;
   const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);

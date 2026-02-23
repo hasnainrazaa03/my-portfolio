@@ -27,6 +27,7 @@ const SkillBar = ({ skill, index }) => {
             <img 
               src={skill.image} 
               alt={skill.name} 
+              loading="lazy"
               className="w-full h-full object-contain"
               onError={(e) => e.target.style.display = 'none'}
             />

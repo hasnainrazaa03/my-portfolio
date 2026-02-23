@@ -1,7 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
 export const useActiveSection = (sectionIds) => {
   const [activeSection, setActiveSection] = useState('hero');
+  // Use a ref to track the current section so the scroll handler never goes stale.
+  const activeSectionRef = useRef(activeSection);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,7 +22,8 @@ export const useActiveSection = (sectionIds) => {
         }
       }
 
-      if (foundSection && foundSection !== activeSection) {
+      if (foundSection && foundSection !== activeSectionRef.current) {
+        activeSectionRef.current = foundSection;
         setActiveSection(foundSection);
       }
     };
@@ -29,7 +32,8 @@ export const useActiveSection = (sectionIds) => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // sectionIds is the only real dependency; the ref avoids the stale-closure issue.
+  }, [sectionIds]);
 
   return activeSection;
 };

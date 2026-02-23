@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Trash2, RefreshCw, Eye, Lock } from 'lucide-react';
 import { analyticsService } from '../services/analyticsService';
 
-const AnalyticsViewer = ({ isOpen, onClose }) => {
+const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
   const [allData, setAllData] = useState([]);
   const [aggregated, setAggregated] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
@@ -126,7 +126,7 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -20 }}
-            className="fixed bottom-24 left-6 z-50 w-[400px] max-w-[calc(100vw-48px)] rounded-2xl shadow-2xl glass-panel border border-slate-200 dark:border-white/10 overflow-hidden"
+            className={`fixed bottom-24 left-6 z-50 w-[400px] max-w-[calc(100vw-48px)] rounded-2xl shadow-2xl glass-panel border border-slate-200 dark:border-white/10 overflow-hidden ${className}`}
           >
             <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
               <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
@@ -195,7 +195,7 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
     return (
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed bottom-24 left-6 z-50 w-[400px] max-w-[calc(100vw-48px)] rounded-2xl shadow-2xl glass-panel border border-slate-200 dark:border-white/10 p-8 text-center">
+          <div className={`fixed bottom-24 left-6 z-50 w-[400px] max-w-[calc(100vw-48px)] rounded-2xl shadow-2xl glass-panel border border-slate-200 dark:border-white/10 p-8 text-center ${className}`}>
             <div className="w-8 h-8 border-2 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-slate-600 dark:text-slate-300">Loading analytics...</p>
           </div>
@@ -212,7 +212,7 @@ const AnalyticsViewer = ({ isOpen, onClose }) => {
           animate={{ opacity: 1, x: 0 }}
           exit={{ opacity: 0, x: -20 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
-          className="fixed bottom-24 left-6 z-50 w-[440px] max-w-[calc(100vw-48px)] max-h-[700px] rounded-2xl shadow-2xl flex flex-col glass-panel border border-slate-200 dark:border-white/10 overflow-hidden"
+          className={`fixed bottom-24 left-6 z-50 w-[440px] max-w-[calc(100vw-48px)] max-h-[700px] rounded-2xl shadow-2xl flex flex-col glass-panel border border-slate-200 dark:border-white/10 overflow-hidden ${className}`}
         >
           <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">

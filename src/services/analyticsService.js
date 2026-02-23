@@ -34,16 +34,21 @@ class AnalyticsService {
 
 
     try {
-      const response = await fetch(this.backendUrl, {
+      // TODO: Set VITE_ANALYTICS_WRITE_TOKEN in your .env.local (public token for write auth).
+      // NOTE: should be safe/public only — this is a write-gate, not a secret admin key.
+      const writeToken = import.meta.env.VITE_ANALYTICS_WRITE_TOKEN || '';
+
+      const fetchResponse = await fetch(this.backendUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-analytics-token': writeToken,
         },
         body: JSON.stringify(interaction)
       });
 
 
-      if (!response.ok) {
+      if (!fetchResponse.ok) {
         console.warn('Failed to send analytics to backend');
         this.persistToLocalStorage();
       }

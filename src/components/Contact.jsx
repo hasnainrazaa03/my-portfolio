@@ -46,7 +46,7 @@ const Contact = () => {
       setTimeout(() => setIsSuccess(false), 8000);
     } catch (error) {
       console.error("Email Failed:", error);
-      setSendError("Failed to transmit message. Please try copying my email instead.");
+      setSendError("Failed to send message. Please try copying my email instead.");
     }
   };
 
@@ -73,7 +73,7 @@ const Contact = () => {
               <span className="text-primary">06.</span> Initialize Contact
             </h2>
             <p className="text-center text-slate-600 dark:text-white mb-8 font-medium opacity-90">
-              Systems online. Ready for new opportunities in AI & Aerospace.
+              Have a project idea, opportunity, or just want to say hi? I'd love to hear from you.
             </p>
 
             <div className="flex flex-col items-center justify-center mb-10 gap-6">
@@ -121,9 +121,9 @@ const Contact = () => {
                     <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
                       <CheckCircle2 size={40} className="text-green-500" />
                     </div>
-                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Message Transmitted!</h3>
+                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Message Sent!</h3>
                     <p className="text-slate-600 dark:text-white max-w-sm font-medium">
-                      I've received your signal. Expect a response shortly.
+                      Thanks for reaching out! I'll get back to you shortly.
                     </p>
                     <button 
                       onClick={() => setIsSuccess(false)}
@@ -158,7 +158,7 @@ const Contact = () => {
                               ? 'border-red-500 focus:ring-red-500' 
                               : 'border-slate-300 dark:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary'
                             }`}
-                          placeholder="Commander Shepard"
+                          placeholder="Your name"
                           disabled={isSubmitting}
                         />
                         <AnimatePresence>
@@ -180,7 +180,7 @@ const Contact = () => {
                           {...register("email", { 
                             required: "Email is required",
                             pattern: {
-                              value: /^\S+@\S+$/i,
+                              value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
                               message: "Invalid email address"
                             }
                           })}
@@ -189,7 +189,7 @@ const Contact = () => {
                               ? 'border-red-500 focus:ring-red-500' 
                               : 'border-slate-300 dark:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary'
                             }`}
-                          placeholder="shepard@alliance.nav"
+                          placeholder="you@example.com"
                           disabled={isSubmitting}
                         />
                         <AnimatePresence>
@@ -222,7 +222,7 @@ const Contact = () => {
                             ? 'border-red-500 focus:ring-red-500' 
                             : 'border-slate-300 dark:border-white/20 focus:border-primary focus:ring-1 focus:ring-primary'
                           }`}
-                        placeholder="Awaiting orders..."
+                        placeholder="Tell me about your project or opportunity..."
                         disabled={isSubmitting}
                       />
                       <AnimatePresence>
@@ -244,11 +244,11 @@ const Contact = () => {
                     >
                       {isSubmitting ? (
                         <>
-                          <Loader2 size={20} className="animate-spin" /> Transmitting...
+                          <Loader2 size={20} className="animate-spin" /> Sending...
                         </>
                       ) : (
                         <>
-                          Send Transmission <Send size={18} />
+                          Send to Hasnain <Send size={18} />
                         </>
                       )}
                     </button>

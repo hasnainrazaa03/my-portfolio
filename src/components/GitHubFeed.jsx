@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GitCommit, GitPullRequest, Star, GitBranch, Disc, ExternalLink, Loader2, AlertCircle, Github } from 'lucide-react';
 import { PERSONAL_INFO } from '../constants';
@@ -113,6 +113,8 @@ const GitHubFeed = () => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const containerRef = useRef(null);
+  const isVisibleRef = useRef(false);
 
   const fetchGitHubActivity = async () => {
     try {
@@ -138,13 +140,32 @@ const GitHubFeed = () => {
   };
 
   useEffect(() => {
-    fetchGitHubActivity();
-    const interval = setInterval(fetchGitHubActivity, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+    // Only poll when the feed is visible on screen.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        isVisibleRef.current = entry.isIntersecting;
+        // Fetch immediately when entering viewport for the first time.
+        if (entry.isIntersecting && activities.length === 0) {
+          fetchGitHubActivity();
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (containerRef.current) observer.observe(containerRef.current);
+
+    const interval = setInterval(() => {
+      if (isVisibleRef.current) fetchGitHubActivity();
+    }, 5 * 60 * 1000);
+
+    return () => {
+      observer.disconnect();
+      clearInterval(interval);
+    };
   }, []);
 
   return (
-    <div className="rounded-2xl border border-slate-200 dark:border-white/10 max-w-md w-full overflow-hidden flex flex-col h-[500px] bg-slate-50/50 dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
+    <div ref={containerRef} className="rounded-2xl border border-slate-200 dark:border-white/10 max-w-md w-full overflow-hidden flex flex-col h-[500px] bg-slate-50/50 dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
       <div className="p-6 pb-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#0F172A]/50 backdrop-blur-sm z-10">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

@@ -7,6 +7,7 @@ import { useDarkMode } from './hooks/useDarkMode';
 import { CONFIG } from './constants';
 
 // Components
+import ErrorBoundary from './components/ErrorBoundary';
 import PageTitleUpdater from './components/PageTitleUpdater';
 import SpaceBackground from './components/SpaceBackground';
 import Navigation from './components/Navigation';
@@ -29,29 +30,31 @@ export default function App() {
   const toggleTheme = () => setIsDark(!isDark);
   
   return (
-    <div className={`relative min-h-screen font-sans selection:bg-primary selection:text-black overflow-hidden ${CONFIG.enableContentProtection ? 'select-none' : ''}`}>
-      <PageTitleUpdater />
+    <ErrorBoundary>
+      <div className={`relative min-h-screen font-sans selection:bg-primary selection:text-black overflow-hidden ${CONFIG.enableContentProtection ? 'select-none' : ''}`}>
+        <PageTitleUpdater />
 
-      <SpaceBackground isDark={isDark} />
-      
-      <ScrollProgress />
+        <SpaceBackground isDark={isDark} />
+        
+        <ScrollProgress />
 
-      <div className="relative z-10">
-        <Navigation isDark={isDark} toggleTheme={toggleTheme} />
-        <Hero />
-        <About />
-        <Education />
-        <Projects />
-        <GitHubSection isDark={isDark} />
-        <Experience />
-        <Skills />
-        <Contact />
-        <Footer />
+        <div className="relative z-10">
+          <Navigation isDark={isDark} toggleTheme={toggleTheme} />
+          <Hero />
+          <About />
+          <Education />
+          <Projects />
+          <GitHubSection isDark={isDark} />
+          <Experience />
+          <Skills />
+          <Contact />
+          <Footer />
+        </div>
+
+        <Chatbot />
+        <BackToTop />
+        <Analytics />
       </div>
-
-      <Chatbot />
-      <BackToTop />
-      <Analytics />
-    </div>
+    </ErrorBoundary>
   );
 }

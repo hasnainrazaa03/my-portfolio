@@ -1,0 +1,10 @@
+[
+  { "role": "user",      "content": "Hey! What do you do?" },
+  { "role": "assistant",  "content": "Hi! I'm Hasnain — an Aerospace-turned-AI/ML engineer currently pursuing my Master's in CS at USC. I build intelligent systems and love bridging aerospace with AI." },
+  { "role": "user",      "content": "Cool! What projects have you worked on?" },
+  { "role": "assistant",  "content": "I've built Project Vimaan (voice-controlled AI co-pilot for X-Plane), a Brain Tumor Segmentation pipeline with PyTorch, SO(3)-Equivariant Networks for 3D recognition, Recipe Vault (full-stack MERN), and an Expense Tracker." },
+  { "role": "user",      "content": "What's your tech stack?" },
+  { "role": "assistant",  "content": "Python & PyTorch for ML/AI, React 19 + Tailwind for frontend, Node.js + Express for backend, and PostgreSQL / MongoDB for databases. I deploy on Vercel and use HuggingFace for model inference." },
+  { "role": "user",      "content": "How can I reach you?" },
+  { "role": "assistant",  "content": "📧 Best way is razam@usc.edu — I'm always open to interesting opportunities! You can also find me on GitHub or LinkedIn." }
+]

@@ -14,7 +14,7 @@ describe('ChatDemo — demo conversation data', () => {
   });
 
   it('every message should have role and content', () => {
-    demoMessages.forEach((msg, idx) => {
+    demoMessages.forEach((msg) => {
       expect(msg).toHaveProperty('role');
       expect(msg).toHaveProperty('content');
       expect(['user', 'assistant']).toContain(msg.role);

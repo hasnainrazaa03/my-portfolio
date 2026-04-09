@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PROJECTS } from '../constants';
-import { staggerContainer } from '../animations';
 import ProjectCard from './ProjectCard';
 import ProjectModal from './ProjectModal';
 
@@ -21,10 +20,6 @@ const Projects = () => {
   const totalPages = Math.ceil(filteredProjects.length / projectsPerPage);
   const startIndex = currentPage * projectsPerPage;
   const visibleProjects = filteredProjects.slice(startIndex, startIndex + projectsPerPage);
-
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [activeTab]);
 
   useEffect(() => {
     if (totalPages <= 1) return;
@@ -68,7 +63,10 @@ const Projects = () => {
               {categories.map((category) => (
                 <button
                   key={category}
-                  onClick={() => setActiveTab(category)}
+                  onClick={() => {
+                    setActiveTab(category);
+                    setCurrentPage(0);
+                  }}
                   className={`relative px-5 py-2.5 text-sm font-medium rounded-lg outline-none transition-colors duration-200 z-10 whitespace-nowrap ${
                     activeTab === category 
                       ? 'text-white dark:text-black font-bold' 

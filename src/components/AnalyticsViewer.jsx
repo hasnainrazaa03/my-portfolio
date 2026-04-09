@@ -4,7 +4,6 @@ import { X, Download, Trash2, RefreshCw, Eye, Lock } from 'lucide-react';
 import { analyticsService } from '../services/analyticsService';
 
 const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
-  const [allData, setAllData] = useState([]);
   const [aggregated, setAggregated] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   const [authToken, setAuthToken] = useState('');
@@ -33,7 +32,6 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
     try {
       const result = await analyticsService.fetchAnalyticsFromBackend(authToken);
       if (result && result.success) {
-        setAllData(result.data);
         setAggregated(result.insights);
       } else {
         loadLocalAnalytics();
@@ -48,7 +46,6 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
 
   const loadLocalAnalytics = () => {
     const localSummary = analyticsService.getLocalAnalytics();
-    setAllData([]);
     setAggregated(localSummary);
   };
 

@@ -20,7 +20,7 @@ const renderMessageWithEmojis = (content) => {
       {lines.map((line, idx) => {
         if (!line.trim()) return null;
         
-        const emojiRegex = /^([🤖💼💻🛠️🎓📧🚀💡🎯🏢📚🐙⚡🎨🧠🛸⚙️🌬️🐍🎨✨⚛️🍳🏋️✈️📊🔧🎬🎭🎪🎨🖼️🎯])\s/;
+        const emojiRegex = /^\p{Extended_Pictographic}\s/u;
         const hasEmoji = emojiRegex.test(line);
         
         return (
@@ -57,6 +57,7 @@ const Avatar = ({ src, fallback, className = '' }) => {
 };
 
 const INITIAL_MESSAGE = { role: 'assistant', content: "Hey there! I'm Hasnain — feel free to ask about my 💻 projects, 🛠️ skills, 💼 experience, or 🎓 education. What would you like to know?" };
+const CHIP_PREFIXES = ['🚀 ', '⚡ ', '💼 ', '📧 ', '📚 '];
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -66,11 +67,9 @@ const Chatbot = () => {
   const [showAnalyticsVault, setShowAnalyticsVault] = useState(false);
   const [flaggedWarning, setFlaggedWarning] = useState(null);
   const [demoMode, setDemoMode] = useState(false);
-  const [showQnA, setShowQnA] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const messagesEndRef = useRef(null);
   const panelRef = useRef(null);
-  const launcherRef = useRef(null);
 
   const suggestions = [
     "🚀 Tell me about your projects",
@@ -110,16 +109,6 @@ const Chatbot = () => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showAnalyticsVault]);
-
-  const getConversationContext = () => {
-    if (messages.length <= 1) return "";
-    const recentMessages = messages.slice(-5);
-    const userMessages = recentMessages
-      .filter(m => m.role === 'user')
-      .map(m => m.content)
-      .join("; ");
-    return userMessages ? `User's recent questions: ${userMessages}` : "";
-  };
 
   const extractTopics = () => {
     const userMessages = messages
@@ -198,7 +187,7 @@ const Chatbot = () => {
         success: true,
         interactionType: 'user_query'
       });
-    } catch (error) {
+    } catch {
       const errorResponse = "🤖 Connection interrupted. Please try again. 🔄";
       setMessages(prev => [...prev, { role: 'assistant', content: errorResponse }]);
       
@@ -249,13 +238,11 @@ const Chatbot = () => {
       { role: 'user', content: question },
       { role: 'assistant', content: answer }
     ]);
-    setShowQnA(false);
   }, []);
 
   const handleAskLive = useCallback((question) => {
-    setShowQnA(false);
     processMessage(question, { provider: 'gemini' });
-  }, []);
+  }, [processMessage]);
 
   // ── Focus trap (basic) ────────────────────────────────────────────────
   useEffect(() => {
@@ -292,7 +279,6 @@ const Chatbot = () => {
         isOpen={isOpen}
         onToggle={() => setIsOpen(!isOpen)}
         unread={unreadCount}
-        ref={launcherRef}
       />
 
 
@@ -490,7 +476,12 @@ const Chatbot = () => {
                     key={idx}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    onClick={() => processMessage(chip.replace(/^[🚀⚡💼📧📚]\s/, ''))}
+                    onClick={() => {
+                      const text = CHIP_PREFIXES.find(prefix => chip.startsWith(prefix))
+                        ? chip.slice(3)
+                        : chip;
+                      processMessage(text);
+                    }}
                     disabled={isTyping}
                     className="whitespace-nowrap px-3 py-1.5 rounded-full bg-slate-200/50 dark:bg-white/5 border border-slate-300 dark:border-white/10 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-primary hover:text-black hover:border-primary dark:hover:border-primary transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
                   >

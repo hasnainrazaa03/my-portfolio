@@ -5,7 +5,7 @@
  *
  * Run:  npm test
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it } from 'vitest';
 
 // Un-comment the line below once vitest + happy-dom / jsdom is configured:
 // import { getChatResponse, getLocalResponse } from '../services/chatService';

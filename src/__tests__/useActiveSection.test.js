@@ -5,7 +5,7 @@
  *
  * Run:  npm test
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it } from 'vitest';
 
 // Un-comment once testing-library is available:
 // import { renderHook, act } from '@testing-library/react';

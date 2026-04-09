@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { Github, ExternalLink, Code, Star, GitCommit } from 'lucide-react';
 import { GitHubCalendar } from 'react-github-calendar';
@@ -8,17 +8,6 @@ import { fadeInUp } from '../animations';
 
 const GitHubSection = ({ isDark }) => {
   const username = PERSONAL_INFO.socials.github.split('/').pop(); 
-  
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   const explicitTheme = {
     light: ['#e2e8f0', '#99f6e4', '#5eead4', '#2dd4bf', '#115e59'],

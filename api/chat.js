@@ -170,18 +170,6 @@ export default async function handler(req, res) {
       });
     }
 
-
-    const profileKeywords = [
-      'hasnain', 'you', 'your', 'projects', 'skills', 'experience', 'education',
-      'work', 'built', 'background', 'tech', 'tech stack', 'contact', 'email',
-      'portfolio', 'career', 'role', 'position', 'language', 'programming',
-      'ai', 'machine learning', 'python', 'react', 'resume', 'cv'
-    ];
-
-
-    const isAboutProfile = profileKeywords.some(keyword => message.toLowerCase().includes(keyword));
-
-
     let systemPrompt = `You are an assistant that speaks in first-person as Hasnain Raza.
 Always respond using "I" and "my" as if Hasnain is speaking directly.
 Do NOT present yourself as an automated assistant or chatbot.

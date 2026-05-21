@@ -180,15 +180,19 @@ const Hero3D = () => {
     };
     window.addEventListener('resize', handleResize);
 
+    // Capture the current ref node so the cleanup runs against the same
+    // DOM element this effect attached to (React may null out the ref by
+    // the time cleanup fires).
+    const mountEl = mountRef.current;
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
       if (observer) observer.disconnect();
       window.removeEventListener('resize', handleResize);
-      if (mountRef.current) {
-        mountRef.current.removeEventListener('mousemove', handleMouseMove);
-        mountRef.current.removeEventListener('click', handleClick);
-        mountRef.current.removeEventListener('keydown', handleKeyDown);
-        if (renderer.domElement) mountRef.current.removeChild(renderer.domElement);
+      if (mountEl) {
+        mountEl.removeEventListener('mousemove', handleMouseMove);
+        mountEl.removeEventListener('click', handleClick);
+        mountEl.removeEventListener('keydown', handleKeyDown);
+        if (renderer.domElement) mountEl.removeChild(renderer.domElement);
       }
       
       geometryCore.dispose(); geometryRing1.dispose(); geometryRing2.dispose(); particlesGeometry.dispose();

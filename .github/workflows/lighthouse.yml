@@ -1,0 +1,45 @@
+name: Lighthouse CI
+
+# Runs Lighthouse against the production build on every PR to catch
+# regressions in performance, accessibility, best-practices, and SEO.
+# Uses `lhci collect` in static mode (no live server needed for a PR check).
+
+on:
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch: # allow manual trigger
+
+jobs:
+  lighthouse:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Run Lighthouse CI
+        # @lhci/cli@0.14.x is the current stable line.
+        run: |
+          npm install -g @lhci/cli@0.14.x
+          lhci autorun \
+            --collect.staticDistDir=./dist \
+            --collect.numberOfRuns=2 \
+            --upload.target=temporary-public-storage \
+            --assert.preset=lighthouse:no-pwa \
+            --assert.assertions.categories:performance="warn:0.85" \
+            --assert.assertions.categories:accessibility="error:0.9" \
+            --assert.assertions.categories:best-practices="warn:0.9" \
+            --assert.assertions.categories:seo="warn:0.9"
+        env:
+          # Posts a link to the report as a check on the PR.
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

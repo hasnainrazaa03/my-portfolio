@@ -39,17 +39,21 @@ const KonamiEasterEgg = () => {
 
   if (!active) return null;
 
+  // Close affordances: Esc key (wired in the effect above) and the Close
+  // button below. We intentionally don't wire backdrop-click-to-close
+  // because making a non-interactive backdrop clickable triggers a11y lint
+  // errors (jsx-a11y/click-events-have-key-events,
+  // jsx-a11y/no-noninteractive-element-interactions). Esc + button are
+  // sufficient and fully keyboard-accessible.
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="konami-title"
-      onClick={() => setActive(false)}
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-6 cursor-pointer animate-fade-slide"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/85 backdrop-blur-md p-6 animate-fade-slide"
     >
       <div
-        onClick={(e) => e.stopPropagation()}
-        className="max-w-md w-full rounded-2xl border border-primary/40 bg-slate-900/90 p-8 text-center font-mono text-primary shadow-[0_0_60px_rgba(45,212,191,0.35)] cursor-default"
+        className="max-w-md w-full rounded-2xl border border-primary/40 bg-slate-900/90 p-8 text-center font-mono text-primary shadow-[0_0_60px_rgba(45,212,191,0.35)]"
       >
         <div className="text-5xl mb-3" aria-hidden="true">🚀</div>
         <h2 id="konami-title" className="text-lg font-bold tracking-wider mb-2">

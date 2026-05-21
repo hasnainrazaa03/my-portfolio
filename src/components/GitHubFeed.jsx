@@ -170,6 +170,11 @@ const GitHubFeed = () => {
       observer.disconnect();
       clearInterval(interval);
     };
+    // Intentionally mount-only: `activities.length` is read inside an
+    // IntersectionObserver callback that closes over the initial value, and
+    // re-running the effect would tear down the observer + interval. The
+    // first-fetch guard only matters on the very first intersection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

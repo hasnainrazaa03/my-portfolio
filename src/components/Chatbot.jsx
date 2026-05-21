@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, User, Sparkles, Trash2, BarChart3, AlertTriangle, Play } from 'lucide-react';
+import { X, Send, Loader2, User, Sparkles, Trash2, BarChart3, AlertTriangle, Play, Mic, MicOff } from 'lucide-react';
 import { getChatResponse } from '../services/chatService.js';
 import { analyticsService } from '../services/analyticsService';
 import ChatLauncher from './ChatLauncher';
 import ChatDemo from './ChatDemo';
 import QnASearch from './QnASearch';
 import { PERSONAL_INFO } from '../constants';
+import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
 
 // SECURITY/PERF: the admin AnalyticsViewer is only included in the bundle
 // when explicitly enabled at build time. Production deploys ship without it.
@@ -148,22 +149,6 @@ const Chatbot = () => {
     return topics;
   };
 
-  const prepareHistoryForAPI = (newUserMessage) => {
-    const fullHistory = [...messages, newUserMessage];
-    const maxHistoryLength = 10;
-    let historyToSend;
-    
-    if (fullHistory.length <= maxHistoryLength) {
-      historyToSend = fullHistory;
-    } else {
-      historyToSend = [
-        fullHistory[0],
-        ...fullHistory.slice(-(maxHistoryLength - 1))
-      ];
-    }
-    return historyToSend;
-  };
-
   const getHistoryStats = () => {
     const userMessageCount = messages.filter(m => m.role === 'user').length;
     const topics = extractTopics();
@@ -174,7 +159,7 @@ const Chatbot = () => {
     };
   };
 
-  const processMessage = async (text) => {
+  const processMessage = useCallback(async (text) => {
     if (!text.trim() || demoMode) return;
 
     const userMessage = { role: 'user', content: text };
@@ -182,7 +167,13 @@ const Chatbot = () => {
     setInput('');
     setIsTyping(true);
 
-    const historyForApi = prepareHistoryForAPI(userMessage);
+    // Inline prepareHistoryForAPI so processMessage doesn't depend on a
+    // non-memoised sibling that would invalidate this callback every render.
+    const fullHistory = [...messages, userMessage];
+    const maxHistoryLength = 10;
+    const historyForApi = fullHistory.length <= maxHistoryLength
+      ? fullHistory
+      : [fullHistory[0], ...fullHistory.slice(-(maxHistoryLength - 1))];
 
     try {
       const responseResult = await getChatResponse(historyForApi, { persona });
@@ -215,12 +206,26 @@ const Chatbot = () => {
     } finally {
       setIsTyping(false);
     }
-  };
+  }, [demoMode, messages, persona]);
 
   const handleFormSubmit = (e) => {
     e.preventDefault();
     processMessage(input);
   };
+
+  // ── Voice input (speech-to-text) ───────────────────────────────────────
+  // On result we submit immediately rather than just populating the input,
+  // because users expect "push to talk → answer" UX. Errors are silently
+  // swallowed (the hook flips `listening` back off) so the UI never sticks.
+  const handleVoiceResult = useCallback((transcript) => {
+    const text = transcript.trim();
+    if (!text) return;
+    setInput(text);
+    processMessage(text);
+  }, [processMessage]);
+  const { supported: voiceSupported, listening: voiceListening, start: startVoice, stop: stopVoice } =
+    useSpeechRecognition({ onResult: handleVoiceResult });
+  const toggleVoice = () => (voiceListening ? stopVoice() : startVoice());
 
   const clearHistory = () => {
     setMessages([INITIAL_MESSAGE]);
@@ -575,10 +580,27 @@ const Chatbot = () => {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   placeholder="Ask about projects... 💭"
-                  className="w-full pl-4 pr-12 py-3 rounded-xl bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all text-sm shadow-inner"
+                  className={`w-full pl-4 py-3 rounded-xl bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all text-sm shadow-inner ${voiceSupported ? 'pr-20' : 'pr-12'}`}
                   disabled={isTyping || demoMode}
                 />
-                <button 
+                {voiceSupported && (
+                  <button
+                    type="button"
+                    onClick={toggleVoice}
+                    disabled={isTyping || demoMode}
+                    title={voiceListening ? 'Stop listening' : 'Speak your question (audio is sent to your browser\'s speech provider)'}
+                    aria-label={voiceListening ? 'Stop voice input' : 'Start voice input'}
+                    aria-pressed={voiceListening}
+                    className={`absolute right-12 p-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+                      voiceListening
+                        ? 'bg-red-500 text-white animate-pulse'
+                        : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-white/20'
+                    }`}
+                  >
+                    {voiceListening ? <MicOff size={16} /> : <Mic size={16} />}
+                  </button>
+                )}
+                <button
                   type="submit"
                   disabled={!input.trim() || isTyping || demoMode}
                   className="absolute right-2 p-2 bg-primary text-black rounded-lg hover:bg-teal-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-lg shadow-primary/20 dark:shadow-primary/30 dark:hover:shadow-[0_0_16px_rgba(45,212,191,0.5)]"

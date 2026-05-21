@@ -34,6 +34,10 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
         loadLocalAnalytics();
       }
     }
+    // loadBackendAnalytics / loadLocalAnalytics are stable closures defined
+    // in this component; wrapping them in useCallback would cascade through
+    // setState calls and add no real benefit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, isOwner, authToken]);
 
   const loadBackendAnalytics = async () => {

@@ -33,3 +33,20 @@ jobs:
 
       - name: Build
         run: npm run build
+
+  # OSV scanner: cross-references our lockfile against the OSV vulnerability
+  # DB. Runs in parallel with the main job and is non-blocking for now
+  # (continue-on-error) so we can review findings before tightening.
+  osv-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+      - name: Run OSV scanner
+        uses: google/osv-scanner-action/osv-scanner-action@v2.0.2
+        continue-on-error: true
+        with:
+          scan-args: |-
+            --lockfile=./package-lock.json
+            --format=table

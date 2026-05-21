@@ -19,6 +19,14 @@ export const useSpeechRecognition = ({ lang = 'en-US', onResult } = {}) => {
   const Ctor = getRecognitionCtor();
   const supported = Boolean(Ctor);
   const recognitionRef = useRef(null);
+  // Keep the latest onResult in a ref so the effect below does NOT re-run on
+  // every render. Without this, callers that close over component state
+  // (e.g. messages, persona) would cause us to abort + recreate the
+  // SpeechRecognition instance on every keystroke, which silently breaks
+  // start() and prevents the browser's mic-permission prompt from firing.
+  const onResultRef = useRef(onResult);
+  useEffect(() => { onResultRef.current = onResult; }, [onResult]);
+
   const [listening, setListening] = useState(false);
   const [error, setError] = useState(null);
 
@@ -32,29 +40,39 @@ export const useSpeechRecognition = ({ lang = 'en-US', onResult } = {}) => {
 
     rec.onresult = (event) => {
       const transcript = event.results?.[0]?.[0]?.transcript || '';
-      if (transcript && typeof onResult === 'function') onResult(transcript);
+      if (transcript && typeof onResultRef.current === 'function') {
+        onResultRef.current(transcript);
+      }
     };
     rec.onerror = (event) => {
+      // Surface common cases so the UI can show a hint:
+      //   'not-allowed'   → user denied mic permission
+      //   'no-speech'     → silence timeout
+      //   'audio-capture' → no mic hardware
+      //   'network'       → STT backend unreachable
       setError(event.error || 'speech-error');
       setListening(false);
     };
     rec.onend = () => setListening(false);
+    rec.onstart = () => setListening(true);
 
     recognitionRef.current = rec;
     return () => {
       try { rec.abort(); } catch { /* no-op */ }
       recognitionRef.current = null;
     };
-  }, [Ctor, lang, onResult, supported]);
+    // Intentionally exclude `onResult` — handled via onResultRef above.
+  }, [Ctor, lang, supported]);
 
   const start = useCallback(() => {
     if (!recognitionRef.current || listening) return;
     setError(null);
     try {
       recognitionRef.current.start();
-      setListening(true);
+      // Do NOT optimistically set listening=true here — onstart will do it.
+      // If start() throws synchronously (e.g. mic permission previously
+      // denied), the catch below keeps state consistent.
     } catch (e) {
-      // `start()` throws if already started; surface but keep state consistent.
       setError(e?.message || 'start-failed');
       setListening(false);
     }

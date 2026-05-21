@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Loader2, User, Sparkles, Trash2, BarChart3, AlertTriangle, Play, Mic, MicOff } from 'lucide-react';
+import { X, Send, Loader2, User, Sparkles, Trash2, BarChart3, AlertTriangle, Play, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
 import { getChatResponse } from '../services/chatService.js';
 import { analyticsService } from '../services/analyticsService';
 import ChatLauncher from './ChatLauncher';
@@ -8,6 +8,7 @@ import ChatDemo from './ChatDemo';
 import QnASearch from './QnASearch';
 import { PERSONAL_INFO } from '../constants';
 import { useSpeechRecognition } from '../hooks/useSpeechRecognition';
+import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 
 // SECURITY/PERF: the admin AnalyticsViewer is only included in the bundle
 // when explicitly enabled at build time. Production deploys ship without it.
@@ -223,9 +224,61 @@ const Chatbot = () => {
     setInput(text);
     processMessage(text);
   }, [processMessage]);
-  const { supported: voiceSupported, listening: voiceListening, start: startVoice, stop: stopVoice } =
+  const { supported: voiceSupported, listening: voiceListening, error: voiceError, start: startVoice, stop: stopVoice } =
     useSpeechRecognition({ onResult: handleVoiceResult });
   const toggleVoice = () => (voiceListening ? stopVoice() : startVoice());
+
+  // ── Voice output (text-to-speech) ──────────────────────────────────────
+  // `ttsEnabled` is opt-in (default off) so the chat is silent unless the
+  // user explicitly turns it on via the speaker toggle in the header.
+  const [ttsEnabled, setTtsEnabled] = useState(false);
+  const { supported: ttsSupported, speaking: ttsSpeaking, speak: ttsSpeak, cancel: ttsCancel } =
+    useSpeechSynthesis();
+
+  // Speak each new *assistant* reply when TTS is enabled. Skip the initial
+  // greeting (length === 1) so toggling on doesn't suddenly read it aloud.
+  const lastSpokenIndexRef = useRef(0);
+  useEffect(() => {
+    if (!ttsEnabled || !ttsSupported) return;
+    const lastIdx = messages.length - 1;
+    if (lastIdx <= 0 || lastIdx === lastSpokenIndexRef.current) return;
+    const last = messages[lastIdx];
+    if (last?.role === 'assistant' && typeof last.content === 'string') {
+      lastSpokenIndexRef.current = lastIdx;
+      ttsSpeak(last.content);
+    }
+  }, [messages, ttsEnabled, ttsSupported, ttsSpeak]);
+
+  const toggleTts = () => {
+    setTtsEnabled((prev) => {
+      const next = !prev;
+      if (!next) ttsCancel();
+      return next;
+    });
+  };
+
+  // Stop any in-flight speech when the panel is closed.
+  useEffect(() => {
+    if (!isOpen) ttsCancel();
+  }, [isOpen, ttsCancel]);
+
+  // Translate raw SpeechRecognition error codes into user-friendly hints.
+  const voiceErrorMessage = (() => {
+    if (!voiceError) return null;
+    switch (voiceError) {
+      case 'not-allowed':
+      case 'service-not-allowed':
+        return 'Microphone blocked. Allow mic access in your browser\'s site settings and reload.';
+      case 'no-speech':
+        return 'No speech detected. Try again and speak after the mic turns red.';
+      case 'audio-capture':
+        return 'No microphone found on this device.';
+      case 'network':
+        return 'Speech service unreachable. Check your connection.';
+      default:
+        return `Voice input error (${voiceError}). Try again or type instead.`;
+    }
+  })();
 
   const clearHistory = () => {
     setMessages([INITIAL_MESSAGE]);
@@ -365,6 +418,21 @@ const Chatbot = () => {
                   >
                     <Play size={14} />
                   </button>
+                  {ttsSupported && (
+                    <button
+                      onClick={toggleTts}
+                      className={`p-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+                        ttsEnabled
+                          ? 'bg-primary/20 text-primary'
+                          : 'hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-primary'
+                      }`}
+                      title={ttsEnabled ? (ttsSpeaking ? 'Speaking… click to mute' : 'Voice replies on') : 'Voice replies off'}
+                      aria-pressed={ttsEnabled}
+                      aria-label="Toggle voice replies"
+                    >
+                      {ttsEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
+                    </button>
+                  )}
                   {ADMIN_ENABLED && (
                     <motion.button 
                       whileHover={{ scale: 1.1 }}
@@ -570,6 +638,22 @@ const Chatbot = () => {
                   >
                     <AlertTriangle size={14} className="shrink-0 mt-0.5" />
                     <span>{flaggedWarning}</span>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Voice-input error */}
+              <AnimatePresence>
+                {voiceErrorMessage && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="mb-2 flex items-start gap-2 rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 px-3 py-2 text-xs text-amber-700 dark:text-amber-300"
+                    role="status"
+                  >
+                    <MicOff size={14} className="shrink-0 mt-0.5" />
+                    <span>{voiceErrorMessage}</span>
                   </motion.div>
                 )}
               </AnimatePresence>

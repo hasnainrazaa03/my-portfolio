@@ -14,6 +14,7 @@ import About from './components/About';
 import ScrollProgress from './components/ScrollProgress';
 import Chatbot from './components/Chatbot';
 import BackToTop from './components/BackToTop';
+import CursorGlow from './components/CursorGlow';
 import Footer from './components/Footer';
 import KonamiEasterEgg from './components/KonamiEasterEgg';
 
@@ -71,6 +72,7 @@ export default function App() {
         <PageTitleUpdater />
 
         <SpaceBackground isDark={isDark} />
+        <CursorGlow />
         
         <ScrollProgress />
 

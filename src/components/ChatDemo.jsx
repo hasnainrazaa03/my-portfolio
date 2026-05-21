@@ -74,7 +74,7 @@ const ChatDemo = ({ isActive, onMessage, onComplete, onReset }) => {
         </motion.button>
       )}
       {isPlaying && (
-        <span className="text-[10px] text-slate-400 dark:text-slate-500 font-mono animate-pulse">
+        <span className="text-[10px] text-slate-500 dark:text-slate-300 font-mono animate-pulse">
           Demo playing…
         </span>
       )}

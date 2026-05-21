@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 .env.local
+# Local-only audit & remediation tracker (not for git)
+AUDIT_CHECKLIST.md

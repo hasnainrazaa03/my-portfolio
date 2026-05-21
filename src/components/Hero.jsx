@@ -1,12 +1,19 @@
 import React, { useState, Suspense } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-scroll';
 import { Download, Check, ArrowRight, Loader2 } from 'lucide-react';
 import { PERSONAL_INFO } from '../constants';
 import { fadeInUp } from '../animations';
 import SocialLinks from './SocialLinks';
 
 const Hero3D = React.lazy(() => import('./Hero3D'));
+
+// Native scroll helper — replaces react-scroll, honors prefers-reduced-motion.
+const scrollToSection = (id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+};
 
 const Hero = () => {
   const { scrollY } = useScroll();
@@ -97,14 +104,14 @@ const Hero = () => {
                 <span>{isDownloaded ? "Downloaded!" : "Download Resume"}</span>
               </motion.button>
 
-              <Link 
-                to="projects" 
-                smooth={true} 
+              <button 
+                type="button"
+                onClick={() => scrollToSection('projects')}
                 className="group flex items-center justify-center gap-2 px-8 py-4 border border-slate-300 dark:border-white/30 text-slate-700 dark:text-white font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer backdrop-blur-sm w-full sm:w-auto"
               >
                 View Mission Log
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
+              </button>
             </div>
             
             <div className="pt-6">

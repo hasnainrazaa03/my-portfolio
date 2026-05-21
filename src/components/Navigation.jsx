@@ -1,9 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link } from 'react-scroll';
 import { Menu, X, Rocket, Sun, Moon } from 'lucide-react';
 import { PERSONAL_INFO } from '../constants';
 import { useActiveSection } from '../hooks/useActiveSection';
+
+// Native scroll helper — replaces react-scroll. Sections use `scroll-margin-top`
+// (set globally in index.css) so we don't need a numeric offset here.
+const scrollToSection = (id) => {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  el.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
+};
 
 const Navigation = ({ isDark, toggleTheme }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -30,20 +38,24 @@ const Navigation = ({ isDark, toggleTheme }) => {
   return (
     <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 dark:bg-[#030014]/80 backdrop-blur-md shadow-lg border-b border-gray-200 dark:border-white/10 py-4' : 'bg-transparent py-6'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
-        <Link to="hero" smooth={true} className="text-2xl font-bold text-primary tracking-tighter flex items-center gap-2 cursor-pointer z-50">
+        <button
+          type="button"
+          onClick={() => scrollToSection('hero')}
+          className="text-2xl font-bold text-primary tracking-tighter flex items-center gap-2 cursor-pointer z-50 bg-transparent"
+          aria-label="Scroll to top"
+        >
           <Rocket size={24} className="text-accent transform -rotate-45" />
           <span>{PERSONAL_INFO.name.split(' ')[0]}<span className="text-accent">.</span></span>
-        </Link>
+        </button>
 
         <div className="hidden md:flex items-center space-x-1">
           {navLinks.map((item) => (
-            <Link 
-              key={item.id} 
-              to={item.id} 
-              smooth={true} 
-              duration={500} 
-              offset={-70}
-              className={`relative px-4 py-2 text-sm font-medium cursor-pointer transition-colors duration-300 ${activeSection === item.id ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-gray-400 hover:text-slate-900 dark:hover:text-white'}`}
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => scrollToSection(item.id)}
+              aria-current={activeSection === item.id ? 'page' : undefined}
+              className={`relative px-4 py-2 text-sm font-medium cursor-pointer transition-colors duration-300 bg-transparent ${activeSection === item.id ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'}`}
             >
               {activeSection === item.id && (
                 <motion.span
@@ -53,7 +65,7 @@ const Navigation = ({ isDark, toggleTheme }) => {
                 />
               )}
               {item.name}
-            </Link>
+            </button>
           ))}
           
           <button 
@@ -73,7 +85,7 @@ const Navigation = ({ isDark, toggleTheme }) => {
             {isDark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
           
-          <button onClick={() => setIsOpen(!isOpen)} className="text-slate-900 dark:text-white focus:outline-none">
+          <button onClick={() => setIsOpen(!isOpen)} className="text-slate-900 dark:text-white focus:outline-none" aria-expanded={isOpen} aria-label="Toggle navigation menu">
             {isOpen ? <X size={28} /> : <Menu size={28} />}
           </button>
         </div>
@@ -89,20 +101,19 @@ const Navigation = ({ isDark, toggleTheme }) => {
           >
             <div className="px-4 pt-2 pb-6 space-y-1">
               {navLinks.map((item) => (
-                <Link 
-                  key={item.id} 
-                  to={item.id} 
-                  smooth={true}
-                  offset={-70}
-                  onClick={() => setIsOpen(false)}
-                  className={`block px-3 py-3 text-base font-medium rounded-md transition-colors ${
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => { scrollToSection(item.id); setIsOpen(false); }}
+                  aria-current={activeSection === item.id ? 'page' : undefined}
+                  className={`block w-full text-left px-3 py-3 text-base font-medium rounded-md transition-colors bg-transparent ${
                     activeSection === item.id 
                       ? 'bg-primary/10 text-primary border-l-4 border-primary' 
                       : 'text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
                   }`}
                 >
                   {item.name}
-                </Link>
+                </button>
               ))}
             </div>
           </motion.div>

@@ -3,14 +3,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Download, Trash2, RefreshCw, Eye, Lock } from 'lucide-react';
 import { analyticsService } from '../services/analyticsService';
 
+// SECURITY: Admin token is held in sessionStorage (not localStorage) so it
+// is cleared when the browser is closed and is NOT shared across tabs by
+// default. The token is also entered via an in-page <input type="password">
+// rather than window.prompt(), which is dismissable / spoofable and was
+// previously the only auth gate.
+const TOKEN_STORAGE_KEY = 'jarvis_analytics_token';
+
 const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
   const [aggregated, setAggregated] = useState(null);
   const [isOwner, setIsOwner] = useState(false);
   const [authToken, setAuthToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [tokenInput, setTokenInput] = useState('');
+  const [authError, setAuthError] = useState('');
 
   useEffect(() => {
-    const token = localStorage.getItem('jarvis_analytics_token');
+    const token = sessionStorage.getItem(TOKEN_STORAGE_KEY);
     if (token) {
       setAuthToken(token);
       setIsOwner(true);
@@ -49,17 +58,37 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
     setAggregated(localSummary);
   };
 
-  const handleAuthenticate = () => {
-    const token = prompt('Enter your analytics secret token:');
-    if (token) {
-      localStorage.setItem('jarvis_analytics_token', token);
-      setAuthToken(token);
-      setIsOwner(true);
+  const handleAuthenticate = async (e) => {
+    if (e && typeof e.preventDefault === 'function') e.preventDefault();
+    setAuthError('');
+    const token = tokenInput.trim();
+    if (!token) {
+      setAuthError('Please enter a token.');
+      return;
+    }
+    // Validate the token immediately by attempting a backend fetch.
+    setIsLoading(true);
+    try {
+      const result = await analyticsService.fetchAnalyticsFromBackend(token);
+      if (result && result.success) {
+        sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
+        setAuthToken(token);
+        setIsOwner(true);
+        setAggregated(result.insights);
+        setTokenInput('');
+      } else {
+        setAuthError('Invalid token.');
+      }
+    } catch (err) {
+      console.error('Auth check failed:', err);
+      setAuthError('Could not verify token. Try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('jarvis_analytics_token');
+    sessionStorage.removeItem(TOKEN_STORAGE_KEY);
     setAuthToken('');
     setIsOwner(false);
     loadLocalAnalytics();
@@ -139,15 +168,32 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
               <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">
                 Only the portfolio owner can access visitor analytics
               </p>
-              
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleAuthenticate}
-                className="w-full px-4 py-3 bg-gradient-to-r from-primary to-blue-600 text-black font-bold rounded-lg shadow-lg hover:shadow-[0_0_30px_rgba(45,212,191,0.6)] transition-all"
-              >
-                🔐 Enter Secret Token
-              </motion.button>
+
+              <form onSubmit={handleAuthenticate} className="space-y-3 text-left">
+                <label htmlFor="analytics-token" className="sr-only">
+                  Analytics secret token
+                </label>
+                <input
+                  id="analytics-token"
+                  type="password"
+                  autoComplete="current-password"
+                  value={tokenInput}
+                  onChange={(e) => setTokenInput(e.target.value)}
+                  placeholder="Paste secret token"
+                  className="w-full px-3 py-2 rounded-lg bg-white/80 dark:bg-[#0F172A]/80 border border-slate-300 dark:border-white/10 text-sm text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                {authError && (
+                  <p role="alert" className="text-xs text-red-500">{authError}</p>
+                )}
+                <motion.button
+                  type="submit"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full px-4 py-3 bg-gradient-to-r from-primary to-blue-600 text-black font-bold rounded-lg shadow-lg hover:shadow-[0_0_30px_rgba(45,212,191,0.6)] transition-all"
+                >
+                  🔐 Unlock
+                </motion.button>
+              </form>
 
               <div className="mt-6 pt-4 border-t border-slate-200 dark:border-white/10">
                 <p className="text-xs text-slate-500 dark:text-slate-400">

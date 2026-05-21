@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PROJECTS } from '../constants';
 import ProjectCard from './ProjectCard';
@@ -21,15 +21,9 @@ const Projects = () => {
   const startIndex = currentPage * projectsPerPage;
   const visibleProjects = filteredProjects.slice(startIndex, startIndex + projectsPerPage);
 
-  useEffect(() => {
-    if (totalPages <= 1) return;
-
-    const interval = setInterval(() => {
-      setCurrentPage(prev => (prev + 1) % totalPages);
-    }, 5000);
-
-    return () => clearInterval(interval);
-  }, [totalPages]);
+  // A11Y: Removed the 5-second auto-rotating carousel (WCAG 2.2.2 "Pause,
+  // Stop, Hide"). Users now control pagination explicitly via the
+  // page-indicator buttons below.
 
   const goToPage = (pageNumber) => {
     setCurrentPage(pageNumber);

@@ -3,6 +3,7 @@ import globals from 'globals'
 import react from 'eslint-plugin-react'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
+import jsxA11y from 'eslint-plugin-jsx-a11y'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
@@ -14,6 +15,7 @@ export default defineConfig([
       react.configs.flat.recommended,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
+      jsxA11y.flatConfigs.recommended,
     ],
     languageOptions: {
       ecmaVersion: 2020,
@@ -36,6 +38,11 @@ export default defineConfig([
       'react/no-unescaped-entities': 'off',
       'react-hooks/set-state-in-effect': 'off',
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // Site is single-page with smooth-scroll buttons, not href targets,
+      // so disable the rule that requires anchors to have `href`.
+      'jsx-a11y/anchor-is-valid': 'off',
+      // Framer Motion sets `tabIndex` via spread props in places.
+      'jsx-a11y/no-noninteractive-tabindex': 'warn',
     },
   },
   {

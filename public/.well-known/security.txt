@@ -1,0 +1,5 @@
+Contact: https://github.com/hasnainrazaa03
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://hasnainrazaa.vercel.app/.well-known/security.txt
+Policy: https://github.com/hasnainrazaa03/my-portfolio/blob/main/SECURITY.md

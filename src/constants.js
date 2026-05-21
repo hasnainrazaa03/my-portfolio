@@ -29,6 +29,22 @@ export const STATS = [
   { target: 6, label: "Pro Languages", suffix: "+", icon: Code }
 ];
 
+/**
+ * Lightweight "Now" snapshot rendered on the About section.
+ * Edit the strings here whenever life changes — kept intentionally short
+ * so it can be scanned at a glance.
+ */
+export const NOW = {
+  // ISO date — shown next to the heading so visitors know how fresh this is.
+  updated: "2026-05-20",
+  items: [
+    { emoji: "🎓", text: "Finishing my second semester of MSCS at USC" },
+    { emoji: "🛠️", text: "Building Project Vimaan — voice copilot for X-Plane" },
+    { emoji: "📚", text: "Studying advanced ML systems & distributed training" },
+    { emoji: "🌎", text: "Based in Los Angeles, CA — open to summer 2026 internships" }
+  ]
+};
+
 export const EDUCATION = [
   {
     id: 1,

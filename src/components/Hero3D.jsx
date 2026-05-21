@@ -16,7 +16,9 @@ const Hero3D = () => {
 
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     renderer.setSize(width, height);
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    // PERF: lower DPR ceiling — the visual difference >1.5 is imperceptible
+    // for this scene and the GPU cost on retina displays is significant.
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     mountRef.current.appendChild(renderer.domElement);
 
     const pivotGroup = new THREE.Group(); 
@@ -86,29 +88,50 @@ const Hero3D = () => {
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
     };
 
+    const randomizeColors = () => {
+      const colors = [0x2DD4BF, 0xF59E0B, 0x7042f8, 0xEF4444, 0x10B981];
+      pivotGroup.children.forEach(child => {
+        if (child.userData.isInteractable && child.material && child.material.color) {
+          child.material.color.setHex(colors[Math.floor(Math.random() * colors.length)]);
+        }
+      });
+    };
+
     const handleClick = () => {
       raycaster.setFromCamera(mouse, camera);
-
       const intersects = raycaster.intersectObjects(pivotGroup.children);
-
       if (intersects.length > 0) {
-        const colors = [0x2DD4BF, 0xF59E0B, 0x7042f8, 0xEF4444, 0x10B981];
-        
-        pivotGroup.children.forEach(child => {
-          if (child.userData.isInteractable && child.material && child.material.color) {
-             child.material.color.setHex(colors[Math.floor(Math.random() * colors.length)]);
-          }
-        });
+        randomizeColors();
+      }
+    };
+
+    // A11Y: keyboard equivalent for the click-to-recolor interaction.
+    const handleKeyDown = (event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        randomizeColors();
       }
     };
 
     mountRef.current.addEventListener('mousemove', handleMouseMove);
     mountRef.current.addEventListener('click', handleClick);
+    mountRef.current.addEventListener('keydown', handleKeyDown);
 
     const clock = new THREE.Clock();
 
+    // A11Y: honor prefers-reduced-motion — render one static frame and stop.
+    const reducedMotion = typeof window !== 'undefined'
+      && window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // PERF: pause rAF when the canvas is offscreen or the tab is hidden.
+    let isVisible = true;
+    let rafId = 0;
+
     const animate = () => {
-      requestAnimationFrame(animate);
+      rafId = requestAnimationFrame(animate);
+      if (!isVisible || document.hidden) return;
+
       const time = clock.getElapsedTime();
 
       core.rotation.y += 0.005;
@@ -131,7 +154,21 @@ const Hero3D = () => {
       renderer.render(scene, camera);
     };
 
-    animate();
+    if (reducedMotion) {
+      // Render a single static frame so the scene is visible without motion.
+      renderer.render(scene, camera);
+    } else {
+      animate();
+    }
+
+    let observer = null;
+    if (typeof IntersectionObserver !== 'undefined' && mountRef.current) {
+      observer = new IntersectionObserver(
+        ([entry]) => { isVisible = entry.isIntersecting; },
+        { threshold: 0 }
+      );
+      observer.observe(mountRef.current);
+    }
 
     const handleResize = () => {
       if (!mountRef.current) return;
@@ -144,10 +181,13 @@ const Hero3D = () => {
     window.addEventListener('resize', handleResize);
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (observer) observer.disconnect();
       window.removeEventListener('resize', handleResize);
       if (mountRef.current) {
         mountRef.current.removeEventListener('mousemove', handleMouseMove);
         mountRef.current.removeEventListener('click', handleClick);
+        mountRef.current.removeEventListener('keydown', handleKeyDown);
         if (renderer.domElement) mountRef.current.removeChild(renderer.domElement);
       }
       
@@ -161,7 +201,10 @@ const Hero3D = () => {
     <div 
       ref={mountRef} 
       className="w-full h-full min-h-[400px] cursor-pointer relative z-30" 
-      title="Click the shapes to change colors"
+      title="Click the shapes or press Enter to change colors"
+      role="button"
+      tabIndex={0}
+      aria-label="Interactive 3D tech core — press Enter or Space to randomize colors"
     />
   );
 };

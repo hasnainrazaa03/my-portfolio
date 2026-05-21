@@ -1,5 +1,20 @@
-import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
+/**
+ * Client-side analytics.
+ *
+ * PRIVACY POSTURE
+ *  - We no longer send `userAgent` or `referrer` to the backend. The
+ *    backend redacts these fields server-side too, and the user IP is
+ *    hashed (see api/_lib/hashIp.js).
+ *  - IDs use `crypto.randomUUID()` instead of `Math.random().toString(36).substr(...)`.
+ */
 
+function safeUUID() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  // Fallback for very old browsers; not cryptographically strong but acceptable for analytics IDs.
+  return `id-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+}
 
 class AnalyticsService {
   constructor() {
@@ -11,18 +26,16 @@ class AnalyticsService {
 
 
   generateSessionId() {
-    return `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `session_${safeUUID()}`;
   }
 
   async logInteraction(question, response, metadata = {}) {
     const interaction = {
-      id: `interaction_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: safeUUID(),
       sessionId: this.sessionId,
       question: question.trim(),
       response: response.trim(),
       timestamp: new Date().toISOString(),
-      userAgent: navigator.userAgent,
-      referrer: document.referrer || 'direct',
       timestamp_unix: Date.now(),
       topics: this.extractTopics(question),
       entities: this.extractEntities(question),

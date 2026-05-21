@@ -119,17 +119,25 @@ const GitHubFeed = () => {
   const fetchGitHubActivity = async () => {
     try {
       setLoading(true);
-      const username = PERSONAL_INFO.socials.github.split('/').pop();
-      const response = await fetch(`https://api.github.com/users/${username}/events/public`);
-      
-      if (!response.ok) throw new Error('Failed to fetch');
-      
-      const data = await response.json();
-      const relevantEvents = data
-        .filter(event => ['PushEvent', 'PullRequestEvent', 'CreateEvent', 'WatchEvent'].includes(event.type))
-        .slice(0, 10); 
-      
-      setActivities(relevantEvents);
+      // Prefer the server proxy: cached + token-authenticated + privacy-safe.
+      // Falls back to direct GitHub (60 req/h limit) only if the proxy 404s
+      // (e.g. running `npm run dev` without `vercel dev`).
+      let events;
+      const proxy = await fetch('/api/github').catch(() => null);
+      if (proxy && proxy.ok) {
+        const body = await proxy.json();
+        events = body.events || [];
+      } else {
+        const username = PERSONAL_INFO.socials.github.split('/').pop();
+        const direct = await fetch(`https://api.github.com/users/${username}/events/public`);
+        if (!direct.ok) throw new Error('Failed to fetch');
+        const data = await direct.json();
+        events = data
+          .filter((e) => ['PushEvent', 'PullRequestEvent', 'CreateEvent', 'WatchEvent'].includes(e.type))
+          .slice(0, 10);
+      }
+
+      setActivities(events);
       setError(false);
     } catch (err) {
       console.error("GitHub API Error:", err);

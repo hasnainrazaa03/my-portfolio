@@ -22,6 +22,8 @@ const getTechIcon = (tech) => {
 const ProjectModal = ({ project, onClose }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const modalRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
+  const titleId = 'project-modal-title';
 
 
   const nextImage = useCallback((e) => {
@@ -40,11 +42,31 @@ const ProjectModal = ({ project, onClose }) => {
   }, [project]);
 
 
+  // A11Y: real focus trap. Tab cycles within the modal; Shift+Tab cycles back.
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        onClose();
+        return;
+      }
       if (e.key === 'ArrowLeft') prevImage();
       if (e.key === 'ArrowRight') nextImage();
+      if (e.key !== 'Tab' || !modalRef.current) return;
+
+      const focusables = modalRef.current.querySelectorAll(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      if (e.shiftKey && active === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
@@ -52,10 +74,23 @@ const ProjectModal = ({ project, onClose }) => {
 
 
   useEffect(() => {
+    previouslyFocusedRef.current = document.activeElement;
     document.body.style.overflow = 'hidden';
-    // Focus trap: focus the modal on mount
-    modalRef.current?.focus();
-    return () => { document.body.style.overflow = 'unset'; };
+    // Focus the first interactive element inside the modal.
+    const focusTimer = setTimeout(() => {
+      const firstFocusable = modalRef.current?.querySelector(
+        'a[href], button:not([disabled]), input:not([disabled])'
+      );
+      (firstFocusable || modalRef.current)?.focus();
+    }, 0);
+    return () => {
+      clearTimeout(focusTimer);
+      document.body.style.overflow = 'unset';
+      // Restore focus to the element that opened the modal.
+      if (previouslyFocusedRef.current && typeof previouslyFocusedRef.current.focus === 'function') {
+        previouslyFocusedRef.current.focus();
+      }
+    };
   }, []);
 
 
@@ -82,6 +117,7 @@ const ProjectModal = ({ project, onClose }) => {
       onClick={onClose}
       role="dialog"
       aria-modal="true"
+      aria-labelledby={titleId}
       ref={modalRef}
       tabIndex={-1}
     >
@@ -111,6 +147,8 @@ const ProjectModal = ({ project, onClose }) => {
                 animate={{ opacity: 1 }}
                 src={project.images[currentImageIndex]} 
                 alt={`${project.title} screenshot ${currentImageIndex + 1}`}
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover"
               />
               
@@ -118,12 +156,14 @@ const ProjectModal = ({ project, onClose }) => {
                 <>
                   <button 
                     onClick={prevImage}
+                    aria-label="Previous image"
                     className="absolute left-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-primary transition-colors"
                   >
                     <ChevronLeft size={24} />
                   </button>
                   <button 
                     onClick={nextImage}
+                    aria-label="Next image"
                     className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-black/50 text-white rounded-full hover:bg-primary transition-colors"
                   >
                     <ChevronRight size={24} />
@@ -154,7 +194,7 @@ const ProjectModal = ({ project, onClose }) => {
             </span>
           </div>
           
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-4 leading-tight">
+          <h2 id={titleId} className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-4 leading-tight">
             {project.title}
           </h2>
           

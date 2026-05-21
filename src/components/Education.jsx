@@ -30,6 +30,10 @@ const Education = () => (
                   <img 
                     src={edu.image} 
                     alt={`${edu.school} logo`} 
+                    loading="lazy"
+                    decoding="async"
+                    width={40}
+                    height={40}
                     className="w-full h-full object-contain"
                     onError={(e) => { e.target.style.display = 'none'; }} 
                   />

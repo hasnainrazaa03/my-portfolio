@@ -20,6 +20,9 @@ const ProjectCard = ({ project, onClick }) => {
             src={thumbnail}
             alt={project.title}
             loading="lazy"
+            decoding="async"
+            width={400}
+            height={160}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
             onError={(e) => { e.target.parentElement.style.display = 'none'; }}
           />

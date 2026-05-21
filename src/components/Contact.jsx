@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { Copy, Check, Mail, AlertCircle, Loader2, Send, CheckCircle2 } from 'lucide-react';
@@ -14,10 +14,20 @@ const errorVariant = {
   exit: { opacity: 0, y: -10, height: 0 }
 };
 
+// SECURITY: Minimum time (ms) between form mount and submission.
+// Real humans take well over a second to fill the form; most spam bots
+// submit in <500ms. This complements the hidden honeypot field.
+const MIN_FILL_MS = 1500;
+
 const Contact = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [sendError, setSendError] = useState(null);
+  // PURITY: initialize in an effect, not during render.
+  const mountedAtRef = useRef(0);
+  useEffect(() => {
+    mountedAtRef.current = Date.now();
+  }, []);
   
   const { 
     register, 
@@ -28,6 +38,23 @@ const Contact = () => {
   
   const onSubmit = async (data) => {
     setSendError(null);
+
+    // Honeypot: real users never see/fill `company`. If it's filled, it's a bot.
+    // Speed gate: submissions faster than MIN_FILL_MS are almost always bots.
+    // `Date.now()` is fine inside an event handler; the react-hooks v6 purity
+    // rule false-positives here because the handler lives in the component body.
+    // eslint-disable-next-line react-hooks/purity
+    const now = Date.now();
+    const tooFast = mountedAtRef.current > 0 && (now - mountedAtRef.current) < MIN_FILL_MS;
+    if (data.company || tooFast) {
+      // Silently "succeed" so the bot moves on without retrying.
+      console.warn('[contact] Suppressed likely spam submission', { honeypot: !!data.company, tooFast });
+      setIsSuccess(true);
+      reset();
+      setTimeout(() => setIsSuccess(false), 8000);
+      return;
+    }
+
     try {
       await emailjs.send(
         import.meta.env.VITE_EMAILJS_SERVICE_ID,
@@ -86,7 +113,9 @@ const Contact = () => {
                 </span>
                 <div className="relative">
                   <button 
+                    type="button"
                     onClick={handleCopyEmail}
+                    aria-label="Copy email address to clipboard"
                     className="p-2 rounded-lg hover:bg-white/10 text-slate-400 dark:text-white hover:text-primary dark:hover:text-primary transition-all active:scale-95"
                   >
                     {isCopied ? <Check size={18} className="text-primary" /> : <Copy size={18} />}
@@ -148,10 +177,23 @@ const Contact = () => {
                       </div>
                     )}
 
+                    {/* Honeypot — hidden from humans/AT, visible to dumb bots. */}
+                    <div aria-hidden="true" style={{ position: 'absolute', left: '-10000px', top: 'auto', width: '1px', height: '1px', overflow: 'hidden' }}>
+                      <label htmlFor="company">Company (leave blank)</label>
+                      <input
+                        id="company"
+                        type="text"
+                        tabIndex={-1}
+                        autoComplete="off"
+                        {...register('company')}
+                      />
+                    </div>
+
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-white mb-1">Name</label>
+                        <label htmlFor="contact-name" className="block text-sm font-bold text-slate-700 dark:text-white mb-1">Name</label>
                         <input 
+                          id="contact-name"
                           {...register("name", { required: "Name is required" })}
                           className={`w-full px-4 py-3 rounded-lg bg-slate-50 dark:bg-[#0F172A]/80 border outline-none transition-all placeholder-slate-400 dark:placeholder-slate-400 text-slate-900 dark:text-white font-medium
                             ${errors.name 
@@ -175,8 +217,9 @@ const Contact = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-bold text-slate-700 dark:text-white mb-1">Email</label>
+                        <label htmlFor="contact-email" className="block text-sm font-bold text-slate-700 dark:text-white mb-1">Email</label>
                         <input 
+                          id="contact-email"
                           {...register("email", { 
                             required: "Email is required",
                             pattern: {
@@ -207,8 +250,9 @@ const Contact = () => {
                     </div>
 
                     <div>
-                      <label className="block text-sm font-bold text-slate-700 dark:text-white mb-1">Message</label>
+                      <label htmlFor="contact-message" className="block text-sm font-bold text-slate-700 dark:text-white mb-1">Message</label>
                       <textarea 
+                        id="contact-message"
                         {...register("message", { 
                           required: "Message is required",
                           minLength: {

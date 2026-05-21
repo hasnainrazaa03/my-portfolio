@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { PERSONAL_INFO, STATS } from '../constants';
+import { PERSONAL_INFO, STATS, NOW } from '../constants';
 import { fadeInUp } from '../animations';
 import StatCounter from './StatCounter';
 
@@ -32,6 +32,10 @@ const About = () => (
             <img
               src="/me.jpg"
               alt="Hasnain Raza"
+              width={192}
+              height={192}
+              decoding="async"
+              fetchPriority="high"
               className="w-full h-full object-cover rounded-full"
               onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.classList.add('bg-primary/20'); }}
             />
@@ -54,6 +58,41 @@ const About = () => (
             <StatCounter key={index} stat={stat} index={index} />
           ))}
         </div>
+
+        {/* "Now" — what I'm focused on right now (lightweight, data-driven). */}
+        <motion.aside
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.1 }}
+          aria-labelledby="now-heading"
+          className="mt-12 max-w-3xl mx-auto p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 text-left"
+        >
+          <div className="flex items-baseline justify-between mb-3">
+            <h3
+              id="now-heading"
+              className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider"
+            >
+              <span className="text-primary">Now</span> · what I&apos;m up to
+            </h3>
+            <time
+              dateTime={NOW.updated}
+              className="text-[11px] font-mono text-slate-500 dark:text-slate-400"
+            >
+              Updated {NOW.updated}
+            </time>
+          </div>
+          <ul className="space-y-2 text-sm text-slate-700 dark:text-slate-200">
+            {NOW.items.map((item, idx) => (
+              <li key={idx} className="flex items-start gap-3">
+                <span aria-hidden="true" className="text-base shrink-0 leading-snug">
+                  {item.emoji}
+                </span>
+                <span>{item.text}</span>
+              </li>
+            ))}
+          </ul>
+        </motion.aside>
 
       </motion.div>
     </div>

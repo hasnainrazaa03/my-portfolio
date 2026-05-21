@@ -11,9 +11,39 @@ html {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/* PERF/UX: account for the fixed nav (~70px) when scroll-anchoring to a section. */
+section[id] {
+  scroll-margin-top: 70px;
+}
+
 body {
   @apply bg-slate-50 text-slate-900 dark:bg-[#030014] dark:text-white transition-colors duration-300;
   overflow-x: hidden;
+}
+
+/* --- A11Y: Global focus-visible ring for keyboard users --- */
+/* Browsers default :focus styles vary; this enforces a high-contrast
+   teal ring on any interactive element when reached via keyboard. */
+*:focus-visible {
+  outline: 2px solid #2DD4BF;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* --- A11Y: Skip-to-content link (visible only on focus) --- */
+.skip-to-content {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  z-index: 100;
+  padding: 0.75rem 1rem;
+  background: #2DD4BF;
+  color: #030014;
+  font-weight: 600;
+  border-radius: 0 0 6px 0;
+}
+.skip-to-content:focus {
+  left: 0;
 }
 
 /* --- GLOBAL SCROLLBAR --- */

@@ -35,23 +35,22 @@ Embedding an LLM into a portfolio introduces security, reliability, and UX chall
 - CORS failures and cold-start latency with hosted inference endpoints
 - Generic chatbot responses that don't reflect real experience
 
-**The Solution — Dual-Provider Vercel Proxy with Intelligent Fallback**
+**The Solution — Dual-Provider Vercel Proxy with Hardened Server**
 
 - Requests are routed through **Vercel Serverless Functions**, fully hiding credentials
-- **Dual LLM Provider System**:
-  - Primary: **Google Gemini Flash** for fast, high-quality responses
-  - Fallback: **HuggingFace Inference (Llama 3 8B)** — auto-triggered if primary fails
-  - Provider selection configurable via `LLM_PROVIDER` env var
-- **Input Sanitization & Security**:
-  - Unicode normalization (NFKC), zero-width character stripping
-  - Prompt injection detection with pattern matching
-  - 500-char input cap and obfuscation detection
-- **Context Injection (RAG-Lite)**:
-  - Full portfolio context (projects, skills, experience, education) injected into system prompt
-  - First-person Hasnain persona — speaks as "I" and "my", not a generic assistant
+- **Server-controlled LLM provider selection** (client cannot override):
+  - Default: **HuggingFace Inference (Llama 3 8B)** — free tier, generous limits
+  - Optional: **Google Gemini 2.0 Flash** — enable via `LLM_PROVIDER=gemini`
+- **Per-IP rate limiting** — fixed-window in-memory limiter (10/min on `/api/chat`, 30/min on `/api/analytics`)
+- **Input Sanitization & Prompt-Injection Defense**:
+  - Unicode normalization (NFKC), zero-width character stripping, control-char removal
+  - Suspicious-pattern detection (ignore/forget/jailbreak/reveal-prompt variants)
+  - 500-char input cap and unbroken-token obfuscation detection
+  - User text wrapped in `<<USER>>…<<END_USER>>` delimiters before reaching the model
+- **Server-built system prompt** — the client cannot inject `context` or override the persona
 - **Local Q&A Fuzzy Search**:
   - Offline-first fuzzy matching against `jarvisQnA.json` (50+ curated Q&A pairs)
-  - Users can search locally or escalate to live LLM with one click
+  - Users can search locally or escalate to the live LLM with one click
 
 Result: **Chat works 100% of the time — even if all external APIs fail.**
 
@@ -92,12 +91,13 @@ Standard GitHub contribution graphs are fixed-width and break mobile layouts.
 
 The chat system speaks in **first-person as Hasnain** — not a generic bot.
 
-- **Dual LLM Providers** — Gemini Flash (primary) + HuggingFace Llama 3 (fallback)
+- **Dual LLM Providers** — HuggingFace Llama 3 8B (default) + Gemini 2.0 Flash (optional)
+- **Server-side persona** — system prompt is hardcoded server-side; clients cannot inject context
 - **Fuzzy Q&A Search** — Local `jarvisQnA.json` with token-overlap scoring and keyboard navigation
 - **Demo Mode** — Plays a canned conversation showcasing chat capabilities
 - **Reactor Core Launcher** — Icon-only floating button with microprocessor (CPU) icon, pulsing neon ring, and unread badge
-- **Security** — Input sanitization, prompt injection detection, CORS domain whitelisting
-- **Accessibility** — Focus trap, `aria-live` region, `aria-expanded` / `aria-controls`, keyboard-navigable
+- **Security** — NFKC normalization, prompt-injection detection, per-IP rate limiting, CORS allow-list
+- **Accessibility** — `role="dialog"`, focus trap, Escape-to-close, focus restoration, `aria-live` transcript region
 
 ---
 
@@ -137,8 +137,8 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
   - *Clean Slate* ☀️
 
 ### 🧪 Testing
-- **Vitest** — 34 passing tests across 5 test suites
-- Coverage: Chat persona, Q&A search, project filters, demo mode, about image
+- **Vitest** — 64 passing tests across 10 test suites
+- Coverage: chat persona, Q&A search, project filters, demo mode, about image, input sanitizer, rate limiter, IP hasher, chat service contract
 
 ---
 
@@ -149,7 +149,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 | Frontend | React 19, Vite 7, Tailwind CSS 3 |
 | Animations | Framer Motion, CSS Keyframes |
 | 3D Engine | Three.js (WebGL) |
-| AI Chat | Google Gemini Flash (primary), HuggingFace Llama 3 (fallback) |
+| AI Chat | HuggingFace Llama 3 8B (default), Google Gemini 2.0 Flash (optional) |
 | Backend | Vercel Serverless Functions (Node.js) |
 | Database | Supabase (analytics) |
 | Testing | Vitest |
@@ -172,10 +172,16 @@ Create a `.env.local` file in the root directory:
 
 ```bash
 # AI Chat — at least one LLM provider required
-GEMINI_API_KEY="your_gemini_key"
-HUGGINGFACE_API_KEY="hf_your_token"
-LLM_PROVIDER="gemini"                              # 'gemini' or 'huggingface'
+HUGGINGFACE_API_KEY="hf_your_token"                # default provider
+GEMINI_API_KEY="your_gemini_key"                   # optional, if LLM_PROVIDER=gemini
+LLM_PROVIDER="huggingface"                         # 'huggingface' (default) or 'gemini'
+
+# CORS allow-list (comma-separated). Vercel preview deploys & localhost are auto-allowed.
 ALLOWED_ORIGIN="https://your-domain.vercel.app"
+
+# Rate limiting (optional overrides)
+CHAT_RATE_LIMIT_MAX="10"
+CHAT_RATE_LIMIT_WINDOW_MS="60000"
 
 # Contact Form (EmailJS)
 VITE_EMAILJS_SERVICE_ID="your_service_id"
@@ -185,8 +191,11 @@ VITE_EMAILJS_PUBLIC_KEY="your_public_key"
 # Analytics (Supabase)
 SUPABASE_URL="your_supabase_url"
 SUPABASE_SERVICE_KEY="your_service_key"
-SUPABASE_ANON_KEY="your_anon_key"
-ANALYTICS_SECRET_TOKEN="your_secret"
+ANALYTICS_SECRET_TOKEN="your_admin_token"          # for the in-chat analytics viewer
+ANALYTICS_IP_SALT="long_random_string"             # required for hashed-IP analytics
+
+# Build flags
+VITE_ENABLE_ADMIN="false"                          # set 'true' to include the analytics viewer in the bundle
 ```
 
 ### 3. Run Locally
@@ -254,7 +263,69 @@ It's designed to feel less like a website — and more like **a system**.
 
 ---
 
-## 🧑‍🚀 Author
+## 🔐 Security & Privacy
+
+**Server-side defenses**
+- Per-IP fixed-window rate limiting on `/api/chat` (10/min) and `/api/analytics` (30/min)
+- Strict CORS allow-list: production origin + `*.vercel.app` previews + localhost
+- Production headers (see [vercel.json](vercel.json)): HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Permissions-Policy`, `Referrer-Policy`, and a Content-Security-Policy in **Report-Only** mode pending observation
+- All API responses carry a `requestId` for correlation; upstream errors are never leaked to clients
+- Honeypot field + time-gate on the contact form to deter bots
+
+**Prompt-injection defense**
+- System prompt is hardcoded server-side — clients cannot inject `context`
+- Client `provider` hint is ignored — provider is selected by env only
+- User text is NFKC-normalized, stripped of zero-width / control chars, and capped at 500 chars
+- Suspicious patterns (`ignore previous`, `jailbreak`, `reveal prompt`, …) are detected and refused
+- User text is wrapped in `<<USER>>…<<END_USER>>` delimiters before reaching the model
+
+**Privacy posture**
+- Analytics never store raw `User-Agent` or `Referer`
+- IPs are hashed server-side with SHA-256 + a per-deploy salt (`ANALYTICS_IP_SALT`)
+- Admin analytics viewer is gated behind a build flag (`VITE_ENABLE_ADMIN`) and a backend-validated password kept in `sessionStorage`
+
+**Reporting**
+Found a vulnerability? See [SECURITY.md](SECURITY.md) (or `.well-known/security.txt`).
+
+---
+
+## 📜 Changelog
+
+### 2026-05 — Audit Remediation (v2.1)
+
+**Security**
+- Rebuilt `/api/chat` with rate limiting, strict input sanitization, server-controlled provider, delimited user message, and shared CORS allow-list
+- Added production security headers + CSP (Report-Only) in `vercel.json`
+- Replaced `prompt()`-based admin auth with an inline password form backed by server-side validation; moved token to `sessionStorage`
+- Honeypot + speed-gate spam protection on the contact form
+
+**Privacy**
+- Stopped collecting raw User-Agent / Referer from the client
+- IPs are now SHA-256 hashed with a per-deploy salt before any storage
+
+**Performance**
+- Vite `manualChunks` splits `three`, `framer-motion`, `@supabase/supabase-js`, and `react-github-calendar` into separate cacheable chunks
+- `Hero3D` respects `prefers-reduced-motion`, pauses rAF when offscreen via `IntersectionObserver`, and caps DPR at 1.5
+- `SpaceBackground` skips its rAF loop entirely under reduced-motion
+- `useActiveSection` consolidated to a single module-level scroll listener shared by all consumers
+
+**Accessibility**
+- Removed the hostile `useContentProtection` hook (blocked Ctrl+C / right-click)
+- Removed the auto-rotating Projects carousel (WCAG 2.2.2)
+- `ProjectModal`: real Tab-cycle focus trap, `aria-labelledby`, focus restoration on close
+- `Chatbot`: `role="dialog"`, `aria-labelledby`, Escape-to-close, focus restoration
+
+**Reliability**
+- All IDs migrated to `crypto.randomUUID()` (deprecated `String#substr` removed)
+
+**Testing**
+- Test count grew from 34 → **64** across 10 suites
+- New suites: `sanitize`, `rateLimit`, `hashIp`, real `chatService` coverage (incl. SECURITY regression that asserts request body never contains `context` or `provider`)
+
+**Docs**
+- Engineering audit checklist moved to a local-only `AUDIT_CHECKLIST.md` (gitignored)
+
+---
 
 **Hasnain Raza**  
 Aerospace Engineer → AI Engineer  

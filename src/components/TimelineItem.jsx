@@ -13,7 +13,6 @@ const TimelineItem = ({ exp, index }) => {
       }`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={() => setIsHovered(!isHovered)}
     >
       <div className="hidden md:block w-5/12" />
 
@@ -28,6 +27,10 @@ const TimelineItem = ({ exp, index }) => {
             <img 
               src={exp.logo} 
               alt={exp.company} 
+              loading="lazy"
+              decoding="async"
+              width={48}
+              height={48}
               className="w-full h-full object-contain"
             />
           ) : (

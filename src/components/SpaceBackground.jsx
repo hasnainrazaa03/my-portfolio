@@ -88,10 +88,18 @@ const SpaceBackground = ({ isDark }) => {
       animationFrameId = requestAnimationFrame(animate);
     };
 
-    animate();
+    // A11Y/PERF: Under prefers-reduced-motion, render exactly one static
+    // frame and skip the rAF loop entirely (no CPU/GPU cost, no motion).
+    if (prefersReducedMotion) {
+      animate(); // runs one frame; we cancel the queued rAF below.
+      cancelAnimationFrame(animationFrameId);
+    } else {
+      animate();
+    }
 
     // Pause rAF when the tab is hidden to save CPU/battery.
     const handleVisibilityChange = () => {
+      if (prefersReducedMotion) return;
       if (document.hidden) {
         cancelAnimationFrame(animationFrameId);
       } else {

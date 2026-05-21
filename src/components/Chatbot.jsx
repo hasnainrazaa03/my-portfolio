@@ -1,13 +1,19 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, User, Sparkles, Trash2, BarChart3, AlertTriangle, Play } from 'lucide-react';
 import { getChatResponse } from '../services/chatService.js';
 import { analyticsService } from '../services/analyticsService';
-import AnalyticsViewer from './AnalyticsViewer';
 import ChatLauncher from './ChatLauncher';
 import ChatDemo from './ChatDemo';
 import QnASearch from './QnASearch';
 import { PERSONAL_INFO } from '../constants';
+
+// SECURITY/PERF: the admin AnalyticsViewer is only included in the bundle
+// when explicitly enabled at build time. Production deploys ship without it.
+const ADMIN_ENABLED = import.meta.env.VITE_ENABLE_ADMIN === 'true';
+const AnalyticsViewer = ADMIN_ENABLED
+  ? lazy(() => import('./AnalyticsViewer'))
+  : null;
 
 // TODO: Add /me.jpg to public/ — a square headshot of Hasnain for chat avatar & hero.
 const AVATAR_SRC = '/me.jpg';
@@ -59,6 +65,15 @@ const Avatar = ({ src, fallback, className = '' }) => {
 const INITIAL_MESSAGE = { role: 'assistant', content: "Hey there! I'm Hasnain — feel free to ask about my 💻 projects, 🛠️ skills, 💼 experience, or 🎓 education. What would you like to know?" };
 const CHIP_PREFIXES = ['🚀 ', '⚡ ', '💼 ', '📧 ', '📚 '];
 
+// Allow-list of personas the UI can select. Must match the keys in
+// PERSONA_OVERLAYS on the server (api/chat.js). The server re-validates.
+const PERSONAS = [
+  { key: 'default',   label: 'Default' },
+  { key: 'recruiter', label: 'Recruiter' },
+  { key: 'aerospace', label: 'Aerospace' },
+  { key: 'startup',   label: 'Startup' },
+];
+
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
@@ -68,8 +83,10 @@ const Chatbot = () => {
   const [flaggedWarning, setFlaggedWarning] = useState(null);
   const [demoMode, setDemoMode] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [persona, setPersona] = useState('default');
   const messagesEndRef = useRef(null);
   const panelRef = useRef(null);
+  const previouslyFocusedRef = useRef(null);
 
   const suggestions = [
     "🚀 Tell me about your projects",
@@ -157,7 +174,7 @@ const Chatbot = () => {
     };
   };
 
-  const processMessage = async (text, opts = {}) => {
+  const processMessage = async (text) => {
     if (!text.trim() || demoMode) return;
 
     const userMessage = { role: 'user', content: text };
@@ -168,7 +185,7 @@ const Chatbot = () => {
     const historyForApi = prepareHistoryForAPI(userMessage);
 
     try {
-      const responseResult = await getChatResponse(historyForApi, { provider: opts.provider });
+      const responseResult = await getChatResponse(historyForApi, { persona });
 
       // Handle flagged input (prompt-injection / abuse detection)
       if (responseResult && typeof responseResult === 'object' && responseResult.__flagged) {
@@ -241,12 +258,15 @@ const Chatbot = () => {
   }, []);
 
   const handleAskLive = useCallback((question) => {
-    processMessage(question, { provider: 'gemini' });
+    // SECURITY: do not pass a provider hint from the client — the server
+    // picks the provider. (Previously this forced { provider: 'gemini' }.)
+    processMessage(question);
   }, [processMessage]);
 
-  // ── Focus trap (basic) ────────────────────────────────────────────────
+  // ── Focus trap + Escape-to-close + restore focus ──────────────────────
   useEffect(() => {
     if (!isOpen) return;
+    previouslyFocusedRef.current = document.activeElement;
     const panel = panelRef.current;
     if (!panel) return;
     const focusable = panel.querySelectorAll('button, input, textarea, [tabindex]:not([tabindex="-1"])');
@@ -254,6 +274,11 @@ const Chatbot = () => {
     const last = focusable[focusable.length - 1];
 
     const trap = (e) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        setIsOpen(false);
+        return;
+      }
       if (e.key !== 'Tab') return;
       if (e.shiftKey) {
         if (document.activeElement === first) { e.preventDefault(); last?.focus(); }
@@ -263,7 +288,14 @@ const Chatbot = () => {
     };
     panel.addEventListener('keydown', trap);
     first?.focus();
-    return () => panel.removeEventListener('keydown', trap);
+    return () => {
+      panel.removeEventListener('keydown', trap);
+      // Restore focus to the launcher (or whatever opened the panel).
+      const target = previouslyFocusedRef.current;
+      if (target && typeof target.focus === 'function') {
+        target.focus();
+      }
+    };
   }, [isOpen]);
 
   // Reset unread when opened
@@ -293,7 +325,9 @@ const Chatbot = () => {
             className="fixed bottom-24 right-6 z-50 w-[380px] max-w-[calc(100vw-48px)] h-[600px] max-h-[calc(100vh-120px)] rounded-2xl overflow-hidden shadow-2xl flex flex-col glass-panel border border-slate-200 dark:border-white/10 chatbot-container"
             id="chatbot-panel"
             ref={panelRef}
-            role="complementary"
+            role="dialog"
+            aria-modal="false"
+            aria-labelledby="chatbot-title"
             aria-label="Chat with Hasnain"
           >
             <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
@@ -306,7 +340,7 @@ const Chatbot = () => {
                     </div>
                   </div>
                   <div>
-                    <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    <h3 id="chatbot-title" className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       Hasnain <Sparkles size={12} className="text-amber-400" />
                     </h3>
                     <span className="text-xs text-slate-500 dark:text-primary/80 font-mono tracking-wider">ONLINE</span>
@@ -326,14 +360,16 @@ const Chatbot = () => {
                   >
                     <Play size={14} />
                   </button>
-                  <motion.button 
-                    whileHover={{ scale: 1.1 }}
-                    onClick={() => setShowAnalyticsVault(!showAnalyticsVault)} 
-                    className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-primary transition-colors"
-                    title="View Analytics Vault"
-                  >
-                    <BarChart3 size={16} />
-                  </motion.button>
+                  {ADMIN_ENABLED && (
+                    <motion.button 
+                      whileHover={{ scale: 1.1 }}
+                      onClick={() => setShowAnalyticsVault(!showAnalyticsVault)} 
+                      className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-primary transition-colors"
+                      title="View Analytics Vault"
+                    >
+                      <BarChart3 size={16} />
+                    </motion.button>
+                  )}
                   <button 
                     onClick={clearHistory} 
                     className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-red-500 transition-colors"
@@ -353,7 +389,31 @@ const Chatbot = () => {
                   )}
                 </div>
               )}
-              
+
+              {/* Persona selector — server validates value against an allow-list. */}
+              <div className="mt-2 flex items-center gap-2 text-xs">
+                <label htmlFor="chatbot-persona" className="text-slate-500 dark:text-slate-400">
+                  Mode:
+                </label>
+                <select
+                  id="chatbot-persona"
+                  value={persona}
+                  onChange={(e) => setPersona(e.target.value)}
+                  disabled={isTyping || demoMode}
+                  className="bg-white dark:bg-slate-800 border border-slate-300 dark:border-white/10 rounded px-2 py-1 text-slate-800 dark:text-slate-200 focus:border-primary focus:outline-none focus-visible:ring-1 focus-visible:ring-primary disabled:opacity-50"
+                  aria-label="Choose chat persona"
+                >
+                  {PERSONAS.map((p) => (
+                    <option key={p.key} value={p.key}>{p.label}</option>
+                  ))}
+                </select>
+                {persona !== 'default' && (
+                  <span className="text-[10px] text-primary font-mono uppercase tracking-wider">
+                    · {persona}
+                  </span>
+                )}
+              </div>
+
               {/* Demo mode controls */}
               <ChatDemo
                 isActive={demoMode}
@@ -532,11 +592,15 @@ const Chatbot = () => {
       </AnimatePresence>
 
 
-      <AnalyticsViewer 
-        isOpen={showAnalyticsVault}
-        onClose={() => setShowAnalyticsVault(false)}
-        className="analytics-vault"
-      />
+      {ADMIN_ENABLED && AnalyticsViewer && (
+        <Suspense fallback={null}>
+          <AnalyticsViewer 
+            isOpen={showAnalyticsVault}
+            onClose={() => setShowAnalyticsVault(false)}
+            className="analytics-vault"
+          />
+        </Suspense>
+      )}
     </>
   );
 };

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUp } from 'lucide-react';
-import { animateScroll as scroll } from 'react-scroll';
 
 const BackToTop = () => {
   const [isVisible, setIsVisible] = useState(false);
@@ -20,9 +19,10 @@ const BackToTop = () => {
   }, []);
 
   const scrollToTop = () => {
-    scroll.scrollToTop({
-      duration: 800,
-      smooth: 'easeInOutQuart',
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({
+      top: 0,
+      behavior: prefersReducedMotion ? 'auto' : 'smooth',
     });
   };
 

@@ -1,95 +1,29 @@
 import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../constants';
-import jarvisQnA from '../data/jarvisQnA.json';
 
-// Optional client‑side hint; actual provider selection happens server‑side.
-// Set VITE_LLM_PROVIDER in .env to 'gemini' or 'huggingface' (non‑secret).
-const DEFAULT_PROVIDER = import.meta.env.VITE_LLM_PROVIDER || 'huggingface';
+/**
+ * Chat client.
+ *
+ * SECURITY NOTE
+ *  - We deliberately do NOT send a `context` or `provider` field to the
+ *    server. The chat system prompt is built server-side and provider
+ *    selection is server-controlled (see api/chat.js). This closes a
+ *    prompt-injection vector that previously allowed any client to
+ *    append arbitrary text to the system prompt.
+ *  - If the server returns `flagged: true`, we surface a soft warning
+ *    instead of the model output.
+ */
 
-// Build context string from constants — computed once at module scope (data is static).
-const CHAT_CONTEXT = (() => {
-  const context = [];
-
-  // Personal info
-  if (PERSONAL_INFO) {
-    context.push(`🤖 Name: ${PERSONAL_INFO.name}`);
-    context.push(`📝 Bio: ${PERSONAL_INFO.bioStory}`);
-    context.push(`📧 Email: ${PERSONAL_INFO.email}`);
-    if (PERSONAL_INFO.socials) {
-      context.push(`🐙 GitHub: ${PERSONAL_INFO.socials.github}`);
-      context.push(`💼 LinkedIn: ${PERSONAL_INFO.socials.linkedin}`);
-      context.push(`🐙 Instagram: ${PERSONAL_INFO.socials.instagram}`);
-    }
-  }
-
-  // Education
-  if (EDUCATION && EDUCATION.length > 0) {
-    context.push('\n🎓 EDUCATION:');
-    EDUCATION.forEach(edu => {
-      context.push(`  📚 ${edu.degree} at ${edu.school} (${edu.period}) - GPA: ${edu.gpa}`);
-    });
-  }
-
-  // Projects
-  if (PROJECTS && PROJECTS.length > 0) {
-    context.push('\n💻 PROJECTS:');
-    PROJECTS.forEach(p => {
-      context.push(`  🚀 ${p.title} (${p.category}): ${p.description}`);
-      if (p.techStack) {
-        context.push(`     🛠️ Tech: ${p.techStack.slice(0, 8).join(', ')}`);
-      }
-    });
-  }
-
-  // Skills
-  if (SKILLS && SKILLS.length > 0) {
-    context.push('\n⚡ SKILLS BY CATEGORY:');
-    SKILLS.forEach(skillGroup => {
-      const topSkills = skillGroup.items
-        .sort((a, b) => b.pct - a.pct)
-        .slice(0, 5)
-        .map(s => `${s.name} (${s.level})`)
-        .join(', ');
-      context.push(`  🎯 ${skillGroup.category}: ${topSkills}`);
-    });
-  }
-
-  // Experience
-  if (EXPERIENCE && EXPERIENCE.length > 0) {
-    context.push('\n💼 PROFESSIONAL EXPERIENCE:');
-    EXPERIENCE.forEach(exp => {
-      context.push(`  🏢 ${exp.role} at ${exp.company} (${exp.period})`);
-      if (exp.description && exp.description.length > 0) {
-        exp.description.slice(0, 2).forEach(point => {
-          context.push(`     ✨ ${point}`);
-        });
-      }
-    });
-  }
-
-  context.push('\n--- KNOWLEDGE BASE (Use for accurate responses) ---\n');
-  jarvisQnA.qaData.forEach((pair) => {
-    context.push(`Q: ${pair.q}`);
-    context.push(`A: ${pair.a}\n`);
-  });
-
-  return context.join('\n');
-})();
-
-export const getChatResponse = async (messages, { provider } = {}) => {
+export const getChatResponse = async (messages, options = {}) => {
   const lastUserMessage = messages[messages.length - 1].content;
+  // `persona` is the only optional client-controllable knob. The server
+  // validates it against an allow-list and falls back to "default" — see
+  // resolvePersona() in api/chat.js.
+  const persona = typeof options.persona === 'string' ? options.persona : 'default';
   try {
-    const apiUrl = '/api/chat';
-
-    const response = await fetch(apiUrl, {
+    const response = await fetch('/api/chat', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        message: lastUserMessage,
-        context: CHAT_CONTEXT,
-        provider: provider || DEFAULT_PROVIDER
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: lastUserMessage, persona }),
     });
 
     if (!response.ok) {
@@ -100,11 +34,12 @@ export const getChatResponse = async (messages, { provider } = {}) => {
 
     const data = await response.json();
 
-    // Handle flagged (prompt-injection) responses from the server
     if (data.flagged) {
       console.warn('Message was flagged by server:', data.reason);
-      // Return a special object so the UI can display a warning inline
-      return { __flagged: true, text: "I couldn't process that — it looked like instructions to the assistant. Try asking about my projects or experience!" };
+      return {
+        __flagged: true,
+        text: "I couldn't process that — it looked like instructions to the assistant. Try asking about my projects or experience!",
+      };
     }
 
     if (!data.reply) {

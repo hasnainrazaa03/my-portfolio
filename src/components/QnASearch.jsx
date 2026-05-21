@@ -35,16 +35,114 @@ export function fuzzyScore(query, target) {
   return matchedTokens / Math.max(qTokens.length, 1);
 }
 
+/* ── TF-IDF + bigram cosine (lightweight "semantic" upgrade) ─────────────
+ * No embeddings, no network — we tokenise question+answer fields, build a
+ * corpus-wide IDF on first use, and score queries with cosine similarity
+ * over unigrams + bigrams. Strictly additive on top of `fuzzyScore` — the
+ * old function still returns identical values for existing callers/tests.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+const STOPWORDS = new Set([
+  'the', 'a', 'an', 'and', 'or', 'of', 'to', 'is', 'in', 'on', 'for',
+  'with', 'at', 'by', 'this', 'that', 'as', 'are', 'was', 'were', 'be',
+  'do', 'does', 'did', 'have', 'has', 'had', 'i', 'you', 'me', 'my',
+  'your', 'we', 'our', 'us', 'it', 'its', 'about', 'what', 'who', 'how',
+]);
+
+function tokenize(str) {
+  return String(str || '')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+    .split(/\s+/)
+    .filter((t) => t.length > 1 && !STOPWORDS.has(t));
+}
+
+function bigrams(tokens) {
+  const out = [];
+  for (let i = 0; i < tokens.length - 1; i++) {
+    out.push(`${tokens[i]} ${tokens[i + 1]}`);
+  }
+  return out;
+}
+
+function termsOf(str) {
+  const t = tokenize(str);
+  return [...t, ...bigrams(t)];
+}
+
+// Lazily-built TF-IDF index over the Q&A corpus.
+let _index = null;
+function getIndex() {
+  if (_index) return _index;
+  const docs = (jarvisQnA.qaData || []).map((item) =>
+    termsOf(`${item.q} ${item.q} ${item.a}`) // weight question 2x
+  );
+  const df = new Map();
+  for (const doc of docs) {
+    const seen = new Set(doc);
+    for (const term of seen) df.set(term, (df.get(term) || 0) + 1);
+  }
+  const N = Math.max(docs.length, 1);
+  const idf = new Map();
+  for (const [term, count] of df) {
+    idf.set(term, Math.log(1 + N / count));
+  }
+  const vectors = docs.map((terms) => vectorize(terms, idf));
+  _index = { idf, vectors };
+  return _index;
+}
+
+function vectorize(terms, idf) {
+  const tf = new Map();
+  for (const t of terms) tf.set(t, (tf.get(t) || 0) + 1);
+  const vec = new Map();
+  let norm = 0;
+  for (const [term, count] of tf) {
+    const w = (1 + Math.log(count)) * (idf.get(term) || 0);
+    if (w > 0) {
+      vec.set(term, w);
+      norm += w * w;
+    }
+  }
+  return { vec, norm: Math.sqrt(norm) || 1 };
+}
+
+function cosine(a, b) {
+  // Iterate the smaller map for speed.
+  const [small, large] = a.vec.size < b.vec.size ? [a, b] : [b, a];
+  let dot = 0;
+  for (const [term, w] of small.vec) {
+    const w2 = large.vec.get(term);
+    if (w2) dot += w * w2;
+  }
+  return dot / (a.norm * b.norm);
+}
+
+/**
+ * Cosine similarity of `query` against the indexed Q&A document at `idx`.
+ * Returns 0–1.
+ */
+export function tfidfScore(query, idx) {
+  const { idf, vectors } = getIndex();
+  if (idx < 0 || idx >= vectors.length) return 0;
+  const qVec = vectorize(termsOf(query), idf);
+  if (qVec.norm === 0) return 0;
+  return Math.max(0, Math.min(1, cosine(qVec, vectors[idx])));
+}
+
 /**
  * Search the QnA dataset. Returns top‑N results sorted by score.
+ * Blends fuzzy substring matching with TF-IDF cosine — the higher wins.
  */
 export function searchQnA(query, topN = 5) {
   if (!query || query.trim().length < 2) return [];
 
-  const scored = jarvisQnA.qaData.map(item => {
-    const qScore = fuzzyScore(query, item.q);
-    const aScore = fuzzyScore(query, item.a) * 0.6; // answer match weighted less
-    return { ...item, score: Math.max(qScore, aScore) };
+  const scored = jarvisQnA.qaData.map((item, idx) => {
+    const fuzzyQ = fuzzyScore(query, item.q);
+    const fuzzyA = fuzzyScore(query, item.a) * 0.6;
+    const semantic = tfidfScore(query, idx);
+    const score = Math.max(fuzzyQ, fuzzyA, semantic);
+    return { ...item, score };
   });
 
   return scored
@@ -123,7 +221,7 @@ const QnASearch = ({ onUseAnswer, onAskLive, disabled }) => {
 
       {/* Keyboard hint */}
       {results.length > 0 && (
-        <div className="flex items-center gap-2 mt-1 px-1 text-[10px] text-slate-400 dark:text-slate-500">
+        <div className="flex items-center gap-2 mt-1 px-1 text-[10px] text-slate-500 dark:text-slate-300">
           <ArrowUp size={10} /><ArrowDown size={10} /> navigate
           <CornerDownLeft size={10} className="ml-1" /> select
         </div>
@@ -145,9 +243,17 @@ const QnASearch = ({ onUseAnswer, onAskLive, disabled }) => {
                 key={idx}
                 role="option"
                 aria-selected={idx === selectedIdx}
+                tabIndex={0}
                 onClick={() => {
                   onUseAnswer?.(r.q, r.a);
                   setQuery('');
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onUseAnswer?.(r.q, r.a);
+                    setQuery('');
+                  }
                 }}
                 className={`px-3 py-2 cursor-pointer text-sm transition-colors ${
                   idx === selectedIdx
@@ -157,7 +263,7 @@ const QnASearch = ({ onUseAnswer, onAskLive, disabled }) => {
               >
                 <div className="font-medium text-xs truncate">{r.q}</div>
                 <div className="text-[11px] opacity-70 truncate mt-0.5">{r.a.substring(0, 80)}…</div>
-                <div className="text-[10px] opacity-40 mt-0.5">Confidence: {Math.round(r.score * 100)}%</div>
+                <div className="text-[10px] opacity-70 mt-0.5">Confidence: {Math.round(r.score * 100)}%</div>
               </li>
             ))}
           </motion.ul>

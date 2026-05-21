@@ -97,7 +97,7 @@ const Contact = () => {
           <div className="relative">
             
             <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-6 text-center">
-              <span className="text-primary">06.</span> Initialize Contact
+              <span className="text-primary">07.</span> Initialize Contact
             </h2>
             <p className="text-center text-slate-600 dark:text-white mb-8 font-medium opacity-90">
               Have a project idea, opportunity, or just want to say hi? I'd love to hear from you.

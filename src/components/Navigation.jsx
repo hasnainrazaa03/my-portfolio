@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Rocket, Sun, Moon } from 'lucide-react';
+import { Menu, X, Rocket, Sun, Moon, Contrast } from 'lucide-react';
+import { useHighContrast } from '../hooks/useHighContrast';
 import { PERSONAL_INFO } from '../constants';
 import { useActiveSection } from '../hooks/useActiveSection';
 
@@ -16,6 +17,7 @@ const scrollToSection = (id) => {
 const Navigation = ({ isDark, toggleTheme }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [hc, , toggleHc] = useHighContrast();
 
   const navLinks = [
     { name: "About", id: "about" },
@@ -24,6 +26,7 @@ const Navigation = ({ isDark, toggleTheme }) => {
     { name: "GitHub", id: "github" },
     { name: "Experience", id: "experience" },
     { name: "Skills", id: "skills" },
+    { name: "Awards", id: "achievements" },
     { name: "Contact", id: "contact" }
   ];
 
@@ -75,9 +78,26 @@ const Navigation = ({ isDark, toggleTheme }) => {
           >
             {isDark ? <Sun size={20} /> : <Moon size={20} />}
           </button>
+          <button 
+            onClick={toggleHc}
+            className={`ml-2 p-2 rounded-full transition-colors ${hc ? 'bg-primary text-black' : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-white/10'}`}
+            aria-label="Toggle high-contrast mode"
+            aria-pressed={hc}
+            title={hc ? 'High-contrast on' : 'High-contrast off'}
+          >
+            <Contrast size={20} />
+          </button>
         </div>
 
         <div className="md:hidden flex items-center gap-4 z-50">
+          <button 
+            onClick={toggleHc}
+            className={`p-2 rounded-full ${hc ? 'bg-primary text-black' : 'bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-200'}`}
+            aria-label="Toggle high-contrast mode"
+            aria-pressed={hc}
+          >
+            <Contrast size={20} />
+          </button>
           <button 
             onClick={toggleTheme}
             className="p-2 rounded-full bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-yellow-400"

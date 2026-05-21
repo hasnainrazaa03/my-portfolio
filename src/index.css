@@ -129,3 +129,37 @@ body {
 .animate-rocket-pulse {
   animation: rocket-pulse 0.2s ease-in-out infinite alternate;
 }
+
+/* --- A11Y: High-contrast theme variant ---
+   Activated by `useHighContrast()` toggling the `.hc` class on <html>.
+   Goal: bump foreground/background contrast past WCAG AAA for the
+   most common surfaces without rewriting the design system. Specific
+   components can opt-in to extra `hc:` Tailwind variants where needed. */
+html.hc {
+  color-scheme: dark;
+}
+html.hc body {
+  background: #000 !important;
+  color: #fff !important;
+}
+html.hc .text-slate-400,
+html.hc .text-slate-500,
+html.hc .text-slate-600,
+html.hc .text-slate-700,
+html.hc .dark\:text-slate-300,
+html.hc .dark\:text-slate-400 {
+  color: #f8fafc !important;
+}
+html.hc a,
+html.hc .text-primary {
+  color: #5eead4 !important; /* lighter teal — 7:1 on black */
+}
+html.hc .border-slate-200,
+html.hc .dark\:border-white\/10,
+html.hc .border-white\/10 {
+  border-color: #fff !important;
+}
+html.hc *:focus-visible {
+  outline: 3px solid #fde047 !important; /* high-vis yellow */
+  outline-offset: 3px !important;
+}

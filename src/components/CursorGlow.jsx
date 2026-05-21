@@ -10,25 +10,24 @@
  *  - `aria-hidden` because it's purely decorative.
  */
 import { useEffect, useRef, useState } from 'react';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 
 const CursorGlow = () => {
   const elRef = useRef(null);
   const rafRef = useRef(0);
-  const [enabled, setEnabled] = useState(false);
+  const reduced = useReducedMotion();
+  const [fine, setFine] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return undefined;
-    const fine = window.matchMedia('(pointer: fine)');
-    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const update = () => setEnabled(fine.matches && !reduce.matches);
+    const mql = window.matchMedia('(pointer: fine)');
+    const update = () => setFine(mql.matches);
     update();
-    fine.addEventListener?.('change', update);
-    reduce.addEventListener?.('change', update);
-    return () => {
-      fine.removeEventListener?.('change', update);
-      reduce.removeEventListener?.('change', update);
-    };
+    mql.addEventListener?.('change', update);
+    return () => mql.removeEventListener?.('change', update);
   }, []);
+
+  const enabled = fine && !reduced;
 
   useEffect(() => {
     if (!enabled) return undefined;

@@ -42,5 +42,12 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [
+    // Register an `hc:` variant that activates whenever the root element
+    // carries the `hc` class. `useHighContrast()` toggles that class, so
+    // any rule like `hc:bg-black hc:text-white` flips automatically.
+    function ({ addVariant }) {
+      addVariant('hc', ':where(.hc) &');
+    },
+  ],
 }

@@ -300,6 +300,69 @@ export const PROJECTS = [
 }
 ];
 
+/**
+ * Achievements / badges wall — content-only, no images required. Each entry
+ * renders as a card on the home page in `Achievements.jsx`. Add freely;
+ * the grid auto-flows.
+ *
+ *   category : short tag rendered as a pill ("Award", "Certification", "Talk", ...)
+ *   year     : string — appears as a small date label
+ *   title    : the headline
+ *   issuer   : organization name (optional but recommended for credibility)
+ *   detail   : one-sentence description
+ *   url      : optional outbound link (verifier / credential / talk recording)
+ */
+export const ACHIEVEMENTS = [
+  {
+    category: "Scholarship",
+    year: "2025",
+    title: "USC Viterbi Graduate Scholarship",
+    issuer: "University of Southern California",
+    detail: "Merit-based award supporting MSCS studies at USC Viterbi.",
+    url: null,
+  },
+  {
+    category: "Academic",
+    year: "2022",
+    title: "B.E. in Aerospace — 9.10 / 10.0 CGPA",
+    issuer: "RV College of Engineering",
+    detail: "Graduated with distinction; thesis on CFD-driven nozzle optimisation.",
+    url: null,
+  },
+  {
+    category: "Project",
+    year: "2024",
+    title: "Project Vimaan — voice copilot for X-Plane",
+    issuer: "Independent",
+    detail: "End-to-end ASR → intent → autopilot agent prototype for flight simulators.",
+    url: "https://github.com/hasnainrazaa03",
+  },
+  {
+    category: "Leadership",
+    year: "2021",
+    title: "Lead — Project RESOLV, Team Antariksh",
+    issuer: "RV College of Engineering",
+    detail: "Coordinated a multidisciplinary student team building a hybrid rocket motor.",
+    url: "https://www.teamantariksh.in/resolv/",
+  },
+  {
+    category: "Certification",
+    year: "2023",
+    title: "Deep Learning Specialization",
+    issuer: "DeepLearning.AI · Coursera",
+    detail: "5-course specialization covering CNNs, sequence models, and structured ML projects.",
+    url: null,
+  },
+  {
+    category: "Open Source",
+    year: "2026",
+    title: "500+ commits this year",
+    issuer: "GitHub",
+    detail: "Active contributor across personal ML, aerospace, and portfolio repos.",
+    url: "https://github.com/hasnainrazaa03",
+  },
+];
+
 export const SKILLS = [
   { 
     category: "Languages", 

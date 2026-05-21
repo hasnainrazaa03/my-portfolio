@@ -25,6 +25,7 @@ const Projects = lazy(() => import('./components/Projects'));
 const GitHubSection = lazy(() => import('./components/GitHubSection'));
 const Experience = lazy(() => import('./components/Experience'));
 const Skills = lazy(() => import('./components/Skills'));
+const Achievements = lazy(() => import('./components/Achievements'));
 const Contact = lazy(() => import('./components/Contact'));
 
 // Stand-alone routes (no router dep — selected by pathname in `App`).
@@ -87,6 +88,7 @@ export default function App() {
               <GitHubSection isDark={isDark} />
               <Experience />
               <Skills />
+              <Achievements />
               <Contact />
             </Suspense>
           </main>

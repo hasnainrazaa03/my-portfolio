@@ -93,7 +93,11 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 
 - **Dual LLM Providers** — HuggingFace Llama 3 8B (default) + Gemini 2.0 Flash (optional)
 - **Server-side persona** — system prompt is hardcoded server-side; clients cannot inject context
-- **Fuzzy Q&A Search** — Local `jarvisQnA.json` with token-overlap scoring and keyboard navigation
+- **Persona switcher** — server-side allow-list (`default` / `recruiter` / `aerospace` / `startup`) with a UI dropdown in the chatbot header
+- **Voice input** — mic button (Web Speech API) with inline error surfacing for `not-allowed` / `no-speech` / `audio-capture` / `network`
+- **Voice replies (TTS)** — opt-in speaker toggle reads assistant messages aloud via `SpeechSynthesis`
+- **Semantic Q&A search** — TF-IDF + bigram + cosine ranking over `jarvisQnA.json` with keyboard navigation
+- **Conversational memory** — last 10 turns persisted in `sessionStorage`
 - **Demo Mode** — Plays a canned conversation showcasing chat capabilities
 - **Reactor Core Launcher** — Icon-only floating button with microprocessor (CPU) icon, pulsing neon ring, and unread badge
 - **Security** — NFKC normalization, prompt-injection detection, per-IP rate limiting, CORS allow-list
@@ -132,13 +136,35 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 - **ErrorBoundary** — Graceful error handling with user-friendly fallback UI
 - **Scroll-to-Top Rocket** — Appears dynamically after scrolling
 - **Contact System** — Serverless form using EmailJS with validation
-- **Theme Engine** — Persisted Dark / Light modes:
+- **Cursor Thruster Glow** — Soft radial light follows the pointer on desktop; auto-disables on touch + reduced-motion
+- **Konami Easter Egg** — ↑↑↓↓←→←→BA unlocks a cockpit overlay
+- **Now Snapshot** — Live status block on the About section sourced from `constants.NOW`
+- **Print-to-PDF Resume** — Standalone `/resume` route, print-optimised
+- **Theme Engine** — Persisted Dark / Light + High-Contrast variant:
   - *Deep Space* 🌑
   - *Clean Slate* ☀️
+  - *High Contrast* ⚫ (a11y toggle in nav, persisted)
+
+### ♿️ Accessibility
+- Skip-to-content link, visible `:focus-visible` rings on all interactive surfaces
+- Real focus trap + focus restoration on the chatbot and project modal
+- Global `useReducedMotion` hook — single source of truth for `prefers-reduced-motion`
+- High-contrast theme variant via `useHighContrast` (initialised from `prefers-contrast: more`)
+- `eslint-plugin-jsx-a11y` enforced in CI
+
+### 🏆 Achievements
+- Content-driven badges wall sourced from `constants.ACHIEVEMENTS`
 
 ### 🧪 Testing
-- **Vitest** — 64 passing tests across 10 test suites
-- Coverage: chat persona, Q&A search, project filters, demo mode, about image, input sanitizer, rate limiter, IP hasher, chat service contract
+- **Vitest** — 92+ passing tests across 17 test suites
+- Coverage thresholds enforced in CI (`@vitest/coverage-v8`)
+- Coverage: chat persona, Q&A search, project filters, demo mode, about image, input sanitizer, rate limiter, IP hasher, chat service contract, speech recognition + synthesis hooks, reduced-motion + high-contrast hooks
+
+### 🛡️ Supply-chain & CI
+- GitHub Actions: lint + test + coverage + build on Node 22, `actions@v5`
+- Lighthouse CI on PR (a11y gate)
+- Dependabot weekly, grouped by ecosystem
+- OSV scanner job (non-blocking) on every push
 
 ---
 

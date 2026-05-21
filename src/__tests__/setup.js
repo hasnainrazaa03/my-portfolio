@@ -27,3 +27,18 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
     }
   };
 }
+
+// Some jsdom builds shipped with vitest 4 don't expose localStorage by
+// default. Provide a minimal in-memory shim so hooks that persist user
+// preferences (theme, high-contrast, etc.) can run under test.
+if (typeof window !== 'undefined' && !window.localStorage) {
+  const store = new Map();
+  window.localStorage = {
+    getItem: (k) => (store.has(k) ? store.get(k) : null),
+    setItem: (k, v) => { store.set(k, String(v)); },
+    removeItem: (k) => { store.delete(k); },
+    clear: () => { store.clear(); },
+    key: (i) => Array.from(store.keys())[i] ?? null,
+    get length() { return store.size; },
+  };
+}

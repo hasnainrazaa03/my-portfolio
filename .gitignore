@@ -27,3 +27,6 @@ coverage
 .env.local
 # Local-only audit & remediation tracker (not for git)
 AUDIT_CHECKLIST.md
+
+# Local-only implementation roadmap / planning checklists (not for git)
+_roadmap/

@@ -167,6 +167,14 @@
       "a": "An overset mesh allows separate grids to move relative to each other. For store separation, the object detaches and moves through airflow, so overset meshing enables accurate transient simulation without remeshing the entire domain."
     },
     {
+      "q": "Tell me about your NACA 4412 vortex study.",
+      "a": "I investigated how vortices shed by a leading NACA 0012 airfoil influence the aerodynamic performance of a trailing NACA 4412 airfoil. Using ANSYS Fluent with PyFluent automation, I simulated the turbulent wake interactions and quantified how lift and drag coefficients degraded under different flow conditions. I wrote Python scripts to extract the aerodynamic coefficients and generate the comparison plots."
+    },
+    {
+      "q": "What did the airfoil wake-interaction project show?",
+      "a": "It quantified the wake-induced performance penalty on the downstream airfoil — capturing how vortex influence from an upstream NACA 0012 changes the lift and drag on a trailing NACA 4412. The emphasis was on simulation automation and structured post-processing so the comparisons were repeatable."
+    },
+    {
       "q": "What did working on a CubeSat teach you that software didn't?",
       "a": "Hardware constraints are unforgiving. In software, you can patch later. In aerospace, tolerances, mass budgets, and structural stability must be right the first time. It sharpened my systems-level thinking."
     },

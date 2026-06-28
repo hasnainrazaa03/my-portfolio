@@ -8,6 +8,8 @@
  *  - IDs use `crypto.randomUUID()` instead of `Math.random().toString(36).substr(...)`.
  */
 
+import { env } from '../config/env.js';
+
 function safeUUID() {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
@@ -47,9 +49,9 @@ class AnalyticsService {
 
 
     try {
-      // TODO: Set VITE_ANALYTICS_WRITE_TOKEN in your .env.local (public token for write auth).
-      // NOTE: should be safe/public only — this is a write-gate, not a secret admin key.
-      const writeToken = import.meta.env.VITE_ANALYTICS_WRITE_TOKEN || '';
+      // Public write-gate token (not a secret admin key). Set
+      // VITE_ANALYTICS_WRITE_TOKEN in .env.local. Centralized in config/env.js.
+      const writeToken = env.analyticsWriteToken;
 
       const fetchResponse = await fetch(this.backendUrl, {
         method: 'POST',

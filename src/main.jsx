@@ -19,6 +19,10 @@ if (import.meta.env.DEV) {
       }
     })
     .catch((err) => console.error('[content] schema validation failed to run:', err))
+
+  import('./config/env.js')
+    .then(({ warnMissingEnv }) => warnMissingEnv())
+    .catch((err) => console.error('[env] env check failed to run:', err))
 }
 
 createRoot(document.getElementById('root')).render(

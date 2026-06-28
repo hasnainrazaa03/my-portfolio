@@ -5,6 +5,7 @@ import { Copy, Check, Mail, AlertCircle, Loader2, Send, CheckCircle2 } from 'luc
 import emailjs from '@emailjs/browser'; 
 import { fadeInUp } from '../animations';
 import { PERSONAL_INFO } from '../constants';
+import { env } from '../config/env';
 import SocialLinks from './SocialLinks';
 
 
@@ -36,8 +37,17 @@ const Contact = () => {
     formState: { errors, isSubmitting } 
   } = useForm({ mode: "onBlur" });
   
+  // Graceful degrade: if EmailJS isn't configured, the form can't send. Disable
+  // submit and point users at the copy-email control instead of failing on send.
+  const contactEnabled = env.emailjs.isConfigured;
+
   const onSubmit = async (data) => {
     setSendError(null);
+
+    if (!contactEnabled) {
+      setSendError('Direct messaging is temporarily unavailable — please copy my email above and reach out there.');
+      return;
+    }
 
     // Honeypot: real users never see/fill `company`. If it's filled, it's a bot.
     // Speed gate: submissions faster than MIN_FILL_MS are almost always bots.
@@ -57,15 +67,15 @@ const Contact = () => {
 
     try {
       await emailjs.send(
-        import.meta.env.VITE_EMAILJS_SERVICE_ID,
-        import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+        env.emailjs.serviceId,
+        env.emailjs.templateId,
         {
           from_name: data.name,
           from_email: data.email,
           message: data.message,
           to_name: 'Hasnain'
         },
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+        env.emailjs.publicKey
       );
 
       setIsSuccess(true);
@@ -282,8 +292,9 @@ const Contact = () => {
                       </AnimatePresence>
                     </div>
 
-                    <button 
-                      disabled={isSubmitting}
+                    <button
+                      disabled={isSubmitting || !contactEnabled}
+                      title={!contactEnabled ? 'Messaging is unavailable — use the copy-email control above.' : undefined}
                       className="w-full py-4 bg-gradient-to-r from-primary to-blue-600 text-white font-bold rounded-lg shadow-lg hover:shadow-[0_0_20px_rgba(45,212,191,0.4)] hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                     >
                       {isSubmitting ? (
@@ -296,6 +307,12 @@ const Contact = () => {
                         </>
                       )}
                     </button>
+
+                    {!contactEnabled && (
+                      <p className="text-center text-xs text-slate-500 dark:text-slate-400 font-medium">
+                        Direct messaging is currently unavailable — please use the copy-email control above.
+                      </p>
+                    )}
                   </motion.form>
                 )}
               </AnimatePresence>

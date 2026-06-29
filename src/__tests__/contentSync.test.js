@@ -14,7 +14,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import qna from '../data/jarvisQnA.json';
-import { EXPERIENCE, PROJECTS, EDUCATION } from '../constants.js';
+import { EXPERIENCE, PROJECTS, EDUCATION } from '../constants';
 import { getLocalResponse } from '../services/chatService.js';
 
 const QNA_BLOB = JSON.stringify(qna.qaData).toLowerCase();

@@ -23,7 +23,7 @@ import {
   ACHIEVEMENTS,
   SKILLS,
   EXPERIENCE,
-} from '../constants.js';
+} from '../constants';
 
 // An asset reference is either an absolute public path ("/USC.png") or an
 // http(s) URL (skill icons are hosted on CDNs).

@@ -8,7 +8,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { buildKnowledgeBlock } from '../data/buildKnowledge.js';
-import { PERSONAL_INFO, PROJECTS, EXPERIENCE, SKILLS, EDUCATION } from '../constants.js';
+import { PERSONAL_INFO, PROJECTS, EXPERIENCE, SKILLS, EDUCATION } from '../constants';
 
 const liveContent = {
   personalInfo: PERSONAL_INFO,

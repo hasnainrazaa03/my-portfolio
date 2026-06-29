@@ -17,8 +17,8 @@ const aboutSource = readFileSync(
 );
 
 describe('About — Portrait Image', () => {
-  it('should render an <img> with src="/me.jpg"', () => {
-    expect(aboutSource).toContain('src="/me.jpg"');
+  it('should render an avatar image (public/me.svg)', () => {
+    expect(aboutSource).toContain('src="/me.svg"');
   });
 
   it('should have alt text "Hasnain Raza"', () => {

@@ -1,8 +1,9 @@
 // Shared constants for the chat UI (extracted from the Chatbot monolith).
 import type { ChatMessage } from './types';
 
-// TODO: Add /me.jpg to public/ — a square headshot of Hasnain for chat avatar & hero.
-export const AVATAR_SRC = '/me.jpg';
+// Orbital monogram avatar (public/me.svg). Swap to a square headshot (e.g.
+// /me.jpg) here whenever one is available — the <Avatar> falls back to "HR".
+export const AVATAR_SRC = '/me.svg';
 
 export const INITIAL_MESSAGE: ChatMessage = {
   role: 'assistant',

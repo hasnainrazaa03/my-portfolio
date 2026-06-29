@@ -31,7 +31,7 @@ const About = () => (
 
           <div className="rounded-full overflow-hidden w-full h-full ring-2 ring-white/10 group-hover:ring-neon-500/30 transition-all duration-300 shadow-xl bg-primary/20">
             <LazyImage
-              src="/me.jpg"
+              src="/me.svg"
               alt="Hasnain Raza"
               width={192}
               height={192}

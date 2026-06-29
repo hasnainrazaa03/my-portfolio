@@ -6,8 +6,8 @@ import { PERSONAL_INFO } from '../constants';
 import GitHubFeed from './GitHubFeed';
 import { fadeInUp } from '../animations';
 
-const GitHubSection = ({ isDark }) => {
-  const username = PERSONAL_INFO.socials.github.split('/').pop(); 
+const GitHubSection = ({ isDark }: { isDark: boolean }) => {
+  const username = PERSONAL_INFO.socials.github.split('/').pop() ?? '';
 
   const explicitTheme = {
     light: ['#e2e8f0', '#99f6e4', '#5eead4', '#2dd4bf', '#115e59'],

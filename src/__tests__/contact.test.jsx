@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import Contact from '../components/Contact.jsx';
+import Contact from '../components/Contact';
 
 // Mock emailjs so the test never hits the network.
 vi.mock('@emailjs/browser', () => ({

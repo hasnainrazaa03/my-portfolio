@@ -1,19 +1,25 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useSpeechRecognition } from './useSpeechRecognition';
 import { useSpeechSynthesis } from './useSpeechSynthesis';
+import type { ChatMessage } from '../components/chat/types';
+
+interface UseChatVoiceOptions {
+  messages: ChatMessage[];
+  isOpen: boolean;
+  processMessage: (text: string) => void;
+  setInput: (value: string) => void;
+}
 
 /**
  * useChatVoice — speech-to-text input + opt-in text-to-speech replies for the
  * chatbot, extracted from the monolith (Phase 3 / T3.1). Behavior preserved.
- *
- * @param {{ messages: Array, isOpen: boolean, processMessage: Function, setInput: Function }} opts
  */
-export function useChatVoice({ messages, isOpen, processMessage, setInput }) {
+export function useChatVoice({ messages, isOpen, processMessage, setInput }: UseChatVoiceOptions) {
   // ── Voice input (speech-to-text) ───────────────────────────────────────
   // On result we submit immediately rather than just populating the input,
   // because users expect "push to talk → answer" UX. Errors are silently
   // swallowed (the hook flips `listening` back off) so the UI never sticks.
-  const handleVoiceResult = useCallback((transcript) => {
+  const handleVoiceResult = useCallback((transcript: string) => {
     const text = transcript.trim();
     if (!text) return;
     setInput(text);

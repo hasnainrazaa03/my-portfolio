@@ -1,20 +1,22 @@
 import { useCallback, useEffect, useState } from 'react';
+import type { FormEvent } from 'react';
 import { getChatResponse } from '../services/chatService';
 import { analyticsService } from '../services/analyticsService';
 import { INITIAL_MESSAGE } from '../components/chat/chatConstants';
+import type { ChatMessage } from '../components/chat/types';
 
 /**
  * useChat — owns the chat conversation state and message lifecycle, extracted
  * from the Chatbot monolith (Phase 3 / T3.1). Behavior is preserved verbatim.
  *
- * @param {{ isOpen: boolean }} opts panel open state (drives unread reset +
- *   the unread increment for demo messages received while closed)
+ * @param opts panel open state (drives unread reset + the unread increment for
+ *   demo messages received while closed)
  */
-export function useChat({ isOpen }) {
-  const [messages, setMessages] = useState([INITIAL_MESSAGE]);
+export function useChat({ isOpen }: { isOpen: boolean }) {
+  const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [flaggedWarning, setFlaggedWarning] = useState(null);
+  const [flaggedWarning, setFlaggedWarning] = useState<string | null>(null);
   const [demoMode, setDemoMode] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [persona, setPersona] = useState('default');
@@ -49,10 +51,10 @@ export function useChat({ isOpen }) {
     };
   };
 
-  const processMessage = useCallback(async (text) => {
+  const processMessage = useCallback(async (text: string) => {
     if (!text.trim() || demoMode) return;
 
-    const userMessage = { role: 'user', content: text };
+    const userMessage: ChatMessage = { role: 'user', content: text };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
@@ -100,7 +102,7 @@ export function useChat({ isOpen }) {
     }
   }, [demoMode, messages, persona]);
 
-  const handleFormSubmit = (e) => {
+  const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     processMessage(input);
   };
@@ -120,7 +122,7 @@ export function useChat({ isOpen }) {
     }
   };
 
-  const handleDemoMessage = useCallback((msg) => {
+  const handleDemoMessage = useCallback((msg: ChatMessage) => {
     setMessages((prev) => [...prev, msg]);
     if (!isOpen) setUnreadCount((prev) => prev + 1);
   }, [isOpen]);
@@ -132,7 +134,7 @@ export function useChat({ isOpen }) {
   }, []);
 
   // ── QnA handlers ────────────────────────────────────────────────────────
-  const handleUseLocalAnswer = useCallback((question, answer) => {
+  const handleUseLocalAnswer = useCallback((question: string, answer: string) => {
     setMessages((prev) => [
       ...prev,
       { role: 'user', content: question },
@@ -140,7 +142,7 @@ export function useChat({ isOpen }) {
     ]);
   }, []);
 
-  const handleAskLive = useCallback((question) => {
+  const handleAskLive = useCallback((question: string) => {
     // SECURITY: do not pass a provider hint from the client — the server
     // picks the provider. (Previously this forced { provider: 'gemini' }.)
     processMessage(question);

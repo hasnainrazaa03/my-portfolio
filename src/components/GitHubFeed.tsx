@@ -3,9 +3,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GitCommit, GitPullRequest, Star, GitBranch, Disc, ExternalLink, Loader2, AlertCircle, Github } from 'lucide-react';
 import { PERSONAL_INFO } from '../constants';
 
-const ActivityItem = ({ event, index }) => {
-  const timeAgo = (dateString) => {
-    const seconds = Math.floor((new Date() - new Date(dateString)) / 1000);
+interface GitHubEvent {
+  id: string;
+  type: string;
+  created_at: string;
+  repo?: { name: string } | null;
+  payload?: {
+    action?: string;
+    ref?: string;
+    ref_type?: string;
+    commits?: { message: string }[];
+    pull_request?: { title?: string };
+  };
+}
+
+const ActivityItem = ({ event, index }: { event: GitHubEvent; index: number }) => {
+  const timeAgo = (dateString: string) => {
+    const seconds = Math.floor((new Date().getTime() - new Date(dateString).getTime()) / 1000);
     let interval = seconds / 31536000;
     if (interval > 1) return Math.floor(interval) + "y ago";
     interval = seconds / 2592000;
@@ -19,23 +33,23 @@ const ActivityItem = ({ event, index }) => {
     return Math.floor(seconds) + "s ago";
   };
 
-  const getEventInfo = (event) => {
+  const getEventInfo = (event: GitHubEvent) => {
     switch (event.type) {
       case 'PushEvent':
         return {
           icon: GitCommit,
           color: 'text-emerald-400',
           bg: 'bg-emerald-400/10',
-          action: `Pushed ${event.payload.commits?.length || 1} commit${event.payload.commits?.length !== 1 ? 's' : ''}`,
-          target: event.payload.commits?.[0]?.message || 'No message'
+          action: `Pushed ${event.payload?.commits?.length || 1} commit${event.payload?.commits?.length !== 1 ? 's' : ''}`,
+          target: event.payload?.commits?.[0]?.message || 'No message'
         };
       case 'PullRequestEvent':
         return {
           icon: GitPullRequest,
           color: 'text-purple-400',
           bg: 'bg-purple-400/10',
-          action: `${event.payload.action === 'opened' ? 'Opened' : 'Closed'} PR`,
-          target: event.payload.pull_request?.title
+          action: `${event.payload?.action === 'opened' ? 'Opened' : 'Closed'} PR`,
+          target: event.payload?.pull_request?.title
         };
       case 'WatchEvent':
         return {
@@ -50,8 +64,8 @@ const ActivityItem = ({ event, index }) => {
           icon: GitBranch,
           color: 'text-blue-400',
           bg: 'bg-blue-400/10',
-          action: `Created ${event.payload.ref_type}`,
-          target: event.payload.ref || event.repo.name
+          action: `Created ${event.payload?.ref_type}`,
+          target: event.payload?.ref || event.repo?.name
         };
       default:
         return {
@@ -69,7 +83,7 @@ const ActivityItem = ({ event, index }) => {
 
   return (
     <motion.a
-      href={`https://github.com/${event.repo.name}`}
+      href={`https://github.com/${event.repo?.name}`}
       target="_blank"
       rel="noopener noreferrer"
       initial={{ opacity: 0, x: -20 }}
@@ -110,10 +124,10 @@ const ActivityItem = ({ event, index }) => {
 };
 
 const GitHubFeed = () => {
-  const [activities, setActivities] = useState([]);
+  const [activities, setActivities] = useState<GitHubEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
-  const containerRef = useRef(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const isVisibleRef = useRef(false);
 
   const fetchGitHubActivity = async () => {
@@ -131,7 +145,7 @@ const GitHubFeed = () => {
         const username = PERSONAL_INFO.socials.github.split('/').pop();
         const direct = await fetch(`https://api.github.com/users/${username}/events/public`);
         if (!direct.ok) throw new Error('Failed to fetch');
-        const data = await direct.json();
+        const data: GitHubEvent[] = await direct.json();
         events = data
           .filter((e) => ['PushEvent', 'PullRequestEvent', 'CreateEvent', 'WatchEvent'].includes(e.type))
           .slice(0, 10);

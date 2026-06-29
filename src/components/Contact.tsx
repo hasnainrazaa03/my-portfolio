@@ -20,28 +20,35 @@ const errorVariant = {
 // submit in <500ms. This complements the hidden honeypot field.
 const MIN_FILL_MS = 1500;
 
+interface ContactFormValues {
+  name: string;
+  email: string;
+  message: string;
+  company?: string;
+}
+
 const Contact = () => {
   const [isCopied, setIsCopied] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-  const [sendError, setSendError] = useState(null);
+  const [sendError, setSendError] = useState<string | null>(null);
   // PURITY: initialize in an effect, not during render.
   const mountedAtRef = useRef(0);
   useEffect(() => {
     mountedAtRef.current = Date.now();
   }, []);
-  
-  const { 
-    register, 
-    handleSubmit, 
+
+  const {
+    register,
+    handleSubmit,
     reset,
-    formState: { errors, isSubmitting } 
-  } = useForm({ mode: "onBlur" });
-  
+    formState: { errors, isSubmitting }
+  } = useForm<ContactFormValues>({ mode: "onBlur" });
+
   // Graceful degrade: if EmailJS isn't configured, the form can't send. Disable
   // submit and point users at the copy-email control instead of failing on send.
   const contactEnabled = env.emailjs.isConfigured;
 
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: ContactFormValues) => {
     setSendError(null);
 
     if (!contactEnabled) {

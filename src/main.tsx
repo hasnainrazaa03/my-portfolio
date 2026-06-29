@@ -1,7 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
-import App from './App.jsx'
+import App from './App'
 
 // DEV-ONLY: validate all site content against its schema so a malformed edit
 // to constants.js surfaces immediately in the console. Guarded by
@@ -25,7 +25,7 @@ if (import.meta.env.DEV) {
     .catch((err) => console.error('[env] env check failed to run:', err))
 }
 
-createRoot(document.getElementById('root')).render(
+createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
   </StrictMode>,

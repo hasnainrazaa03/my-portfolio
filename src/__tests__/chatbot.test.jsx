@@ -20,7 +20,7 @@ vi.mock('../services/analyticsService', () => ({
 vi.mock('../components/ChatDemo', () => ({ default: () => null }));
 vi.mock('../components/QnASearch', () => ({ default: () => null }));
 
-import Chatbot from '../components/Chatbot.jsx';
+import Chatbot from '../components/Chatbot';
 import { getChatResponse } from '../services/chatService';
 
 const openChat = () =>

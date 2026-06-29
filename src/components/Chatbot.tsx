@@ -39,13 +39,14 @@ const Chatbot = () => {
 
   // Dismiss the analytics vault on an outside click.
   useEffect(() => {
-    const handleClickOutside = (e) => {
+    const handleClickOutside = (e: MouseEvent) => {
       if (showAnalyticsVault) {
+        const target = e.target as Node | null;
         const analyticsElement = document.querySelector('.analytics-vault');
         const chatbotElement = document.querySelector('.chatbot-container');
 
-        if (analyticsElement && !analyticsElement.contains(e.target) &&
-            chatbotElement && !chatbotElement.contains(e.target)) {
+        if (analyticsElement && !analyticsElement.contains(target) &&
+            chatbotElement && !chatbotElement.contains(target)) {
           setShowAnalyticsVault(false);
         }
       }

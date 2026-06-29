@@ -1,9 +1,10 @@
 // Shared constants for the chat UI (extracted from the Chatbot monolith).
+import type { ChatMessage } from './types';
 
 // TODO: Add /me.jpg to public/ — a square headshot of Hasnain for chat avatar & hero.
 export const AVATAR_SRC = '/me.jpg';
 
-export const INITIAL_MESSAGE = {
+export const INITIAL_MESSAGE: ChatMessage = {
   role: 'assistant',
   content:
     "Hey there! I'm Hasnain — feel free to ask about my 💻 projects, 🛠️ skills, 💼 experience, or 🎓 education. What would you like to know?",

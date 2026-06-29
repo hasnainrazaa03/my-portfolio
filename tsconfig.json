@@ -25,5 +25,6 @@
 
     "types": ["node"]
   },
-  "include": ["src", "api"]
+  "comment-include": "Handler files (api/*.ts) are transpiled (type-stripped) by Vercel's esbuild, not type-checked by us; only the shared, unit-tested _lib helpers are in our typecheck scope.",
+  "include": ["src", "api/_lib"]
 }

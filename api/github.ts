@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 /**
  * Cached proxy for GitHub user events.
  *
@@ -80,7 +81,7 @@ async function fetchEventsFromGitHub(username) {
     .map(stripPayload);
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   const requestId = randomUUID();
   res.setHeader('x-request-id', requestId);
 

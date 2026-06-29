@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 /**
  * CSP violation report endpoint.
  *
@@ -23,7 +24,7 @@ const MAX_FIELD_LEN = 256;
 const trunc = (s) =>
   typeof s === 'string' && s.length > MAX_FIELD_LEN ? `${s.slice(0, MAX_FIELD_LEN)}…` : s;
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   applyCors(req, res, { methods: 'POST, OPTIONS', headers: 'Content-Type' });
 
   if (req.method === 'OPTIONS') return res.status(204).end();

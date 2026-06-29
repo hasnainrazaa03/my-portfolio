@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { sanitizeInput } from './_lib/sanitize';
 import { createRateLimiter, getClientIp } from './_lib/rateLimit';
 import { applyCors } from './_lib/cors';
@@ -150,7 +151,7 @@ async function callGeminiFlash(systemPrompt, userMessage) {
   return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate response';
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Correlation ID for log/trace stitching. Set BEFORE any early returns.
   const requestId = randomUUID();
   res.setHeader('x-request-id', requestId);

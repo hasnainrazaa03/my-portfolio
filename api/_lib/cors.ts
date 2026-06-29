@@ -41,7 +41,7 @@ export function isAllowedOrigin(origin: string | null | undefined): boolean {
 }
 
 interface RequestLike {
-  headers?: { origin?: string } & Record<string, unknown>;
+  headers?: Record<string, string | string[] | undefined>;
 }
 
 interface ResponseLike {
@@ -62,7 +62,8 @@ export function applyCors(
   res: ResponseLike,
   { methods = 'POST, OPTIONS', headers = 'Content-Type' }: CorsOptions = {},
 ): string | null {
-  const origin = req.headers?.origin;
+  const rawOrigin = req.headers?.origin;
+  const origin = typeof rawOrigin === 'string' ? rawOrigin : undefined;
   const allowed = isAllowedOrigin(origin) ? origin! : null;
 
   if (allowed) {

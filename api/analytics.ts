@@ -1,3 +1,4 @@
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID, timingSafeEqual as nodeTimingSafeEqual } from 'node:crypto';
 import { applyCors } from './_lib/cors';
@@ -29,7 +30,7 @@ function safeEq(a, b) {
   return nodeTimingSafeEqual(ab, bb);
 }
 
-export default async function handler(req, res) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Correlation ID for log/trace stitching. Echo on every response.
   const requestId = randomUUID();
   res.setHeader('x-request-id', requestId);

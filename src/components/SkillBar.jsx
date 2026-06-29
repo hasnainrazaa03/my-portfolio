@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import LazyImage from './ui/LazyImage';
 
 const SkillBar = ({ skill, index }) => {
   const getLevel = (level) => {
@@ -23,18 +24,13 @@ const SkillBar = ({ skill, index }) => {
     >
       <div className="flex items-center gap-3">
         <div className="w-8 h-8 rounded-lg bg-white p-1.5 flex items-center justify-center shadow-sm">
-          {skill.image && (
-            <img 
-              src={skill.image} 
-              alt={skill.name} 
-              loading="lazy"
-              decoding="async"
-              width={20}
-              height={20}
-              className="w-full h-full object-contain"
-              onError={(e) => e.target.style.display = 'none'}
-            />
-          )}
+          <LazyImage
+            src={skill.image}
+            alt={skill.name}
+            width={20}
+            height={20}
+            className="w-full h-full object-contain"
+          />
         </div>
         
         <span className="font-bold text-slate-700 dark:text-white text-sm">

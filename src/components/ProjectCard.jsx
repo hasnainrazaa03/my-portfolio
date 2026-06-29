@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, CheckCircle, Zap } from 'lucide-react';
 import { scaleIn } from '../animations';
+import LazyImage from './ui/LazyImage';
 
 const ProjectCard = ({ project, onClick }) => {
   const isInProgress = project.status === "In Progress";
   const thumbnail = project.images?.[0];
-  
+  // State-driven: hide the whole thumbnail wrapper if the image fails to load
+  // (replaces a direct `e.target.parentElement.style.display` DOM mutation).
+  const [thumbErrored, setThumbErrored] = useState(false);
+
   return (
     <motion.div 
       variants={scaleIn}
@@ -14,17 +18,15 @@ const ProjectCard = ({ project, onClick }) => {
       className="group rounded-2xl overflow-hidden h-full flex flex-col bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] cursor-pointer hover:-translate-y-2"
     >
       {/* Thumbnail */}
-      {thumbnail && (
+      {thumbnail && !thumbErrored && (
         <div className="relative h-40 overflow-hidden bg-slate-200 dark:bg-white/5 shrink-0">
-          <img
+          <LazyImage
             src={thumbnail}
             alt={project.title}
-            loading="lazy"
-            decoding="async"
             width={400}
             height={160}
             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-            onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+            onError={() => setThumbErrored(true)}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
         </div>

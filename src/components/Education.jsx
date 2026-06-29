@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, ExternalLink } from 'lucide-react';
 import { EDUCATION } from '../constants';
+import LazyImage from './ui/LazyImage';
 
 const Education = () => (
   <section id="education" className="py-20 relative">
@@ -26,20 +27,14 @@ const Education = () => (
                 className="w-16 h-16 p-3 bg-white rounded-xl shadow-sm flex items-center justify-center overflow-hidden cursor-pointer hover:scale-110 hover:shadow-md transition-all duration-300 relative z-20"
                 title={`Visit ${edu.school}`}
               >
-                {edu.image ? (
-                  <img 
-                    src={edu.image} 
-                    alt={`${edu.school} logo`} 
-                    loading="lazy"
-                    decoding="async"
-                    width={40}
-                    height={40}
-                    className="w-full h-full object-contain"
-                    onError={(e) => { e.target.style.display = 'none'; }} 
-                  />
-                ) : (
-                  <BookOpen size={32} className="text-primary" />
-                )}
+                <LazyImage
+                  src={edu.image}
+                  alt={`${edu.school} logo`}
+                  width={40}
+                  height={40}
+                  className="w-full h-full object-contain"
+                  fallback={<BookOpen size={32} className="text-primary" />}
+                />
                 
                 <div className="absolute inset-0 bg-black/10 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
                   <ExternalLink size={16} className="text-black/70" />

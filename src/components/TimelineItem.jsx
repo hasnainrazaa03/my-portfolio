@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Calendar, MapPin } from 'lucide-react';
+import LazyImage from './ui/LazyImage';
 
 const TimelineItem = ({ exp, index }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -23,19 +24,14 @@ const TimelineItem = ({ exp, index }) => {
           transition={{ type: "spring", stiffness: 260, damping: 20 }}
           className="w-20 h-20 rounded-full bg-white dark:bg-[#0F172A] border-2 border-slate-200 dark:border-primary/30 shadow-[0_0_0_4px_rgba(255,255,255,0.1)] dark:shadow-[0_0_0_4px_rgba(45,212,191,0.1)] flex items-center justify-center overflow-hidden p-4 group-hover:scale-110 transition-transform duration-300"
         >
-          {exp.logo ? (
-            <img 
-              src={exp.logo} 
-              alt={exp.company} 
-              loading="lazy"
-              decoding="async"
-              width={48}
-              height={48}
-              className="w-full h-full object-contain"
-            />
-          ) : (
-            <span className="font-bold text-primary text-xs">{exp.company.substring(0, 2)}</span>
-          )}
+          <LazyImage
+            src={exp.logo}
+            alt={exp.company}
+            width={48}
+            height={48}
+            className="w-full h-full object-contain"
+            fallback={<span className="font-bold text-primary text-xs">{exp.company.substring(0, 2)}</span>}
+          />
         </motion.div>
       </div>
 

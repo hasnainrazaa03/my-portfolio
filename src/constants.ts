@@ -1,13 +1,24 @@
 import { Code, Cpu, Database, Terminal, Wind, BookOpen, Rocket, Briefcase, GitBranch } from "lucide-react";
+import type {
+  SiteConfig,
+  PersonalInfo,
+  Stat,
+  Now,
+  Education,
+  Project,
+  Achievement,
+  SkillGroup,
+  Experience,
+} from "./types/content";
 
 // --- CONFIGURATION SETTINGS ---
-export const CONFIG = {
+export const CONFIG: SiteConfig = {
   // Set this to 'true' to block right-clicks and copy-paste.
   // Set to 'false' otherwise.
-  enableContentProtection: false, 
+  enableContentProtection: false,
 };
 
-export const PERSONAL_INFO = {
+export const PERSONAL_INFO: PersonalInfo = {
   name: "Hasnain Raza",
   title: "Hi | I'm Hasnain...",
   tagline: "Ready for takeoff?",
@@ -22,7 +33,7 @@ export const PERSONAL_INFO = {
   }
 };
 
-export const STATS = [
+export const STATS: Stat[] = [
   { target: 500, label: "Total Commits", suffix: "+", icon: GitBranch },
   { target: 10, label: "Projects Built", suffix: "+", icon: Rocket },
   { target: 3, label: "Years Experience", suffix: "+", icon: Briefcase },
@@ -34,7 +45,7 @@ export const STATS = [
  * Edit the strings here whenever life changes — kept intentionally short
  * so it can be scanned at a glance.
  */
-export const NOW = {
+export const NOW: Now = {
   // ISO date — shown next to the heading so visitors know how fresh this is.
   updated: "2026-05-20",
   items: [
@@ -45,7 +56,7 @@ export const NOW = {
   ]
 };
 
-export const EDUCATION = [
+export const EDUCATION: Education[] = [
   {
     id: 1,
     degree: "M.S. in Computer Science",
@@ -78,7 +89,7 @@ export const EDUCATION = [
   }
 ];
 
-export const PROJECTS = [
+export const PROJECTS: Project[] = [
   {
     id: 1,
     title: "Project Vimaan",
@@ -312,7 +323,7 @@ export const PROJECTS = [
  *   detail   : one-sentence description
  *   url      : optional outbound link (verifier / credential / talk recording)
  */
-export const ACHIEVEMENTS = [
+export const ACHIEVEMENTS: Achievement[] = [
   {
     category: "Scholarship",
     year: "2025",
@@ -363,7 +374,7 @@ export const ACHIEVEMENTS = [
   },
 ];
 
-export const SKILLS = [
+export const SKILLS: SkillGroup[] = [
   { 
     category: "Languages", 
     icon: Terminal,
@@ -425,7 +436,7 @@ export const SKILLS = [
   },
 ];
 
-export const EXPERIENCE = [
+export const EXPERIENCE: Experience[] = [
   {
     id: 1,
     role: "Technology Analyst",

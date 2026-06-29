@@ -11,10 +11,11 @@
  * call `const [hc, setHc] = useHighContrast()`.
  */
 import { useCallback, useEffect, useState } from 'react';
+import type { Dispatch, SetStateAction } from 'react';
 
 const STORAGE_KEY = 'pref:highContrast';
 
-const readInitial = () => {
+const readInitial = (): boolean => {
   if (typeof window === 'undefined') return false;
   try {
     const stored = window.localStorage.getItem(STORAGE_KEY);
@@ -33,8 +34,8 @@ const readInitial = () => {
   return false;
 };
 
-export const useHighContrast = () => {
-  const [enabled, setEnabled] = useState(readInitial);
+export const useHighContrast = (): [boolean, Dispatch<SetStateAction<boolean>>, () => void] => {
+  const [enabled, setEnabled] = useState<boolean>(readInitial);
 
   useEffect(() => {
     if (typeof document === 'undefined') return;

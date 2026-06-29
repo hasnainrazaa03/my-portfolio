@@ -7,12 +7,14 @@ import { useState, useEffect } from 'react';
  * scroll event, doubling layout work. Now we compute once and broadcast.
  */
 
-let listenerAttached = false;
-let lastSectionIds = [];
-let lastActive = 'hero';
-const subscribers = new Set();
+type Subscriber = (id: string) => void;
 
-function compute() {
+let listenerAttached = false;
+let lastSectionIds: string[] = [];
+let lastActive = 'hero';
+const subscribers = new Set<Subscriber>();
+
+function compute(): void {
   const spyLine = window.innerHeight * 0.3;
   for (const id of lastSectionIds) {
     const el = document.getElementById(id);
@@ -28,14 +30,14 @@ function compute() {
   }
 }
 
-function attachIfNeeded() {
+function attachIfNeeded(): void {
   if (listenerAttached || typeof window === 'undefined') return;
   listenerAttached = true;
   window.addEventListener('scroll', compute, { passive: true });
 }
 
-export const useActiveSection = (sectionIds) => {
-  const [activeSection, setActiveSection] = useState(lastActive);
+export const useActiveSection = (sectionIds: string[]): string => {
+  const [activeSection, setActiveSection] = useState<string>(lastActive);
 
   useEffect(() => {
     // Track the *union* of all requested section IDs so the shared listener

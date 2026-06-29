@@ -11,7 +11,7 @@ import { useEffect, useState } from 'react';
 
 const MEDIA = '(prefers-reduced-motion: reduce)';
 
-const getInitial = () => {
+const getInitial = (): boolean => {
   if (typeof window === 'undefined' || !window.matchMedia) return false;
   try {
     return window.matchMedia(MEDIA).matches;
@@ -20,13 +20,13 @@ const getInitial = () => {
   }
 };
 
-export const useReducedMotion = () => {
-  const [reduced, setReduced] = useState(getInitial);
+export const useReducedMotion = (): boolean => {
+  const [reduced, setReduced] = useState<boolean>(getInitial);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return undefined;
     const mql = window.matchMedia(MEDIA);
-    const onChange = (e) => setReduced(e.matches);
+    const onChange = (e: MediaQueryListEvent) => setReduced(e.matches);
     // Safari < 14 only supports the legacy `addListener` API.
     if (mql.addEventListener) mql.addEventListener('change', onChange);
     else mql.addListener(onChange);

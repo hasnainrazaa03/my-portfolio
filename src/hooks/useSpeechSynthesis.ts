@@ -9,27 +9,42 @@
  */
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-const getSynth = () =>
+export interface UseSpeechSynthesisOptions {
+  lang?: string;
+  rate?: number;
+  pitch?: number;
+}
+
+export interface UseSpeechSynthesisResult {
+  supported: boolean;
+  speaking: boolean;
+  speak: (text: string) => void;
+  cancel: () => void;
+}
+
+const getSynth = (): SpeechSynthesis | null =>
   (typeof window !== 'undefined' && 'speechSynthesis' in window)
     ? window.speechSynthesis
     : null;
 
-export const useSpeechSynthesis = ({ lang = 'en-US', rate = 1, pitch = 1 } = {}) => {
+export const useSpeechSynthesis = (
+  { lang = 'en-US', rate = 1, pitch = 1 }: UseSpeechSynthesisOptions = {},
+): UseSpeechSynthesisResult => {
   const synth = getSynth();
   const supported = Boolean(synth);
   const [speaking, setSpeaking] = useState(false);
-  const currentUtterRef = useRef(null);
+  const currentUtterRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Stop any in-flight speech if the component using this hook unmounts.
   useEffect(() => {
-    if (!supported) return undefined;
+    if (!synth) return undefined;
     return () => {
       try { synth.cancel(); } catch { /* no-op */ }
     };
-  }, [supported, synth]);
+  }, [synth]);
 
-  const speak = useCallback((text) => {
-    if (!supported || typeof text !== 'string' || !text.trim()) return;
+  const speak = useCallback((text: string) => {
+    if (!synth || typeof text !== 'string' || !text.trim()) return;
     try {
       // Cancel anything currently playing — avoids overlap when the chat
       // produces messages faster than they can be read aloud.
@@ -46,13 +61,13 @@ export const useSpeechSynthesis = ({ lang = 'en-US', rate = 1, pitch = 1 } = {})
     } catch {
       setSpeaking(false);
     }
-  }, [supported, synth, lang, rate, pitch]);
+  }, [synth, lang, rate, pitch]);
 
   const cancel = useCallback(() => {
-    if (!supported) return;
+    if (!synth) return;
     try { synth.cancel(); } catch { /* no-op */ }
     setSpeaking(false);
-  }, [supported, synth]);
+  }, [synth]);
 
   return { supported, speaking, speak, cancel };
 };

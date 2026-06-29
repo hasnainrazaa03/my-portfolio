@@ -13,24 +13,26 @@ export default defineConfig({
       provider: 'v8',
       reporter: ['text', 'html', 'lcov'],
       include: [
-        'src/services/**/*.js',
-        'src/hooks/**/*.js',
-        'api/_lib/**/*.js',
+        'src/services/**/*.{js,ts}',
+        'src/hooks/**/*.{js,ts}',
+        'src/utils/**/*.{js,ts}',
+        'src/data/**/*.{js,ts}',
+        'src/config/**/*.{js,ts}',
+        'api/_lib/**/*.{js,ts}',
       ],
       exclude: [
         '**/__tests__/**',
         '**/*.test.{js,jsx}',
       ],
-      // Baseline thresholds. These reflect what's actually tested today
-      // (api/_lib helpers, chatService, speech-recognition hook). We
-      // intentionally do NOT include components in `include` because UI
-      // smoke tests give misleading line-coverage signal. Raise these as
-      // service / hook coverage grows; CI will catch regressions.
+      // Ratcheted thresholds (Phase 4 / T4.4). We deliberately keep components
+      // OUT of `include` — UI smoke tests give misleading line-coverage signal.
+      // These cover the logic layer (services, hooks, utils, data, config,
+      // api/_lib). Raise further as coverage grows; CI catches regressions.
       thresholds: {
-        lines: 35,
-        functions: 30,
-        statements: 35,
-        branches: 40,
+        lines: 55,
+        functions: 50,
+        statements: 55,
+        branches: 45,
       },
     },
   },

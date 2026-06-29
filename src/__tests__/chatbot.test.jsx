@@ -41,7 +41,10 @@ describe('Chatbot (characterization)', () => {
     render(<Chatbot />);
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     openChat();
-    expect(screen.getByRole('dialog')).toBeInTheDocument();
+    const dialog = screen.getByRole('dialog');
+    expect(dialog).toBeInTheDocument();
+    // F-20: aria-modal must match the real focus-trap behavior.
+    expect(dialog).toHaveAttribute('aria-modal', 'true');
     expect(screen.getByText(/feel free to ask about my/i)).toBeInTheDocument();
   });
 

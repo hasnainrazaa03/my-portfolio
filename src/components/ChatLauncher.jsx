@@ -15,7 +15,7 @@ const ChatLauncher = ({ isOpen, onToggle, unread = 0 }) => (
   <motion.button
     type="button"
     onClick={onToggle}
-    className="fixed bottom-6 right-6 z-50 group flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+    className="fixed bottom-6 right-6 z-50 group flex items-center justify-center w-14 h-14 md:w-16 md:h-16 rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-neon-500/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-slate-900"
     whileHover={{ scale: 1.08 }}
     whileTap={{ scale: 0.92 }}
     aria-label={isOpen ? 'Close chat' : 'Open chat with Hasnain Raza'}

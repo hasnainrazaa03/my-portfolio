@@ -35,12 +35,27 @@ const TimelineItem = ({ exp, index }) => {
         </motion.div>
       </div>
 
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: 30 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true, margin: "-50px" }}
         transition={{ duration: 0.5, delay: index * 0.1 }}
-        className={`w-[calc(100%-60px)] md:w-5/12 ml-16 md:ml-0 p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:border-primary/40 dark:hover:border-primary/40 shadow-lg hover:shadow-xl dark:shadow-none hover:shadow-primary/5 backdrop-blur-sm transition-all duration-300 cursor-pointer relative group ${
+        // A11Y (F-26): the details were hover-only — unreachable by keyboard and
+        // a no-op on touch. Make the card a focusable button that reveals on
+        // focus and toggles on Enter/Space.
+        role="button"
+        tabIndex={0}
+        aria-expanded={isHovered}
+        aria-label={`${exp.role} at ${exp.company} — ${isHovered ? 'hide' : 'show'} details`}
+        onFocus={() => setIsHovered(true)}
+        onBlur={() => setIsHovered(false)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setIsHovered((v) => !v);
+          }
+        }}
+        className={`w-[calc(100%-60px)] md:w-5/12 ml-16 md:ml-0 p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-white/5 hover:border-primary/40 dark:hover:border-primary/40 shadow-lg hover:shadow-xl dark:shadow-none hover:shadow-primary/5 backdrop-blur-sm transition-all duration-300 cursor-pointer relative group focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-white dark:focus-visible:ring-offset-[#030014] ${
           isEven ? "md:mr-auto" : "md:ml-auto"
         }`}
       >

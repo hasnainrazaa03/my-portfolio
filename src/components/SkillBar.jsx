@@ -38,7 +38,16 @@ const SkillBar = ({ skill, index }) => {
         </span>
       </div>
 
-      <div className="flex items-end gap-1 h-4" title={skill.level}>
+      <div
+        className="flex items-end gap-1 h-4"
+        title={skill.level}
+        role="progressbar"
+        aria-label={`${skill.name} proficiency: ${skill.level}`}
+        aria-valuenow={levelStrength}
+        aria-valuemin={0}
+        aria-valuemax={4}
+        aria-valuetext={skill.level}
+      >
         {[1, 2, 3, 4].map((bar) => (
           <motion.div
             key={bar}

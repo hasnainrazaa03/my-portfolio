@@ -74,7 +74,7 @@ const Chatbot = () => {
             id="chatbot-panel"
             ref={panelRef}
             role="dialog"
-            aria-modal="false"
+            aria-modal="true"
             aria-labelledby="chatbot-title"
             aria-label="Chat with Hasnain"
           >

@@ -285,7 +285,7 @@ const QnASearch = ({ onUseAnswer, onAskLive, disabled }) => {
             onClick={() => { onAskLive?.(query); setQuery(''); }}
             className="flex-1 text-xs px-3 py-1.5 rounded-lg bg-purple-500/10 text-purple-600 dark:text-purple-400 hover:bg-purple-500/20 font-medium transition-colors border border-purple-500/20 flex items-center justify-center gap-1"
           >
-            <Zap size={12} /> Ask live (Gemini)
+            <Zap size={12} /> Ask live
           </button>
         </div>
       )}

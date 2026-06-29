@@ -4,15 +4,7 @@ import { Menu, X, Rocket, Sun, Moon, Contrast } from 'lucide-react';
 import { useHighContrast } from '../hooks/useHighContrast';
 import { PERSONAL_INFO } from '../constants';
 import { useActiveSection } from '../hooks/useActiveSection';
-
-// Native scroll helper — replaces react-scroll. Sections use `scroll-margin-top`
-// (set globally in index.css) so we don't need a numeric offset here.
-const scrollToSection = (id) => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  el.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
-};
+import { scrollToSection } from '../utils/scroll';
 
 const Navigation = ({ isDark, toggleTheme }) => {
   const [isOpen, setIsOpen] = useState(false);

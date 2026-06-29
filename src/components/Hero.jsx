@@ -3,17 +3,10 @@ import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
 import { Download, Check, ArrowRight, Loader2 } from 'lucide-react';
 import { PERSONAL_INFO } from '../constants';
 import { fadeInUp } from '../animations';
+import { scrollToSection } from '../utils/scroll';
 import SocialLinks from './SocialLinks';
 
 const Hero3D = React.lazy(() => import('./Hero3D'));
-
-// Native scroll helper — replaces react-scroll, honors prefers-reduced-motion.
-const scrollToSection = (id) => {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  el.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth', block: 'start' });
-};
 
 const Hero = () => {
   const { scrollY } = useScroll();

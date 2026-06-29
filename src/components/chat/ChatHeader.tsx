@@ -4,6 +4,27 @@ import { Sparkles, Trash2, BarChart3, Play, Volume2, VolumeX } from 'lucide-reac
 import Avatar from './Avatar';
 import ChatDemo from '../ChatDemo';
 import { AVATAR_SRC, PERSONAS } from './chatConstants';
+import type { ChatMessage, ChatStats } from './types';
+
+interface ChatHeaderProps {
+  demoMode: boolean;
+  onDemoToggle: () => void;
+  ttsSupported: boolean;
+  ttsEnabled: boolean;
+  ttsSpeaking: boolean;
+  onToggleTts: () => void;
+  adminEnabled: boolean;
+  onToggleAnalytics: () => void;
+  onClearHistory: () => void;
+  stats: ChatStats;
+  messagesLength: number;
+  persona: string;
+  onPersonaChange: (persona: string) => void;
+  isTyping: boolean;
+  onDemoMessage: (msg: ChatMessage) => void;
+  onDemoComplete: () => void;
+  onDemoReset: () => void;
+}
 
 /**
  * ChatHeader — title bar: avatar/status, demo + TTS + admin + clear controls,
@@ -27,7 +48,7 @@ const ChatHeader = ({
   onDemoMessage,
   onDemoComplete,
   onDemoReset,
-}) => (
+}: ChatHeaderProps) => (
   <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
     <div className="flex items-center justify-between mb-2">
       <div className="flex items-center gap-3">

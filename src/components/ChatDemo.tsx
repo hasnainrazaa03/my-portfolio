@@ -1,20 +1,25 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, RotateCcw } from 'lucide-react';
-import demoMessages from '../data/chatDemo.json';
+import demoMessagesJson from '../data/chatDemo.json';
+import type { ChatMessage } from './chat/types';
+
+const demoMessages = demoMessagesJson as ChatMessage[];
+
+interface ChatDemoProps {
+  isActive: boolean;
+  onMessage?: (msg: ChatMessage) => void;
+  onComplete?: () => void;
+  onReset?: () => void;
+}
 
 /**
  * ChatDemo — plays a canned conversation with typing animation.
- * Props:
- *   isActive    – whether demo mode is currently on
- *   onMessage   – (msg) => void — pushes each demo message into the parent message list
- *   onComplete  – () => void — called when demo playback is finished
- *   onReset     – () => void — resets parent messages & replays demo
  */
-const ChatDemo = ({ isActive, onMessage, onComplete, onReset }) => {
+const ChatDemo = ({ isActive, onMessage, onComplete, onReset }: ChatDemoProps) => {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
-  const timerRef = useRef(null);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const play = useCallback(() => {
     if (!isActive) return;
@@ -48,11 +53,11 @@ const ChatDemo = ({ isActive, onMessage, onComplete, onReset }) => {
       setCurrentIdx(prev => prev + 1);
     }, delay);
 
-    return () => clearTimeout(timerRef.current);
+    return () => clearTimeout(timerRef.current ?? undefined);
   }, [isPlaying, isActive, currentIdx, onMessage, onComplete]);
 
   // Cleanup on unmount
-  useEffect(() => () => clearTimeout(timerRef.current), []);
+  useEffect(() => () => clearTimeout(timerRef.current ?? undefined), []);
 
   if (!isActive) return null;
 

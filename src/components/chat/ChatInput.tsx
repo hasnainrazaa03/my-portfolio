@@ -1,7 +1,22 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, AlertTriangle, Mic, MicOff } from 'lucide-react';
+import type { FormEvent } from 'react';
 import { SUGGESTIONS, CHIP_PREFIXES } from './chatConstants';
+
+interface ChatInputProps {
+  input: string;
+  onInputChange: (value: string) => void;
+  onSubmit: (e: FormEvent<HTMLFormElement>) => void;
+  isTyping: boolean;
+  demoMode: boolean;
+  flaggedWarning: string | null;
+  voiceSupported: boolean;
+  voiceListening: boolean;
+  voiceErrorMessage: string | null;
+  onToggleVoice: () => void;
+  onSendText: (text: string) => void;
+}
 
 /**
  * ChatInput — quick-suggestion chips + the message form (flagged-input and
@@ -19,7 +34,7 @@ const ChatInput = ({
   voiceErrorMessage,
   onToggleVoice,
   onSendText,
-}) => (
+}: ChatInputProps) => (
   <>
     <div className="px-4 pb-2 pt-2 bg-slate-50 dark:bg-[#0F172A]">
       <div className="flex gap-2 overflow-x-auto thin-scrollbar-x pb-2">

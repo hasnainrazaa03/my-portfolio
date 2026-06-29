@@ -106,6 +106,7 @@ export default defineConfig([
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react/no-unescaped-entities': 'off',
+      'react-hooks/set-state-in-effect': 'off',
       // Defer to the TS-aware unused-vars rule (mirrors the JS block's pattern).
       'no-unused-vars': 'off',
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],

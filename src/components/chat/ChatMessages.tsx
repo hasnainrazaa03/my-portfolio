@@ -3,8 +3,9 @@ import { motion } from 'framer-motion';
 import { User } from 'lucide-react';
 import Avatar from './Avatar';
 import { AVATAR_SRC } from './chatConstants';
+import type { ChatMessage } from './types';
 
-const renderMessageWithEmojis = (content) => {
+const renderMessageWithEmojis = (content: string) => {
   const lines = content.split('\n');
 
   return (
@@ -29,8 +30,13 @@ const renderMessageWithEmojis = (content) => {
  * Scrollable transcript: the message bubbles + the "typing" indicator.
  * Auto-scrolls to the latest message whenever messages/typing change.
  */
-const ChatMessages = ({ messages, isTyping }) => {
-  const messagesEndRef = useRef(null);
+interface ChatMessagesProps {
+  messages: ChatMessage[];
+  isTyping: boolean;
+}
+
+const ChatMessages = ({ messages, isTyping }: ChatMessagesProps) => {
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

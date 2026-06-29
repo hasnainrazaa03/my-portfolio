@@ -1,13 +1,20 @@
 import React, { useEffect, useRef } from 'react';
 
-const SpaceBackground = ({ isDark }) => {
-  const canvasRef = useRef(null);
+interface SpaceBackgroundProps {
+  isDark: boolean;
+}
+
+const SpaceBackground = ({ isDark }: SpaceBackgroundProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    
-    let resizeTimeout;
+    // The canvas ref is always attached by the time this effect runs, and a 2d
+    // context is universally available — assert non-null so the Star class
+    // methods below (where TS drops flow-narrowing) type cleanly.
+    const canvas = canvasRef.current!;
+    const ctx = canvas.getContext('2d')!;
+
+    let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
 
     const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -20,9 +27,13 @@ const SpaceBackground = ({ isDark }) => {
     const isMobile = window.innerWidth < 768;
     const numStars = isMobile ? 60 : 150;
 
-    const stars = [];
-
     class Star {
+      x!: number;
+      y!: number;
+      size!: number;
+      speedY!: number;
+      brightness!: number;
+
       constructor() {
         this.init();
       }
@@ -59,11 +70,12 @@ const SpaceBackground = ({ isDark }) => {
       }
     }
 
+    const stars: Star[] = [];
     for (let i = 0; i < numStars; i++) {
       stars.push(new Star());
     }
 
-    let animationFrameId;
+    let animationFrameId = 0;
     
     const animate = () => {
       ctx.clearRect(0, 0, canvas.width, canvas.height);

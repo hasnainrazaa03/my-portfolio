@@ -1,7 +1,14 @@
 import React, { useState } from 'react';
+import type { ReactNode } from 'react';
+
+interface AvatarProps {
+  src?: string;
+  fallback: ReactNode;
+  className?: string;
+}
 
 /** Small circular avatar — falls back to initials when image missing. */
-const Avatar = ({ src, fallback, className = '' }) => {
+const Avatar = ({ src, fallback, className = '' }: AvatarProps) => {
   const [imgError, setImgError] = useState(false);
   if (imgError || !src) {
     return (

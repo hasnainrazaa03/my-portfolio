@@ -6,7 +6,12 @@ import { PERSONAL_INFO } from '../constants';
 import { useActiveSection } from '../hooks/useActiveSection';
 import { scrollToSection } from '../utils/scroll';
 
-const Navigation = ({ isDark, toggleTheme }) => {
+interface NavigationProps {
+  isDark: boolean;
+  toggleTheme: () => void;
+}
+
+const Navigation = ({ isDark, toggleTheme }: NavigationProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hc, , toggleHc] = useHighContrast();

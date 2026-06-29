@@ -2,7 +2,7 @@
  * sanitize.test.js — tests for the server-side prompt-injection sanitizer.
  */
 import { describe, it, expect } from 'vitest';
-import { sanitizeInput } from '../../api/_lib/sanitize.js';
+import { sanitizeInput } from '../../api/_lib/sanitize';
 
 describe('sanitizeInput', () => {
   it('rejects empty / non-string input', () => {

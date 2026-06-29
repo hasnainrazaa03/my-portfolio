@@ -7,7 +7,11 @@
  * wrapping it in delimited blocks — see api/chat.js.
  */
 
-const SUSPICIOUS_PATTERNS = [
+export type SanitizeResult =
+  | { safe: true; cleaned: string }
+  | { safe: false; cleaned: string; reason: string };
+
+const SUSPICIOUS_PATTERNS: RegExp[] = [
   /ignore\s*(all\s*)?instructions/i,
   /forget\s*(all\s*)?(system|previous)/i,
   /you\s+are\s+now/i,
@@ -25,10 +29,8 @@ const SUSPICIOUS_PATTERNS = [
 
 /**
  * Sanitize raw user input.
- * @param {unknown} raw
- * @returns {{ safe: boolean, cleaned: string, reason?: string }}
  */
-export function sanitizeInput(raw) {
+export function sanitizeInput(raw: unknown): SanitizeResult {
   if (!raw || typeof raw !== 'string') {
     return { safe: false, cleaned: '', reason: 'invalid_input' };
   }

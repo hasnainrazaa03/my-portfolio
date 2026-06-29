@@ -13,7 +13,26 @@ import { PERSONAL_INFO, PROJECTS, SKILLS, EXPERIENCE, EDUCATION } from '../const
  *    instead of the model output.
  */
 
-export const getChatResponse = async (messages, options = {}) => {
+export interface ChatMessage {
+  role?: string;
+  content: string;
+}
+
+export interface ChatOptions {
+  persona?: string;
+}
+
+export interface FlaggedResponse {
+  __flagged: true;
+  text: string;
+}
+
+export type ChatResponse = string | FlaggedResponse;
+
+export const getChatResponse = async (
+  messages: ChatMessage[],
+  options: ChatOptions = {},
+): Promise<ChatResponse> => {
   const lastUserMessage = messages[messages.length - 1].content;
   // `persona` is the only optional client-controllable knob. The server
   // validates it against an allow-list and falls back to "default" — see
@@ -53,7 +72,7 @@ export const getChatResponse = async (messages, options = {}) => {
   }
 };
 
-export const getLocalResponse = (input) => {
+export const getLocalResponse = (input: string): string => {
   const lower = input.toLowerCase();
 
   // Greetings
@@ -64,7 +83,7 @@ export const getLocalResponse = (input) => {
   // Projects
   if (lower.includes('project')) {
     if (PROJECTS && PROJECTS.length > 0) {
-      const projectNames = PROJECTS.slice(0, 3).map(p => p.title || p.name).join(', ');
+      const projectNames = PROJECTS.slice(0, 3).map((p) => p.title).join(', ');
       return `🚀 I've built several projects including ${projectNames}. Want details on any of them? 🎯`;
     }
     return "💻 I've built several AI and full-stack projects — ask about specific technologies or achievements!";
@@ -73,7 +92,7 @@ export const getLocalResponse = (input) => {
   // Skills & Technology
   if (lower.includes('skill') || lower.includes('technolog')) {
     if (SKILLS && SKILLS.length > 0) {
-      const skillCategories = SKILLS.map(s => s.category).join(', ');
+      const skillCategories = SKILLS.map((s) => s.category).join(', ');
       return `⚡ My key skill areas are: ${skillCategories}. I'm strongest in Machine Learning 🤖 and Backend Development 🛠️. Want specifics? 🎯`;
     }
     return "🛠️ I'm proficient in Python, PyTorch, TensorFlow, React, Node.js, and MATLAB — specializing in AI/ML! 🚀";
@@ -82,7 +101,7 @@ export const getLocalResponse = (input) => {
   // Experience
   if (lower.includes('experience') || lower.includes('work')) {
     if (EXPERIENCE && EXPERIENCE.length > 0) {
-      const companies = EXPERIENCE.map(e => e.company).join(', ');
+      const companies = EXPERIENCE.map((e) => e.company).join(', ');
       return `💼 I've worked at ${companies}. Ask about any specific role or what I achieved there! 🏢`;
     }
     return "💼 I have diverse experience in AI, software engineering, and aerospace research. 🚀";
@@ -91,7 +110,7 @@ export const getLocalResponse = (input) => {
   // Education
   if (lower.includes('education') || lower.includes('degree') || lower.includes('university')) {
     if (EDUCATION && EDUCATION.length > 0) {
-      const school = EDUCATION[0].school || EDUCATION[0].institution;
+      const school = EDUCATION[0].school;
       const gpa = EDUCATION[0].gpa;
       return `🎓 I'm studying at ${school} (GPA: ${gpa}). Happy to share more about my academic journey! 📚`;
     }

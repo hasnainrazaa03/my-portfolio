@@ -1,9 +1,9 @@
-import { sanitizeInput } from './_lib/sanitize.js';
-import { createRateLimiter, getClientIp } from './_lib/rateLimit.js';
-import { applyCors } from './_lib/cors.js';
+import { sanitizeInput } from './_lib/sanitize';
+import { createRateLimiter, getClientIp } from './_lib/rateLimit';
+import { applyCors } from './_lib/cors';
 import { randomUUID } from 'node:crypto';
 import { PERSONAL_INFO, PROJECTS, EXPERIENCE, SKILLS, EDUCATION } from '../src/constants';
-import { buildKnowledgeBlock } from '../src/data/buildKnowledge.js';
+import { buildKnowledgeBlock } from '../src/data/buildKnowledge';
 
 /**
  * LLM Provider Configuration (server-only, env-driven)

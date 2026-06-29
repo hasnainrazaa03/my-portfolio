@@ -2,7 +2,7 @@
  * hashIp.test.js — tests for the salted IP-hashing helper.
  */
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { hashIp } from '../../api/_lib/hashIp.js';
+import { hashIp } from '../../api/_lib/hashIp';
 
 describe('hashIp', () => {
   const originalSalt = process.env.ANALYTICS_IP_SALT;

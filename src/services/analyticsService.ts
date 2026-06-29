@@ -7,10 +7,9 @@
  *    hashed (see api/_lib/hashIp.js).
  *  - IDs use `crypto.randomUUID()` instead of `Math.random().toString(36).substr(...)`.
  */
+import { env } from '../config/env';
 
-import { env } from '../config/env.js';
-
-function safeUUID() {
+function safeUUID(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
     return crypto.randomUUID();
   }
@@ -18,7 +17,35 @@ function safeUUID() {
   return `id-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
 }
 
+export interface Interaction {
+  id: string;
+  sessionId: string;
+  question: string;
+  response: string;
+  timestamp: string;
+  timestamp_unix: number;
+  topics: string[];
+  entities: string[];
+  [key: string]: unknown;
+}
+
+export interface AnalyticsSummary {
+  totalInteractions: number;
+  totalQuestions: number;
+  topicBreakdown: Record<string, number>;
+  mostAskedTopics: Array<{ topic: string; count: number }>;
+  entityMentions: Record<string, number>;
+  sessionDuration: number;
+  sessionStart?: string;
+  sessionId?: string;
+}
+
 class AnalyticsService {
+  interactions: Interaction[];
+  sessionStart: Date;
+  sessionId: string;
+  backendUrl: string;
+
   constructor() {
     this.interactions = [];
     this.sessionStart = new Date();
@@ -26,13 +53,16 @@ class AnalyticsService {
     this.backendUrl = '/api/analytics';
   }
 
-
-  generateSessionId() {
+  generateSessionId(): string {
     return `session_${safeUUID()}`;
   }
 
-  async logInteraction(question, response, metadata = {}) {
-    const interaction = {
+  async logInteraction(
+    question: string,
+    response: string,
+    metadata: Record<string, unknown> = {},
+  ): Promise<Interaction> {
+    const interaction: Interaction = {
       id: safeUUID(),
       sessionId: this.sessionId,
       question: question.trim(),
@@ -41,12 +71,10 @@ class AnalyticsService {
       timestamp_unix: Date.now(),
       topics: this.extractTopics(question),
       entities: this.extractEntities(question),
-      ...metadata
+      ...metadata,
     };
 
-
     this.interactions.push(interaction);
-
 
     try {
       // Public write-gate token (not a secret admin key). Set
@@ -59,9 +87,8 @@ class AnalyticsService {
           'Content-Type': 'application/json',
           'x-analytics-token': writeToken,
         },
-        body: JSON.stringify(interaction)
+        body: JSON.stringify(interaction),
       });
-
 
       if (!fetchResponse.ok) {
         console.warn('Failed to send analytics to backend');
@@ -72,27 +99,23 @@ class AnalyticsService {
       this.persistToLocalStorage();
     }
 
-
     return interaction;
   }
 
-
-  persistToLocalStorage() {
+  persistToLocalStorage(): void {
     try {
       localStorage.setItem(
         `jarvis_analytics_${this.sessionId}`,
-        JSON.stringify(this.interactions)
+        JSON.stringify(this.interactions),
       );
     } catch (e) {
       console.warn('Failed to persist analytics to localStorage:', e);
     }
   }
 
-
-  extractTopics(question) {
+  extractTopics(question: string): string[] {
     const lower = question.toLowerCase();
-    const topics = [];
-
+    const topics: string[] = [];
 
     if (lower.includes('project') || lower.includes('vimaan')) topics.push('projects');
     if (lower.includes('skill') || lower.includes('tech')) topics.push('skills');
@@ -102,35 +125,29 @@ class AnalyticsService {
     if (lower.includes('ai') || lower.includes('machine learning')) topics.push('ai_ml');
     if (lower.includes('aerospace') || lower.includes('cfd')) topics.push('aerospace');
 
-
     return topics;
   }
 
-
-  extractEntities(question) {
+  extractEntities(question: string): string[] {
     const lower = question.toLowerCase();
-    const entities = [];
-
+    const entities: string[] = [];
 
     const projects = ['vimaan', 'brain tumor', 'segmentation', 'recipe vault', 'expense tracker'];
     const skills = ['python', 'pytorch', 'tensorflow', 'react', 'nodejs', 'matlab'];
     const companies = ['deloitte', 'drdo', 'prana', 'usc', 'rvce'];
 
-
-    [...projects, ...skills, ...companies].forEach(item => {
+    [...projects, ...skills, ...companies].forEach((item) => {
       if (lower.includes(item)) entities.push(item);
     });
-
 
     return [...new Set(entities)];
   }
 
-  getLocalAnalytics() {
+  getLocalAnalytics(): AnalyticsSummary {
     return this.getAnalyticsSummary();
   }
 
-
-  getAnalyticsSummary() {
+  getAnalyticsSummary(): AnalyticsSummary {
     if (this.interactions.length === 0) {
       return {
         totalInteractions: 0,
@@ -138,33 +155,28 @@ class AnalyticsService {
         topicBreakdown: {},
         mostAskedTopics: [],
         entityMentions: {},
-        sessionDuration: 0
+        sessionDuration: 0,
       };
     }
 
+    const topicBreakdown: Record<string, number> = {};
+    const entityMentions: Record<string, number> = {};
 
-    const topicBreakdown = {};
-    const entityMentions = {};
-
-
-    this.interactions.forEach(interaction => {
-      interaction.topics?.forEach(topic => {
+    this.interactions.forEach((interaction) => {
+      interaction.topics?.forEach((topic) => {
         topicBreakdown[topic] = (topicBreakdown[topic] || 0) + 1;
       });
-      interaction.entities?.forEach(entity => {
+      interaction.entities?.forEach((entity) => {
         entityMentions[entity] = (entityMentions[entity] || 0) + 1;
       });
     });
-
 
     const mostAskedTopics = Object.entries(topicBreakdown)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 5)
       .map(([topic, count]) => ({ topic, count }));
 
-
     const sessionDuration = Date.now() - this.sessionStart.getTime();
-
 
     return {
       totalInteractions: this.interactions.length,
@@ -174,20 +186,19 @@ class AnalyticsService {
       entityMentions,
       sessionDuration,
       sessionStart: this.sessionStart.toISOString(),
-      sessionId: this.sessionId
+      sessionId: this.sessionId,
     };
   }
 
-  async fetchAnalyticsFromBackend(token) {
+  async fetchAnalyticsFromBackend(token: string): Promise<unknown> {
     try {
       const response = await fetch(this.backendUrl, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
       });
-
 
       if (!response.ok) {
         if (response.status === 401) {
@@ -196,7 +207,6 @@ class AnalyticsService {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-
       return await response.json();
     } catch (error) {
       console.error('Failed to fetch analytics:', error);
@@ -204,8 +214,7 @@ class AnalyticsService {
     }
   }
 
-
-  clearAnalytics() {
+  clearAnalytics(): void {
     this.interactions = [];
     localStorage.removeItem(`jarvis_analytics_${this.sessionId}`);
   }
@@ -216,10 +225,9 @@ class AnalyticsService {
       sessionStart: this.sessionStart.toISOString(),
       exportTime: new Date().toISOString(),
       summary: this.getAnalyticsSummary(),
-      interactions: this.interactions
+      interactions: this.interactions,
     };
   }
 }
-
 
 export const analyticsService = new AnalyticsService();

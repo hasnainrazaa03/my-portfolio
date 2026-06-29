@@ -11,7 +11,13 @@ import { Cpu, X } from 'lucide-react';
  *   onToggle   – () => void
  *   unread     – number, unread badge count (0 = hidden)
  */
-const ChatLauncher = ({ isOpen, onToggle, unread = 0 }) => (
+interface ChatLauncherProps {
+  isOpen: boolean;
+  onToggle: () => void;
+  unread?: number;
+}
+
+const ChatLauncher = ({ isOpen, onToggle, unread = 0 }: ChatLauncherProps) => (
   <motion.button
     type="button"
     onClick={onToggle}

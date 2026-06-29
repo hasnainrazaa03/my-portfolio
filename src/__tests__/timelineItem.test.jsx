@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import TimelineItem from '../components/TimelineItem.jsx';
+import TimelineItem from '../components/TimelineItem';
 
 const exp = {
   id: 1,

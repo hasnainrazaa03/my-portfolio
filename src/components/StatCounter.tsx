@@ -1,8 +1,14 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, useInView, useMotionValue, useSpring } from 'framer-motion';
+import type { Stat } from '../types/content';
 
-const StatCounter = ({ stat, index }) => {
-  const ref = useRef(null);
+interface StatCounterProps {
+  stat: Stat;
+  index: number;
+}
+
+const StatCounter = ({ stat, index }: StatCounterProps) => {
+  const ref = useRef<HTMLSpanElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-50px" });
   
   const motionValue = useMotionValue(0);

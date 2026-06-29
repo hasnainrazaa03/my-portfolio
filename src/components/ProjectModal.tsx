@@ -6,9 +6,11 @@ import {
   FileText
 } from 'lucide-react';
 import { useFocusTrap } from '../hooks/useFocusTrap';
+import type { LucideIcon } from 'lucide-react';
+import type { Project } from '../types/content';
 
 
-const getTechIcon = (tech) => {
+const getTechIcon = (tech: string): LucideIcon => {
   const lowerTech = tech.toLowerCase();
   if (lowerTech.includes('react') || lowerTech.includes('web')) return Globe;
   if (lowerTech.includes('python') || lowerTech.includes('c++')) return Terminal;
@@ -20,23 +22,28 @@ const getTechIcon = (tech) => {
 };
 
 
-const ProjectModal = ({ project, onClose }) => {
+interface ProjectModalProps {
+  project: Project | null;
+  onClose: () => void;
+}
+
+const ProjectModal = ({ project, onClose }: ProjectModalProps) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const modalRef = useRef(null);
+  const modalRef = useRef<HTMLDivElement>(null);
   const titleId = 'project-modal-title';
 
 
-  const nextImage = useCallback((e) => {
-    e?.stopPropagation();
-    if (project?.images?.length > 1) {
+  const nextImage = useCallback((e?: { stopPropagation?: () => void }) => {
+    e?.stopPropagation?.();
+    if (project?.images && project.images.length > 1) {
       setCurrentImageIndex((prev) => (prev + 1) % project.images.length);
     }
   }, [project]);
 
 
-  const prevImage = useCallback((e) => {
-    e?.stopPropagation();
-    if (project?.images?.length > 1) {
+  const prevImage = useCallback((e?: { stopPropagation?: () => void }) => {
+    e?.stopPropagation?.();
+    if (project?.images && project.images.length > 1) {
       setCurrentImageIndex((prev) => (prev - 1 + project.images.length) % project.images.length);
     }
   }, [project]);
@@ -49,7 +56,7 @@ const ProjectModal = ({ project, onClose }) => {
   // Image carousel keyboard nav (component-specific; kept on window to match
   // the focus-trap's window-level listener).
   useEffect(() => {
-    const handleKeyDown = (e) => {
+    const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'ArrowLeft') prevImage();
       if (e.key === 'ArrowRight') nextImage();
     };

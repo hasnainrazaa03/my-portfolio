@@ -3,7 +3,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import SkillBar from '../components/SkillBar.jsx';
+import SkillBar from '../components/SkillBar';
 
 describe('SkillBar a11y', () => {
   it('exposes the proficiency as a labelled progressbar', () => {

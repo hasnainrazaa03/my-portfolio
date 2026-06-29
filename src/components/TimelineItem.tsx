@@ -2,8 +2,14 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronRight, Calendar, MapPin } from 'lucide-react';
 import LazyImage from './ui/LazyImage';
+import type { Experience } from '../types/content';
 
-const TimelineItem = ({ exp, index }) => {
+interface TimelineItemProps {
+  exp: Experience;
+  index: number;
+}
+
+const TimelineItem = ({ exp, index }: TimelineItemProps) => {
   const [isHovered, setIsHovered] = useState(false);
   const isEven = index % 2 === 0;
 

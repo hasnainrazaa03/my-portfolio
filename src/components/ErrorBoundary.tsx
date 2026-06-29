@@ -1,4 +1,15 @@
 import React from 'react';
+import type { ReactNode, ErrorInfo } from 'react';
+
+interface ErrorBoundaryProps {
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
 
 /**
  * Generic React Error Boundary.
@@ -10,17 +21,17 @@ import React from 'react';
  *     <ComponentThatMightCrash />
  *   </ErrorBoundary>
  */
-class ErrorBoundary extends React.Component {
-  constructor(props) {
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError(error) {
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
     return { hasError: true, error };
   }
 
-  componentDidCatch(error, info) {
+  componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[ErrorBoundary] caught:', error, info.componentStack);
   }
 

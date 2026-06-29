@@ -1,9 +1,15 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import LazyImage from './ui/LazyImage';
+import type { SkillItem } from '../types/content';
 
-const SkillBar = ({ skill, index }) => {
-  const getLevel = (level) => {
+interface SkillBarProps {
+  skill: SkillItem;
+  index: number;
+}
+
+const SkillBar = ({ skill, index }: SkillBarProps) => {
+  const getLevel = (level: string) => {
     switch (level) {
       case "Expert": return 4;
       case "Intermediate": return 3;

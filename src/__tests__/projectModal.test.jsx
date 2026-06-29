@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
-import ProjectModal from '../components/ProjectModal.jsx';
+import ProjectModal from '../components/ProjectModal';
 
 const sampleProject = {
   title: 'Test Project',

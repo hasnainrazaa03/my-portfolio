@@ -3,8 +3,14 @@ import { motion } from 'framer-motion';
 import { ExternalLink, CheckCircle, Zap } from 'lucide-react';
 import { scaleIn } from '../animations';
 import LazyImage from './ui/LazyImage';
+import type { Project } from '../types/content';
 
-const ProjectCard = ({ project, onClick }) => {
+interface ProjectCardProps {
+  project: Project;
+  onClick: (project: Project) => void;
+}
+
+const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
   const isInProgress = project.status === "In Progress";
   const thumbnail = project.images?.[0];
   // State-driven: hide the whole thumbnail wrapper if the image fails to load

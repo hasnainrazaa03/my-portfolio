@@ -3,9 +3,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PROJECTS } from '../constants';
 import ProjectCard from './ProjectCard';
 import ProjectModal from './ProjectModal';
+import type { Project } from '../types/content';
 
 const Projects = () => {
-  const [selectedProject, setSelectedProject] = useState(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [activeTab, setActiveTab] = useState("All");
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -25,7 +26,7 @@ const Projects = () => {
   // Stop, Hide"). Users now control pagination explicitly via the
   // page-indicator buttons below.
 
-  const goToPage = (pageNumber) => {
+  const goToPage = (pageNumber: number) => {
     setCurrentPage(pageNumber);
   };
 

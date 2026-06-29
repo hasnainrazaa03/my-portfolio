@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID, timingSafeEqual as nodeTimingSafeEqual } from 'node:crypto';
 import { applyCors } from './_lib/cors';
-import { createRateLimiter, getClientIp } from './_lib/rateLimit';
+import { createDurableLimiter, getClientIp } from './_lib/rateLimit';
 import { hashIp } from './_lib/hashIp';
 
 const supabaseUrl = process.env.SUPABASE_URL;
@@ -20,7 +20,7 @@ const supabase = createClient(supabaseUrl, supabaseKey);
  *    the existing table schema valid without exposing PII.
  */
 
-const writeLimiter = createRateLimiter({ windowMs: 60_000, max: 30 });
+const writeLimiter = createDurableLimiter({ windowMs: 60_000, max: 30, prefix: 'analytics' });
 
 function safeEq(a, b) {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -56,7 +56,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     const clientIp = getClientIp(req);
-    const { limited } = writeLimiter(clientIp);
+    const { limited } = await writeLimiter(clientIp);
     if (limited) return res.status(429).json({ error: 'Too many requests', requestId });
 
     try {

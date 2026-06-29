@@ -18,7 +18,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  */
 
 import { applyCors } from './_lib/cors';
-import { createRateLimiter, getClientIp } from './_lib/rateLimit';
+import { createDurableLimiter, getClientIp } from './_lib/rateLimit';
 import { randomUUID } from 'node:crypto';
 
 const DEFAULT_USERNAME = 'hasnainrazaa03';
@@ -32,7 +32,7 @@ const ALLOWED_EVENT_TYPES = new Set([
 ]);
 
 const cache = new Map(); // username -> { data, expiresAt }
-const limiter = createRateLimiter({ windowMs: 60_000, max: 30 });
+const limiter = createDurableLimiter({ windowMs: 60_000, max: 30, prefix: 'github' });
 
 function stripPayload(event) {
   // Keep only what the UI actually renders.
@@ -93,7 +93,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   const ip = getClientIp(req);
-  const { limited } = limiter(ip);
+  const { limited } = await limiter(ip);
   if (limited) {
     return res.status(429).json({ error: 'Too many requests', requestId });
   }

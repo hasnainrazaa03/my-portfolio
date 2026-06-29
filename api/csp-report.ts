@@ -14,10 +14,10 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * We accept both. Always returns 204 No Content.
  */
 import { applyCors } from './_lib/cors';
-import { createRateLimiter, getClientIp } from './_lib/rateLimit';
+import { createDurableLimiter, getClientIp } from './_lib/rateLimit';
 
 // Cheap rate-limit so a misbehaving extension can't flood logs.
-const reportLimiter = createRateLimiter({ windowMs: 60_000, max: 30 });
+const reportLimiter = createDurableLimiter({ windowMs: 60_000, max: 30, prefix: 'csp' });
 
 // Cap payload size so we never log unbounded text.
 const MAX_FIELD_LEN = 256;
@@ -31,7 +31,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).end();
 
   const ip = getClientIp(req);
-  const { limited } = reportLimiter(ip);
+  const { limited } = await reportLimiter(ip);
   if (limited) return res.status(204).end();
 
   try {

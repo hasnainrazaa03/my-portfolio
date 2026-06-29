@@ -2,7 +2,7 @@
  * rateLimit.test.js — tests for the in-memory per-key fixed-window limiter.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createRateLimiter, getClientIp } from '../../api/_lib/rateLimit';
+import { createRateLimiter, createDurableLimiter, getClientIp } from '../../api/_lib/rateLimit';
 
 describe('createRateLimiter', () => {
   beforeEach(() => {
@@ -53,6 +53,32 @@ describe('createRateLimiter', () => {
     const check = createRateLimiter({ windowMs: 60_000, max: 1 });
     expect(check(undefined).limited).toBe(false);
     expect(check('').limited).toBe(false);
+  });
+});
+
+describe('createDurableLimiter (no Upstash env → in-memory fallback)', () => {
+  const saved = { ...process.env };
+  beforeEach(() => {
+    // Ensure no Upstash/KV creds so it uses the in-memory fallback path.
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    delete process.env.KV_REST_API_URL;
+    delete process.env.KV_REST_API_TOKEN;
+  });
+  afterEach(() => {
+    process.env = { ...saved };
+  });
+
+  it('falls back to in-memory limiting and blocks after `max`', async () => {
+    const check = createDurableLimiter({ windowMs: 60_000, max: 2, prefix: 't' });
+    expect((await check('1.2.3.4')).limited).toBe(false);
+    expect((await check('1.2.3.4')).limited).toBe(false);
+    expect((await check('1.2.3.4')).limited).toBe(true);
+  });
+
+  it('treats missing keys as unlimited', async () => {
+    const check = createDurableLimiter({ windowMs: 60_000, max: 1 });
+    expect((await check(undefined)).limited).toBe(false);
   });
 });
 

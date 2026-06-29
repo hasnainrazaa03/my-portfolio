@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { sanitizeInput } from './_lib/sanitize';
-import { createRateLimiter, getClientIp } from './_lib/rateLimit';
+import { createDurableLimiter, getClientIp } from './_lib/rateLimit';
 import { applyCors } from './_lib/cors';
 import { randomUUID } from 'node:crypto';
 import { PERSONAL_INFO, PROJECTS, EXPERIENCE, SKILLS, EDUCATION } from '../src/constants';
@@ -27,7 +27,7 @@ const LLM_PROVIDER = process.env.LLM_PROVIDER === 'gemini' ? 'gemini' : 'hugging
 
 const RATE_LIMIT_MAX = Number.parseInt(process.env.CHAT_RATE_LIMIT_MAX || '10', 10);
 const RATE_LIMIT_WINDOW_MS = Number.parseInt(process.env.CHAT_RATE_LIMIT_WINDOW_MS || '60000', 10);
-const chatLimiter = createRateLimiter({ windowMs: RATE_LIMIT_WINDOW_MS, max: RATE_LIMIT_MAX });
+const chatLimiter = createDurableLimiter({ windowMs: RATE_LIMIT_WINDOW_MS, max: RATE_LIMIT_MAX, prefix: 'chat' });
 
 // Static directive header — security/persona rules. NEVER derived from client
 // input. The `=== ABOUT ME ===` facts that follow are generated from the
@@ -162,7 +162,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed', requestId });
 
   const ip = getClientIp(req);
-  const { limited, remaining, resetAt } = chatLimiter(ip);
+  const { limited, remaining, resetAt } = await chatLimiter(ip);
   res.setHeader('X-RateLimit-Limit', String(RATE_LIMIT_MAX));
   res.setHeader('X-RateLimit-Remaining', String(Math.max(0, remaining)));
   res.setHeader('X-RateLimit-Reset', String(Math.ceil(resetAt / 1000)));

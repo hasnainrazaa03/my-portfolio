@@ -7,7 +7,7 @@
  * with zero edits to api/chat.js.
  */
 import { describe, it, expect } from 'vitest';
-import { buildKnowledgeBlock } from '../data/buildKnowledge.js';
+import { buildKnowledgeBlock } from '../data/buildKnowledge';
 import { PERSONAL_INFO, PROJECTS, EXPERIENCE, SKILLS, EDUCATION } from '../constants';
 
 const liveContent = {

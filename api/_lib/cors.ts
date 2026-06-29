@@ -12,7 +12,7 @@
 
 const DEFAULT_ORIGINS = ['https://hasnainrazaa.vercel.app'];
 
-function parseConfiguredOrigins() {
+function parseConfiguredOrigins(): string[] {
   const raw = process.env.ALLOWED_ORIGIN || '';
   const list = raw
     .split(',')
@@ -23,7 +23,7 @@ function parseConfiguredOrigins() {
 
 const CONFIGURED = parseConfiguredOrigins();
 
-export function isAllowedOrigin(origin) {
+export function isAllowedOrigin(origin: string | null | undefined): boolean {
   if (!origin) return false;
   const normalized = origin.replace(/\/+$/, '');
   if (CONFIGURED.includes(normalized)) return true;
@@ -40,13 +40,30 @@ export function isAllowedOrigin(origin) {
   return false;
 }
 
+interface RequestLike {
+  headers?: { origin?: string } & Record<string, unknown>;
+}
+
+interface ResponseLike {
+  setHeader(name: string, value: string): void;
+}
+
+export interface CorsOptions {
+  methods?: string;
+  headers?: string;
+}
+
 /**
  * Apply CORS + common security headers. Returns the matched origin
  * (or null if not allowed).
  */
-export function applyCors(req, res, { methods = 'POST, OPTIONS', headers = 'Content-Type' } = {}) {
+export function applyCors(
+  req: RequestLike,
+  res: ResponseLike,
+  { methods = 'POST, OPTIONS', headers = 'Content-Type' }: CorsOptions = {},
+): string | null {
   const origin = req.headers?.origin;
-  const allowed = isAllowedOrigin(origin) ? origin : null;
+  const allowed = isAllowedOrigin(origin) ? origin! : null;
 
   if (allowed) {
     res.setHeader('Access-Control-Allow-Origin', allowed);

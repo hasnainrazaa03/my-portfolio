@@ -6,12 +6,29 @@
  * Vercel KV + `@upstash/ratelimit` in front (see README → Audit Checklist).
  */
 
+export interface RateLimitOptions {
+  windowMs: number;
+  max: number;
+}
+
+export interface RateLimitResult {
+  limited: boolean;
+  remaining: number;
+  resetAt: number;
+}
+
+export type RateLimiter = (key: string | null | undefined) => RateLimitResult;
+
+interface Bucket {
+  windowStart: number;
+  count: number;
+}
+
 /**
  * Factory — returns a `check(key)` function bound to a private Map.
- * @param {{ windowMs: number, max: number }} opts
  */
-export function createRateLimiter({ windowMs, max }) {
-  const buckets = new Map();
+export function createRateLimiter({ windowMs, max }: RateLimitOptions): RateLimiter {
+  const buckets = new Map<string, Bucket>();
 
   return function check(key) {
     if (!key) return { limited: false, remaining: max, resetAt: Date.now() + windowMs };
@@ -30,10 +47,15 @@ export function createRateLimiter({ windowMs, max }) {
   };
 }
 
+interface RequestLike {
+  headers?: Record<string, string | string[] | undefined>;
+  socket?: { remoteAddress?: string };
+}
+
 /**
  * Extract a best-effort client IP from request headers.
  */
-export function getClientIp(req) {
+export function getClientIp(req: RequestLike): string {
   const fwd = req.headers?.['x-forwarded-for'];
   if (fwd) return String(fwd).split(',')[0].trim();
   return req.socket?.remoteAddress || 'unknown';

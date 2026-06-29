@@ -12,8 +12,8 @@
  *
  * We accept both. Always returns 204 No Content.
  */
-import { applyCors } from './_lib/cors.js';
-import { createRateLimiter, getClientIp } from './_lib/rateLimit.js';
+import { applyCors } from './_lib/cors';
+import { createRateLimiter, getClientIp } from './_lib/rateLimit';
 
 // Cheap rate-limit so a misbehaving extension can't flood logs.
 const reportLimiter = createRateLimiter({ windowMs: 60_000, max: 30 });

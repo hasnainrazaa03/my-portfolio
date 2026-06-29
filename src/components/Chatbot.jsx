@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Loader2, User, Sparkles, Trash2, BarChart3, AlertTriangle, Play, Mic, MicOff, Volume2, VolumeX } from 'lucide-react';
-import { getChatResponse } from '../services/chatService.js';
+import { getChatResponse } from '../services/chatService';
 import { analyticsService } from '../services/analyticsService';
 import ChatLauncher from './ChatLauncher';
 import ChatDemo from './ChatDemo';

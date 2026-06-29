@@ -9,7 +9,7 @@
  *  - SECURITY regression: request body must not contain `context` or `provider`
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { getChatResponse, getLocalResponse } from '../services/chatService.js';
+import { getChatResponse, getLocalResponse } from '../services/chatService';
 
 describe('chatService.getLocalResponse', () => {
   it('returns a greeting for "hello"', () => {

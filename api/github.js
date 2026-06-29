@@ -16,8 +16,8 @@
  *     internal IDs / gravatar URLs to clients).
  */
 
-import { applyCors } from './_lib/cors.js';
-import { createRateLimiter, getClientIp } from './_lib/rateLimit.js';
+import { applyCors } from './_lib/cors';
+import { createRateLimiter, getClientIp } from './_lib/rateLimit';
 import { randomUUID } from 'node:crypto';
 
 const DEFAULT_USERNAME = 'hasnainrazaa03';

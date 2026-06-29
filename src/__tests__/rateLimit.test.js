@@ -2,7 +2,7 @@
  * rateLimit.test.js — tests for the in-memory per-key fixed-window limiter.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { createRateLimiter, getClientIp } from '../../api/_lib/rateLimit.js';
+import { createRateLimiter, getClientIp } from '../../api/_lib/rateLimit';
 
 describe('createRateLimiter', () => {
   beforeEach(() => {

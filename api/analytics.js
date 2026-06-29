@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID, timingSafeEqual as nodeTimingSafeEqual } from 'node:crypto';
-import { applyCors } from './_lib/cors.js';
-import { createRateLimiter, getClientIp } from './_lib/rateLimit.js';
-import { hashIp } from './_lib/hashIp.js';
+import { applyCors } from './_lib/cors';
+import { createRateLimiter, getClientIp } from './_lib/rateLimit';
+import { hashIp } from './_lib/hashIp';
 
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_KEY;

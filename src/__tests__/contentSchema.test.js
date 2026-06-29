@@ -15,7 +15,7 @@ import {
   SkillItemSchema,
   AchievementSchema,
   NowSchema,
-} from '../data/contentSchema.js';
+} from '../data/contentSchema';
 
 describe('contentSchema — real content', () => {
   it('validates the live constants.js with zero errors', () => {

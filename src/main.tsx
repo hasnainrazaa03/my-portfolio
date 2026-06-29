@@ -8,7 +8,7 @@ import App from './App'
 // import.meta.env.DEV — this code (and the zod import) is stripped from the
 // production bundle by Vite's tree-shaking, so it adds zero runtime cost.
 if (import.meta.env.DEV) {
-  import('./data/contentSchema.js')
+  import('./data/contentSchema')
     .then(({ collectContentErrors }) => {
       const errors = collectContentErrors()
       if (errors.length > 0) {
@@ -20,7 +20,7 @@ if (import.meta.env.DEV) {
     })
     .catch((err) => console.error('[content] schema validation failed to run:', err))
 
-  import('./config/env.js')
+  import('./config/env')
     .then(({ warnMissingEnv }) => warnMissingEnv())
     .catch((err) => console.error('[env] env check failed to run:', err))
 }

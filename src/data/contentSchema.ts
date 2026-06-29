@@ -168,7 +168,7 @@ const CONTENT_VALUES = {
  * @param {Record<string, unknown>} [values] override content (used in tests)
  * @returns {string[]} error messages, each prefixed with the export + field path
  */
-export function collectContentErrors(values = CONTENT_VALUES) {
+export function collectContentErrors(values: Record<string, unknown> = CONTENT_VALUES) {
   const errors = [];
   for (const [name, schema] of Object.entries(CONTENT_SCHEMAS)) {
     const result = schema.safeParse(values[name]);
@@ -186,7 +186,7 @@ export function collectContentErrors(values = CONTENT_VALUES) {
  * Throws an aggregated error if any content is invalid. No-op when valid.
  * Called dev-only from main.jsx and asserted in tests.
  */
-export function validateContent(values = CONTENT_VALUES) {
+export function validateContent(values: Record<string, unknown> = CONTENT_VALUES) {
   const errors = collectContentErrors(values);
   if (errors.length > 0) {
     throw new Error(

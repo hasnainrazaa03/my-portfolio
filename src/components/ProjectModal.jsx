@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Github, ExternalLink, X, ChevronLeft, ChevronRight, 
+import {
+  Github, ExternalLink, X, ChevronLeft, ChevronRight,
   Code, Terminal, Cpu, Database, Globe, Layers, Wind, Server,
   FileText
 } from 'lucide-react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 
 const getTechIcon = (tech) => {
@@ -22,7 +23,6 @@ const getTechIcon = (tech) => {
 const ProjectModal = ({ project, onClose }) => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const modalRef = useRef(null);
-  const previouslyFocusedRef = useRef(null);
   const titleId = 'project-modal-title';
 
 
@@ -42,55 +42,25 @@ const ProjectModal = ({ project, onClose }) => {
   }, [project]);
 
 
-  // A11Y: real focus trap. Tab cycles within the modal; Shift+Tab cycles back.
+  // A11Y: Tab-cycle focus trap, Escape-to-close, initial focus + focus
+  // restoration are all handled by the shared hook.
+  useFocusTrap(modalRef, { onEscape: onClose });
+
+  // Image carousel keyboard nav (component-specific; kept on window to match
+  // the focus-trap's window-level listener).
   useEffect(() => {
     const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-        return;
-      }
       if (e.key === 'ArrowLeft') prevImage();
       if (e.key === 'ArrowRight') nextImage();
-      if (e.key !== 'Tab' || !modalRef.current) return;
-
-      const focusables = modalRef.current.querySelectorAll(
-        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      );
-      if (focusables.length === 0) return;
-      const first = focusables[0];
-      const last = focusables[focusables.length - 1];
-      const active = document.activeElement;
-      if (e.shiftKey && active === first) {
-        e.preventDefault();
-        last.focus();
-      } else if (!e.shiftKey && active === last) {
-        e.preventDefault();
-        first.focus();
-      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onClose, prevImage, nextImage]);
+  }, [prevImage, nextImage]);
 
-
+  // Lock body scroll while the modal is open.
   useEffect(() => {
-    previouslyFocusedRef.current = document.activeElement;
     document.body.style.overflow = 'hidden';
-    // Focus the first interactive element inside the modal.
-    const focusTimer = setTimeout(() => {
-      const firstFocusable = modalRef.current?.querySelector(
-        'a[href], button:not([disabled]), input:not([disabled])'
-      );
-      (firstFocusable || modalRef.current)?.focus();
-    }, 0);
-    return () => {
-      clearTimeout(focusTimer);
-      document.body.style.overflow = 'unset';
-      // Restore focus to the element that opened the modal.
-      if (previouslyFocusedRef.current && typeof previouslyFocusedRef.current.focus === 'function') {
-        previouslyFocusedRef.current.focus();
-      }
-    };
+    return () => { document.body.style.overflow = 'unset'; };
   }, []);
 
 

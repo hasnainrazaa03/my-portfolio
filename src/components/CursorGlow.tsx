@@ -13,7 +13,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useReducedMotion } from '../hooks/useReducedMotion';
 
 const CursorGlow = () => {
-  const elRef = useRef(null);
+  const elRef = useRef<HTMLDivElement>(null);
   const rafRef = useRef(0);
   const reduced = useReducedMotion();
   const [fine, setFine] = useState(false);
@@ -38,7 +38,7 @@ const CursorGlow = () => {
       if (el) el.style.transform = `translate3d(${pendingX - 150}px, ${pendingY - 150}px, 0)`;
       rafRef.current = 0;
     };
-    const onMove = (e) => {
+    const onMove = (e: MouseEvent) => {
       pendingX = e.clientX;
       pendingY = e.clientY;
       if (!rafRef.current) rafRef.current = requestAnimationFrame(apply);

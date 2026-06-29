@@ -14,11 +14,12 @@ const KonamiEasterEgg = () => {
   const [active, setActive] = useState(false);
 
   useEffect(() => {
-    let buf = [];
-    const onKey = (e) => {
+    let buf: string[] = [];
+    const onKey = (e: KeyboardEvent) => {
       // Ignore typing in form fields.
-      const tag = e.target?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || e.target?.isContentEditable) return;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || target?.isContentEditable) return;
       buf = [...buf, e.key].slice(-KONAMI.length);
       if (buf.length === KONAMI.length &&
           buf.every((k, i) => k.toLowerCase() === KONAMI[i].toLowerCase())) {
@@ -32,7 +33,7 @@ const KonamiEasterEgg = () => {
 
   useEffect(() => {
     if (!active) return;
-    const onKey = (e) => { if (e.key === 'Escape') setActive(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setActive(false); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [active]);

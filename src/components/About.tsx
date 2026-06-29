@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { PERSONAL_INFO, STATS, NOW } from '../constants';
 import { fadeInUp } from '../animations';
 import StatCounter from './StatCounter';
+import LazyImage from './ui/LazyImage';
 
 const About = () => (
   <section id="about" className="py-20 relative">
@@ -28,16 +29,14 @@ const About = () => (
           {/* Decorative glow ring behind the avatar */}
           <div className="absolute inset-0 rounded-full bg-gradient-to-br from-primary/20 via-neon-500/20 to-primary/10 blur-md scale-110 -z-10 opacity-60 group-hover:opacity-100 group-hover:scale-[1.15] transition-all duration-500" aria-hidden="true" />
 
-          <div className="rounded-full overflow-hidden w-full h-full ring-2 ring-white/10 group-hover:ring-neon-500/30 transition-all duration-300 shadow-xl">
-            <img
+          <div className="rounded-full overflow-hidden w-full h-full ring-2 ring-white/10 group-hover:ring-neon-500/30 transition-all duration-300 shadow-xl bg-primary/20">
+            <LazyImage
               src="/me.jpg"
               alt="Hasnain Raza"
               width={192}
               height={192}
-              decoding="async"
               fetchPriority="high"
               className="w-full h-full object-cover rounded-full"
-              onError={(e) => { e.target.style.display = 'none'; e.target.parentElement.classList.add('bg-primary/20'); }}
             />
           </div>
         </motion.div>

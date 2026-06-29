@@ -8,11 +8,11 @@
  */
 import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
-import Experience from '../components/Experience.jsx';
-import Education from '../components/Education.jsx';
-import Skills from '../components/Skills.jsx';
-import Achievements from '../components/Achievements.jsx';
-import About from '../components/About.jsx';
+import Experience from '../components/Experience';
+import Education from '../components/Education';
+import Skills from '../components/Skills';
+import Achievements from '../components/Achievements';
+import About from '../components/About';
 import { EXPERIENCE, EDUCATION, SKILLS, ACHIEVEMENTS, PERSONAL_INFO } from '../constants';
 
 describe('Experience section', () => {

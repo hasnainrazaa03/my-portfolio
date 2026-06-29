@@ -12,7 +12,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
 const aboutSource = readFileSync(
-  resolve(__dirname, '../components/About.jsx'),
+  resolve(__dirname, '../components/About.tsx'),
   'utf-8'
 );
 

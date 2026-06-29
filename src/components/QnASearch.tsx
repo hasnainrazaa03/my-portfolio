@@ -3,6 +3,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Zap, ArrowUp, ArrowDown, CornerDownLeft } from 'lucide-react';
 import jarvisQnA from '../data/jarvisQnA.json';
 
+interface QnAItem { q: string; a: string; }
+interface QnAResult extends QnAItem { score: number; }
+interface DocVector { vec: Map<string, number>; norm: number; }
+interface TfIdfIndex { idf: Map<string, number>; vectors: DocVector[]; }
+
 /* ── Compact fuzzy scorer (no deps) ──────────────────────────────────────── */
 
 /**
@@ -11,7 +16,7 @@ import jarvisQnA from '../data/jarvisQnA.json';
  *  - exact substring bonus
  *  - token-level overlap via Jaccard
  */
-export function fuzzyScore(query, target) {
+export function fuzzyScore(query: string, target: string): number {
   if (!query || !target) return 0;
   const q = query.toLowerCase().trim();
   const t = target.toLowerCase();
@@ -49,7 +54,7 @@ const STOPWORDS = new Set([
   'your', 'we', 'our', 'us', 'it', 'its', 'about', 'what', 'who', 'how',
 ]);
 
-function tokenize(str) {
+function tokenize(str: string): string[] {
   return String(str || '')
     .toLowerCase()
     .replace(/[^\p{L}\p{N}\s]/gu, ' ')
@@ -57,33 +62,33 @@ function tokenize(str) {
     .filter((t) => t.length > 1 && !STOPWORDS.has(t));
 }
 
-function bigrams(tokens) {
-  const out = [];
+function bigrams(tokens: string[]): string[] {
+  const out: string[] = [];
   for (let i = 0; i < tokens.length - 1; i++) {
     out.push(`${tokens[i]} ${tokens[i + 1]}`);
   }
   return out;
 }
 
-function termsOf(str) {
+function termsOf(str: string): string[] {
   const t = tokenize(str);
   return [...t, ...bigrams(t)];
 }
 
 // Lazily-built TF-IDF index over the Q&A corpus.
-let _index = null;
-function getIndex() {
+let _index: TfIdfIndex | null = null;
+function getIndex(): TfIdfIndex {
   if (_index) return _index;
   const docs = (jarvisQnA.qaData || []).map((item) =>
     termsOf(`${item.q} ${item.q} ${item.a}`) // weight question 2x
   );
-  const df = new Map();
+  const df = new Map<string, number>();
   for (const doc of docs) {
     const seen = new Set(doc);
     for (const term of seen) df.set(term, (df.get(term) || 0) + 1);
   }
   const N = Math.max(docs.length, 1);
-  const idf = new Map();
+  const idf = new Map<string, number>();
   for (const [term, count] of df) {
     idf.set(term, Math.log(1 + N / count));
   }
@@ -92,10 +97,10 @@ function getIndex() {
   return _index;
 }
 
-function vectorize(terms, idf) {
-  const tf = new Map();
+function vectorize(terms: string[], idf: Map<string, number>): DocVector {
+  const tf = new Map<string, number>();
   for (const t of terms) tf.set(t, (tf.get(t) || 0) + 1);
-  const vec = new Map();
+  const vec = new Map<string, number>();
   let norm = 0;
   for (const [term, count] of tf) {
     const w = (1 + Math.log(count)) * (idf.get(term) || 0);
@@ -107,7 +112,7 @@ function vectorize(terms, idf) {
   return { vec, norm: Math.sqrt(norm) || 1 };
 }
 
-function cosine(a, b) {
+function cosine(a: DocVector, b: DocVector): number {
   // Iterate the smaller map for speed.
   const [small, large] = a.vec.size < b.vec.size ? [a, b] : [b, a];
   let dot = 0;
@@ -122,7 +127,7 @@ function cosine(a, b) {
  * Cosine similarity of `query` against the indexed Q&A document at `idx`.
  * Returns 0–1.
  */
-export function tfidfScore(query, idx) {
+export function tfidfScore(query: string, idx: number): number {
   const { idf, vectors } = getIndex();
   if (idx < 0 || idx >= vectors.length) return 0;
   const qVec = vectorize(termsOf(query), idf);
@@ -134,7 +139,7 @@ export function tfidfScore(query, idx) {
  * Search the QnA dataset. Returns top‑N results sorted by score.
  * Blends fuzzy substring matching with TF-IDF cosine — the higher wins.
  */
-export function searchQnA(query, topN = 5) {
+export function searchQnA(query: string, topN = 5): QnAResult[] {
   if (!query || query.trim().length < 2) return [];
 
   const scored = jarvisQnA.qaData.map((item, idx) => {
@@ -156,12 +161,18 @@ export const AUTO_SUGGEST_THRESHOLD = 0.75;
 
 /* ── Component ───────────────────────────────────────────────────────────── */
 
-const QnASearch = ({ onUseAnswer, onAskLive, disabled }) => {
+interface QnASearchProps {
+  onUseAnswer?: (question: string, answer: string) => void;
+  onAskLive?: (query: string) => void;
+  disabled?: boolean;
+}
+
+const QnASearch = ({ onUseAnswer, onAskLive, disabled }: QnASearchProps) => {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState([]);
+  const [results, setResults] = useState<QnAResult[]>([]);
   const [selectedIdx, setSelectedIdx] = useState(0);
-  const inputRef = useRef(null);
-  const debounceRef = useRef(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   // Debounced search (200ms)
   useEffect(() => {
@@ -176,7 +187,7 @@ const QnASearch = ({ onUseAnswer, onAskLive, disabled }) => {
     return () => clearTimeout(debounceRef.current);
   }, [query]);
 
-  const handleKeyDown = useCallback((e) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (results.length === 0) return;
 
     if (e.key === 'ArrowDown') {

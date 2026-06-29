@@ -72,15 +72,8 @@ export default defineConfig([
       },
     },
   },
-  {
-    files: ['src/components/QnASearch.jsx'],
-    rules: {
-      'react-refresh/only-export-components': 'off',
-    },
-  },
-  // TypeScript (Phase 2 incremental migration). No .ts/.tsx files exist yet, so
-  // this block is inert until the first one lands — at which point TS files get
-  // typescript-eslint rules + the React/a11y plugins, mirroring the JS blocks.
+  // TypeScript (Phase 2 migration). TS files get typescript-eslint rules + the
+  // React/a11y plugins, mirroring the JS blocks.
   {
     files: ['src/**/*.{ts,tsx}', 'api/**/*.ts'],
     extends: [
@@ -112,6 +105,14 @@ export default defineConfig([
       '@typescript-eslint/no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' }],
       'jsx-a11y/anchor-is-valid': 'off',
       'jsx-a11y/no-noninteractive-tabindex': 'warn',
+    },
+  },
+  // QnASearch deliberately co-exports scoring helpers (fuzzyScore/searchQnA/…)
+  // alongside the component. Must come AFTER the TS block so it wins.
+  {
+    files: ['src/components/QnASearch.tsx'],
+    rules: {
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])

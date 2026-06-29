@@ -2,15 +2,16 @@ import React, { useEffect, useRef } from 'react';
 import * as THREE from 'three';
 
 const Hero3D = () => {
-  const mountRef = useRef(null);
+  const mountRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!mountRef.current) return;
+    const mount = mountRef.current;
+    if (!mount) return;
 
     const scene = new THREE.Scene();
-    
-    const width = mountRef.current.clientWidth;
-    const height = mountRef.current.clientHeight;
+
+    const width = mount.clientWidth;
+    const height = mount.clientHeight;
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     camera.position.z = 5;
 
@@ -19,7 +20,7 @@ const Hero3D = () => {
     // PERF: lower DPR ceiling — the visual difference >1.5 is imperceptible
     // for this scene and the GPU cost on retina displays is significant.
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
-    mountRef.current.appendChild(renderer.domElement);
+    mount.appendChild(renderer.domElement);
 
     const pivotGroup = new THREE.Group(); 
     scene.add(pivotGroup);
@@ -79,7 +80,7 @@ const Hero3D = () => {
     let mouseX = 0;
     let mouseY = 0;
 
-    const handleMouseMove = (event) => {
+    const handleMouseMove = (event: MouseEvent) => {
       mouseX = (event.clientX / window.innerWidth) * 2 - 1;
       mouseY = -(event.clientY / window.innerHeight) * 2 + 1;
 
@@ -90,9 +91,10 @@ const Hero3D = () => {
 
     const randomizeColors = () => {
       const colors = [0x2DD4BF, 0xF59E0B, 0x7042f8, 0xEF4444, 0x10B981];
-      pivotGroup.children.forEach(child => {
-        if (child.userData.isInteractable && child.material && child.material.color) {
-          child.material.color.setHex(colors[Math.floor(Math.random() * colors.length)]);
+      pivotGroup.children.forEach((child) => {
+        const material = (child as THREE.Mesh).material as THREE.MeshBasicMaterial | undefined;
+        if (child.userData.isInteractable && material && material.color) {
+          material.color.setHex(colors[Math.floor(Math.random() * colors.length)]);
         }
       });
     };
@@ -106,16 +108,16 @@ const Hero3D = () => {
     };
 
     // A11Y: keyboard equivalent for the click-to-recolor interaction.
-    const handleKeyDown = (event) => {
+    const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
         randomizeColors();
       }
     };
 
-    mountRef.current.addEventListener('mousemove', handleMouseMove);
-    mountRef.current.addEventListener('click', handleClick);
-    mountRef.current.addEventListener('keydown', handleKeyDown);
+    mount.addEventListener('mousemove', handleMouseMove);
+    mount.addEventListener('click', handleClick);
+    mount.addEventListener('keydown', handleKeyDown);
 
     const clock = new THREE.Clock();
 
@@ -162,18 +164,18 @@ const Hero3D = () => {
     }
 
     let observer = null;
-    if (typeof IntersectionObserver !== 'undefined' && mountRef.current) {
+    if (typeof IntersectionObserver !== 'undefined' && mount) {
       observer = new IntersectionObserver(
         ([entry]) => { isVisible = entry.isIntersecting; },
         { threshold: 0 }
       );
-      observer.observe(mountRef.current);
+      observer.observe(mount);
     }
 
     const handleResize = () => {
-      if (!mountRef.current) return;
-      const w = mountRef.current.clientWidth;
-      const h = mountRef.current.clientHeight;
+      if (!mount) return;
+      const w = mount.clientWidth;
+      const h = mount.clientHeight;
       renderer.setSize(w, h);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -183,7 +185,7 @@ const Hero3D = () => {
     // Capture the current ref node so the cleanup runs against the same
     // DOM element this effect attached to (React may null out the ref by
     // the time cleanup fires).
-    const mountEl = mountRef.current;
+    const mountEl = mount;
     return () => {
       if (rafId) cancelAnimationFrame(rafId);
       if (observer) observer.disconnect();

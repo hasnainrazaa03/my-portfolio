@@ -10,8 +10,32 @@ import { analyticsService } from '../services/analyticsService';
 // previously the only auth gate.
 const TOKEN_STORAGE_KEY = 'jarvis_analytics_token';
 
-const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
-  const [aggregated, setAggregated] = useState(null);
+interface AnalyticsViewerProps {
+  isOpen: boolean;
+  onClose: () => void;
+  className?: string;
+}
+
+// Permissive shape — the panel renders a union of the local summary and the
+// backend `insights` object (admin-only debug view).
+interface AggregatedAnalytics {
+  totalSessions?: number;
+  totalQuestions?: number;
+  totalInteractions?: number;
+  dateRange?: string;
+  mostAskedTopics?: Array<{ topic: string; count: number }>;
+  entityMentions?: Array<[string, number]>;
+  hourlyBreakdown?: Record<string, number>;
+}
+
+interface BackendResult {
+  success?: boolean;
+  insights?: AggregatedAnalytics;
+  data?: unknown;
+}
+
+const AnalyticsViewer = ({ isOpen, onClose, className = '' }: AnalyticsViewerProps) => {
+  const [aggregated, setAggregated] = useState<AggregatedAnalytics | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [authToken, setAuthToken] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -43,9 +67,9 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
   const loadBackendAnalytics = async () => {
     setIsLoading(true);
     try {
-      const result = await analyticsService.fetchAnalyticsFromBackend(authToken);
+      const result = (await analyticsService.fetchAnalyticsFromBackend(authToken)) as BackendResult | null;
       if (result && result.success) {
-        setAggregated(result.insights);
+        setAggregated(result.insights ?? null);
       } else {
         loadLocalAnalytics();
       }
@@ -59,10 +83,10 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
 
   const loadLocalAnalytics = () => {
     const localSummary = analyticsService.getLocalAnalytics();
-    setAggregated(localSummary);
+    setAggregated(localSummary as unknown as AggregatedAnalytics);
   };
 
-  const handleAuthenticate = async (e) => {
+  const handleAuthenticate = async (e: React.FormEvent<HTMLFormElement>) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();
     setAuthError('');
     const token = tokenInput.trim();
@@ -73,12 +97,12 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
     // Validate the token immediately by attempting a backend fetch.
     setIsLoading(true);
     try {
-      const result = await analyticsService.fetchAnalyticsFromBackend(token);
+      const result = (await analyticsService.fetchAnalyticsFromBackend(token)) as BackendResult | null;
       if (result && result.success) {
         sessionStorage.setItem(TOKEN_STORAGE_KEY, token);
         setAuthToken(token);
         setIsOwner(true);
-        setAggregated(result.insights);
+        setAggregated(result.insights ?? null);
         setTokenInput('');
       } else {
         setAuthError('Invalid token.');
@@ -118,12 +142,12 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
       return;
     }
 
-    const result = await analyticsService.fetchAnalyticsFromBackend(authToken);
+    const result = (await analyticsService.fetchAnalyticsFromBackend(authToken)) as BackendResult | null;
     if (result && result.success) {
       const exportData = {
         exportTime: new Date().toISOString(),
-        totalSessions: result.insights.totalSessions,
-        totalQuestions: result.insights.totalQuestions,
+        totalSessions: result.insights?.totalSessions,
+        totalQuestions: result.insights?.totalQuestions,
         summary: result.insights,
         allInteractions: result.data
       };
@@ -250,6 +274,8 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }) => {
       </AnimatePresence>
     );
   }
+
+  if (!aggregated) return null;
 
   return (
     <AnimatePresence>

@@ -16,6 +16,12 @@ if (typeof window !== 'undefined' && !window.matchMedia) {
   });
 }
 
+// jsdom doesn't implement Element.scrollIntoView; several components call it
+// (e.g. the chatbot auto-scrolls to the latest message). No-op stub.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = () => {};
+}
+
 // jsdom doesn't implement IntersectionObserver. Provide a no-op.
 if (typeof globalThis.IntersectionObserver === 'undefined') {
   globalThis.IntersectionObserver = class {

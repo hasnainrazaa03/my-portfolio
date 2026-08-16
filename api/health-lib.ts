@@ -42,12 +42,31 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     }
   }
 
+  // ?models=1 lists the Gemini models this key may actually call. The catalog
+  // shifts and old model IDs get retired for new keys, so ask rather than guess.
+  let geminiModels: unknown = 'skipped (pass ?models=1)';
+  if (_req.query?.models === '1' && process.env.GEMINI_API_KEY) {
+    try {
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models', {
+        headers: { 'x-goog-api-key': process.env.GEMINI_API_KEY },
+      });
+      const j = (await r.json()) as { models?: { name: string; supportedGenerationMethods?: string[] }[] };
+      geminiModels = (j.models ?? [])
+        .filter((m) => m.supportedGenerationMethods?.includes('generateContent'))
+        .map((m) => m.name.replace('models/', ''))
+        .filter((n) => /flash|lite/i.test(n));
+    } catch (e) {
+      geminiModels = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   // Presence only — never values. Tells us which providers the chain can even
   // attempt, which is otherwise invisible without Vercel log access.
   const present = (k: string) => Boolean(process.env[k]);
   res.status(200).json({
     ...results,
     chain,
+    geminiModels,
     keys: {
       ANTHROPIC_API_KEY: present('ANTHROPIC_API_KEY'),
       GEMINI_API_KEY: present('GEMINI_API_KEY'),

@@ -41,7 +41,7 @@ const StatCounter = ({ stat, index }: StatCounterProps) => {
       viewport={{ once: true }}
       transition={{ delay: index * 0.1, duration: 0.5 }}
       whileHover={{ y: -5 }}
-      className="relative flex flex-col items-center justify-center p-6 bg-slate-50/50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-primary/50 transition-all duration-300 group shadow-lg dark:shadow-none hover:shadow-[0_0_30px_rgba(45,212,191,0.15)]"
+      className="relative flex flex-col items-center justify-center p-6 bg-white dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-primary/50 transition-all duration-300 group shadow-lg dark:shadow-none hover:shadow-[0_0_30px_rgba(45,212,191,0.15)]"
     >
       <div className="mb-4 p-3 bg-white dark:bg-white/10 rounded-xl text-primary shadow-sm ring-1 ring-black/5 dark:ring-white/10 group-hover:scale-110 transition-transform duration-300 relative z-10">
         <ContentIcon name={stat.icon} size={28} />

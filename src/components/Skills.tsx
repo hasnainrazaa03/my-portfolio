@@ -20,7 +20,7 @@ const Skills = () => (
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: groupIdx * 0.1 }}
-            className="p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 hover:border-primary/30 transition-colors"
+            className="p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 shadow-sm dark:shadow-none hover:border-primary/30 transition-colors"
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2.5 bg-primary/10 rounded-lg text-primary">

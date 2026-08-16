@@ -21,7 +21,7 @@ const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
     <motion.div 
       variants={scaleIn}
       onClick={() => onClick(project)}
-      className="group rounded-2xl overflow-hidden h-full flex flex-col bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] cursor-pointer hover:-translate-y-2"
+      className="group rounded-2xl overflow-hidden h-full flex flex-col bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] cursor-pointer hover:-translate-y-2"
     >
       {/* Thumbnail */}
       {thumbnail && !thumbErrored && (

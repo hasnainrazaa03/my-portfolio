@@ -13,7 +13,15 @@ export default {
         secondary: "#0F172A", // Lighter panels
         
         // Accents
-        primary: "#2DD4BF", // Teal/Cyan (HUD/Cockpit color)
+        //
+        // `primary` is THEME-AWARE. The brand teal #2DD4BF scores a superb
+        // 11.1:1 on the dark background but only 1.78:1 on the light one —
+        // far below the 4.5:1 WCAG AA floor, which made every `text-primary`
+        // in light mode effectively unreadable. The variable resolves to
+        // teal-700 (5.2:1) in light and the original teal in dark, so all ~40
+        // usages become theme-appropriate without touching a single call site.
+        // Values live in src/index.css.
+        primary: "rgb(var(--color-primary) / <alpha-value>)",
         accent: "#F59E0B", // Amber/Gold (Stars/Engines)
         nebula: "#7042f8", // Purple for glowing effects
         'neon-500': '#7c3aed', // Purple-ish neon accent

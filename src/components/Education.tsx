@@ -17,7 +17,7 @@ const Education = () => (
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ delay: index * 0.1 }}
-            className="p-8 rounded-2xl relative overflow-hidden group transition-all duration-300 flex flex-col h-full bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/50 shadow-lg hover:shadow-2xl hover:shadow-primary/10 transform-gpu hover:-translate-y-2"
+            className="p-8 rounded-2xl relative overflow-hidden group transition-all duration-300 flex flex-col h-full bg-white dark:bg-white/5 shadow-sm dark:shadow-none border border-slate-200 dark:border-white/10 hover:border-primary/50 shadow-lg hover:shadow-2xl hover:shadow-primary/10 transform-gpu hover:-translate-y-2"
           >
             <div className="flex justify-between items-start mb-6">
               <a 

@@ -109,7 +109,7 @@ const Contact = () => {
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="p-8 md:p-12 rounded-2xl shadow-xl overflow-hidden bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]"
+          className="p-8 md:p-12 rounded-2xl shadow-xl overflow-hidden bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]"
         >
           <div className="relative">
             

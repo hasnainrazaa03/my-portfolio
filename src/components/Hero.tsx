@@ -56,7 +56,7 @@ const Hero = () => {
             
             <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-white leading-tight">
               {PERSONAL_INFO.title.split('|')[0]} <br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-400 to-purple-500">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-purple-700 dark:via-blue-400 dark:to-purple-500">
                 {PERSONAL_INFO.title.split('|')[1]}
               </span>
             </h1>
@@ -66,7 +66,7 @@ const Hero = () => {
                 {PERSONAL_INFO.tagline}
               </p>
               
-              <p className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-400 to-primary animate-gradient-x pb-1">
+              <p className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-700 to-primary dark:via-purple-400 animate-gradient-x pb-1">
                 {PERSONAL_INFO.bio.split('.')[0]}
               </p>
             </div>

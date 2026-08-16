@@ -4,6 +4,16 @@
 
 :root {
   color-scheme: light dark;
+
+  /* Brand accent, theme-aware. See the `primary` note in tailwind.config.js.
+     Light: teal-700 — 5.23:1 on #F8FAFC (passes AA for body text).
+     The original #2DD4BF scored 1.78:1 here, which is why light mode read as
+     washed out. Kept verbatim for dark, where it scores 11.13:1 on #030014. */
+  --color-primary: 15 118 110;
+}
+
+.dark {
+  --color-primary: 45 212 191;
 }
 
 html {

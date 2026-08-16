@@ -41,7 +41,7 @@ const About = () => (
           </div>
         </motion.div>
 
-        <div className="p-8 md:p-10 rounded-2xl shadow-xl max-w-4xl mx-auto mb-16 bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
+        <div className="p-8 md:p-10 rounded-2xl shadow-xl max-w-4xl mx-auto mb-16 bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
           
           <p className="text-xl md:text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-300 mb-8 leading-relaxed tracking-tight">
             {PERSONAL_INFO.bioHeadline}
@@ -65,7 +65,7 @@ const About = () => (
           viewport={{ once: true }}
           transition={{ delay: 0.1 }}
           aria-labelledby="now-heading"
-          className="mt-12 max-w-3xl mx-auto p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/5 text-left"
+          className="mt-12 max-w-3xl mx-auto p-6 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 text-left"
         >
           <div className="flex items-baseline justify-between mb-3">
             <h3

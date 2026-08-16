@@ -50,7 +50,7 @@ const GitHubSection = ({ isDark }: { isDark: boolean }) => {
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
-              className="p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden bg-slate-50/50 dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]"
+              className="p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-white/10 shadow-xl overflow-hidden bg-white dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]"
             >
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
                 <div>
@@ -96,7 +96,7 @@ const GitHubSection = ({ isDark }: { isDark: boolean }) => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               
-              <div className="p-6 rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col justify-center bg-slate-50/50 dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
+              <div className="p-6 rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col justify-center bg-white dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
                 <h4 className="font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
                   <Code size={18} className="text-primary" />
                   Top Languages
@@ -113,7 +113,7 @@ const GitHubSection = ({ isDark }: { isDark: boolean }) => {
                 </div>
               </div>
 
-              <div className="p-6 rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col justify-center items-center text-center bg-slate-50/50 dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
+              <div className="p-6 rounded-2xl border border-slate-200 dark:border-white/10 flex flex-col justify-center items-center text-center bg-white dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
                 <div className="mb-2 p-3 bg-primary/10 rounded-full text-primary animate-pulse">
                   <Star size={24} />
                 </div>

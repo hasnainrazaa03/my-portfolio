@@ -304,13 +304,13 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }: AnalyticsViewerPro
 
           <div className="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-4">
             <div className="grid grid-cols-2 gap-2">
-              <div className="p-3 rounded-lg bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+              <div className="p-3 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
                 <div className="text-xs text-slate-600 dark:text-slate-400">📊 Sessions</div>
                 <div className="text-2xl font-bold text-slate-900 dark:text-white">
                   {aggregated.totalSessions}
                 </div>
               </div>
-              <div className="p-3 rounded-lg bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+              <div className="p-3 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
                 <div className="text-xs text-slate-600 dark:text-slate-400">💬 Total Chats</div>
                 <div className="text-2xl font-bold text-slate-900 dark:text-white">
                   {aggregated.totalQuestions}
@@ -318,7 +318,7 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }: AnalyticsViewerPro
               </div>
             </div>
 
-            <div className="p-3 rounded-lg bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10">
+            <div className="p-3 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10">
               <div className="text-xs text-slate-600 dark:text-slate-400 font-mono">📅 Date Range</div>
               <div className="text-sm font-medium text-slate-900 dark:text-white mt-1">
                 {aggregated.dateRange}
@@ -332,7 +332,7 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }: AnalyticsViewerPro
                   {aggregated.mostAskedTopics.map((item, idx) => (
                     <div
                       key={idx}
-                      className="text-xs p-2 rounded-lg bg-slate-50/50 dark:bg-white/5 border border-slate-200 dark:border-white/10"
+                      className="text-xs p-2 rounded-lg bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10"
                     >
                       <div className="flex justify-between items-start">
                         <span className="text-slate-700 dark:text-slate-300 capitalize flex-1">
@@ -381,7 +381,7 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }: AnalyticsViewerPro
             )}
           </div>
 
-          <div className="p-3 bg-slate-50/50 dark:bg-white/5 border-t border-slate-200 dark:border-white/10 flex flex-col gap-2">
+          <div className="p-3 bg-white dark:bg-white/5 border-t border-slate-200 dark:border-white/10 flex flex-col gap-2">
             <div className="flex gap-2">
               <motion.button
                 whileHover={{ scale: 1.02 }}

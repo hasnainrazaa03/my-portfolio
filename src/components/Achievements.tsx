@@ -39,7 +39,7 @@ const Achievements = () => {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, amount: 0.2 }}
                 transition={{ delay: idx * 0.05 }}
-                className="group relative flex h-full flex-col rounded-2xl border border-slate-200 bg-slate-50/50 p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 dark:border-white/10 dark:bg-white/5"
+                className="group relative flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:border-primary/50 hover:shadow-2xl hover:shadow-primary/10 dark:border-white/10 dark:bg-white/5"
               >
                 <div className="mb-4 flex items-start justify-between gap-2">
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">

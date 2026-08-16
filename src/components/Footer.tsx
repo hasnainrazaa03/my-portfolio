@@ -6,7 +6,7 @@ const Footer = () => (
   <footer className="bg-transparent py-8 border-t border-white/10">
     <div className="max-w-7xl mx-auto px-4 flex flex-col items-center gap-4">
       <SocialLinks />
-      <div className="text-center text-slate-500 dark:text-gray-500 text-sm">
+      <div className="text-center text-slate-500 dark:text-slate-400 text-sm">
         <p>&copy; {new Date().getFullYear()} {PERSONAL_INFO.name}. Designed in the cosmos.</p>
       </div>
       <nav aria-label="Footer" className="flex items-center gap-4 text-xs text-slate-500 dark:text-slate-400">

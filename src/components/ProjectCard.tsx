@@ -46,8 +46,8 @@ const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
         <div className="flex items-center gap-2">
           <div className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${
             isInProgress 
-              ? 'bg-yellow-400/20 text-yellow-600 dark:text-yellow-400 border border-yellow-400/30' 
-              : 'bg-green-400/20 text-green-600 dark:text-green-400 border border-green-400/30'
+              ? 'bg-yellow-400/20 text-yellow-800 dark:text-yellow-400 border border-yellow-400/30' 
+              : 'bg-green-400/20 text-green-800 dark:text-green-400 border border-green-400/30'
           }`}>
             {isInProgress ? (
               <>
@@ -75,7 +75,7 @@ const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
       
       <div className="flex flex-wrap gap-2 flex-none">
         {project.techStack?.slice(0, 3).map(tag => (
-          <span key={tag} className="px-2 py-0.5 bg-slate-200 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-primary text-xs rounded-full font-semibold">
+          <span key={tag} className="px-2 py-0.5 bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-primary text-xs rounded-full font-semibold">
             {tag}
           </span>
         ))}

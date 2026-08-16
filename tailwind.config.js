@@ -22,7 +22,11 @@ export default {
         // usages become theme-appropriate without touching a single call site.
         // Values live in src/index.css.
         primary: "rgb(var(--color-primary) / <alpha-value>)",
-        accent: "#F59E0B", // Amber/Gold (Stars/Engines)
+        // Same story as `primary`: amber-500 reads beautifully on near-black
+        // but only ~2.1:1 on white, and it is used as TEXT on a 10% tint of
+        // itself (project category chips, education periods). Light mode gets
+        // amber-700 (4.9:1). Values in src/index.css.
+        accent: "rgb(var(--color-accent) / <alpha-value>)",
         nebula: "#7042f8", // Purple for glowing effects
         'neon-500': '#7c3aed', // Purple-ish neon accent
         
@@ -32,6 +36,11 @@ export default {
         
         // Text
         light: "#F3F4F6", // Main text
+        // NOTE: this is a FLAT colour, so it SHADOWS Tailwind's built-in gray
+        // scale — `text-gray-300` and friends generate no CSS at all and fail
+        // silently. Eleven such classes were dead in the codebase, which is why
+        // several dark-mode elements were falling back to their light colour.
+        // Use the `slate` scale for shades; `text-gray` (bare) uses this value.
         gray: "#9CA3AF", // Secondary text
       },
       fontFamily: {

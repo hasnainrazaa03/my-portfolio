@@ -18,7 +18,7 @@ const SocialLinks = ({ className = "" }) => {
           href={social.url}
           target="_blank"
           rel="noopener noreferrer"
-          className="p-3 bg-slate-200/50 dark:bg-white/5 rounded-full backdrop-blur-sm border border-slate-300 dark:border-white/10 text-slate-600 dark:text-gray-400 hover:text-primary hover:border-primary/50 transition-colors shadow-lg shadow-primary/5"
+          className="p-3 bg-slate-200/50 dark:bg-white/5 rounded-full backdrop-blur-sm border border-slate-300 dark:border-white/10 text-slate-600 dark:text-slate-400 hover:text-primary hover:border-primary/50 transition-colors shadow-lg shadow-primary/5"
           whileHover={{ scale: 1.2, rotate: 5 }}
           whileTap={{ scale: 0.9 }}
           transition={{ type: "spring", stiffness: 400, damping: 17 }}

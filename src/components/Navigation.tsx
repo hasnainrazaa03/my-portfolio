@@ -36,7 +36,7 @@ const Navigation = ({ isDark, toggleTheme }: NavigationProps) => {
   }, []);
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 dark:bg-[#030014]/80 backdrop-blur-md shadow-lg border-b border-gray-200 dark:border-white/10 py-4' : 'bg-transparent py-6'}`}>
+    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? 'bg-white/80 dark:bg-[#030014]/80 backdrop-blur-md shadow-lg border-b border-slate-200 dark:border-white/10 py-4' : 'bg-transparent py-6'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex justify-between items-center">
         <button
           type="button"
@@ -114,7 +114,7 @@ const Navigation = ({ isDark, toggleTheme }: NavigationProps) => {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="md:hidden bg-white dark:bg-[#0F172A] border-t border-gray-200 dark:border-gray-800 overflow-hidden shadow-xl"
+            className="md:hidden bg-white dark:bg-[#0F172A] border-t border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl"
           >
             <div className="px-4 pt-2 pb-6 space-y-1">
               {navLinks.map((item) => (
@@ -126,7 +126,7 @@ const Navigation = ({ isDark, toggleTheme }: NavigationProps) => {
                   className={`block w-full text-left px-3 py-3 text-base font-medium rounded-md transition-colors bg-transparent ${
                     activeSection === item.id 
                       ? 'bg-primary/10 text-primary border-l-4 border-primary' 
-                      : 'text-slate-600 dark:text-gray-300 hover:bg-slate-100 dark:hover:bg-white/5'
+                      : 'text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5'
                   }`}
                 >
                   {item.name}

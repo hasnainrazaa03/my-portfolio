@@ -70,7 +70,7 @@ const ActivityItem = ({ event, index }: { event: GitHubEvent; index: number }) =
       default:
         return {
           icon: Disc,
-          color: 'text-slate-400',
+          color: 'text-slate-600 dark:text-slate-300',
           bg: 'bg-slate-400/10',
           action: 'Performed action',
           target: event.type
@@ -100,19 +100,19 @@ const ActivityItem = ({ event, index }: { event: GitHubEvent; index: number }) =
           <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
             {info.action}
           </p>
-          <span className="text-xs text-slate-500 dark:text-gray-400 whitespace-nowrap font-mono">
+          <span className="text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap font-mono">
             {timeAgo(event.created_at)}
           </span>
         </div>
         
         {info.target && (
-          <p className="text-xs text-slate-600 dark:text-gray-300 mt-0.5 line-clamp-1 italic font-medium">
+          <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 line-clamp-1 italic font-medium">
             "{info.target}"
           </p>
         )}
         
         <div className="flex items-center gap-2 mt-2">
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-gray-200 font-medium border border-transparent dark:border-white/10">
+          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-200 font-medium border border-transparent dark:border-white/10">
             {repoName}
           </span>
         </div>
@@ -204,14 +204,14 @@ const GitHubFeed = () => {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
             </span>
-            <span className="text-xs text-slate-500 dark:text-gray-300 uppercase tracking-wider font-bold">Live</span>
+            <span className="text-xs text-slate-600 dark:text-slate-200 uppercase tracking-wider font-bold">Live</span>
           </div>
         </div>
       </div>
 
       <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
         {loading && activities.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-400 gap-2">
+          <div className="flex flex-col items-center justify-center h-full text-slate-600 dark:text-slate-400 gap-2">
             <Loader2 className="animate-spin" size={24} />
             <span className="text-xs">Connecting to GitHub...</span>
           </div>

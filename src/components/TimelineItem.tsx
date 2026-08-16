@@ -83,13 +83,13 @@ const TimelineItem = ({ exp, index }: TimelineItemProps) => {
             
             <div className="flex items-center gap-3">
               {exp.location && (
-                <div className="flex items-center gap-1 text-slate-500 dark:text-gray-300 text-xs">
+                <div className="flex items-center gap-1 text-slate-700 dark:text-slate-300 text-xs">
                   <MapPin size={12} className="text-primary" />
                   {exp.location}
                 </div>
               )}
               
-              <div className="flex items-center gap-1.5 text-slate-500 dark:text-gray-300 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md font-mono text-xs">
+              <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-white/5 px-2 py-0.5 rounded-md font-mono text-xs">
                 <Calendar size={12} />
                 {exp.period}
               </div>
@@ -120,7 +120,7 @@ const TimelineItem = ({ exp, index }: TimelineItemProps) => {
         </motion.div>
         
         {!isHovered && (
-           <div className="md:hidden flex items-center gap-1 text-xs text-slate-400 mt-2 italic">
+           <div className="md:hidden flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300 mt-2 italic">
              Tap to reveal details <ChevronRight size={12} />
            </div>
         )}

@@ -115,7 +115,7 @@ const ProjectModal = ({ project, onClose }: ProjectModalProps) => {
         </button>
 
 
-        <div className="relative h-48 sm:h-64 bg-gray-900 shrink-0 border-b border-slate-200 dark:border-white/10">
+        <div className="relative h-48 sm:h-64 bg-slate-900 shrink-0 border-b border-slate-200 dark:border-white/10">
           {project.images && project.images.length > 0 ? (
             <>
               <motion.img 
@@ -158,7 +158,7 @@ const ProjectModal = ({ project, onClose }: ProjectModalProps) => {
               )}
             </>
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-500 bg-gray-800">
+            <div className="w-full h-full flex items-center justify-center text-slate-500 bg-slate-800">
               No Image Available
             </div>
           )}

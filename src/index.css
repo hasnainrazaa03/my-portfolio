@@ -10,10 +10,12 @@
      The original #2DD4BF scored 1.78:1 here, which is why light mode read as
      washed out. Kept verbatim for dark, where it scores 11.13:1 on #030014. */
   --color-primary: 15 118 110;
+  --color-accent: 146 64 14; /* amber-800 — clears 4.5:1 even on its own 10% tint */
 }
 
 .dark {
   --color-primary: 45 212 191;
+  --color-accent: 245 158 11; /* amber-500 */
 }
 
 html {

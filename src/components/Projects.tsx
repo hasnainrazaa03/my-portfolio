@@ -107,7 +107,7 @@ const Projects = () => {
             <motion.div 
               initial={{ opacity: 0 }} 
               animate={{ opacity: 1 }}
-              className="text-center text-slate-500 dark:text-gray-300 py-20"
+              className="text-center text-slate-500 dark:text-slate-300 py-20"
             >
               No missions found in this sector.
             </motion.div>

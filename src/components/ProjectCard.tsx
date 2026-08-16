@@ -30,7 +30,6 @@ const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
       type="button"
       variants={scaleIn}
       onClick={() => onClick(project)}
-      aria-label={`${project.title} — ${project.category}, ${project.status}. View mission details.`}
       className="group w-full text-left rounded-2xl overflow-hidden h-full flex flex-col bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] cursor-pointer hover:-translate-y-2"
     >
       {/* Thumbnail */}
@@ -102,6 +101,11 @@ const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
           </span>
         )}
       </div>
+
+      {/* Announces what activating the card does. Visually hidden rather than an
+          aria-label, because a label would REPLACE the accessible name and
+          break WCAG 2.5.3 (Label in Name) against the card's own visible text. */}
+      <span className="sr-only">View mission details for {project.title}</span>
       </div>
     </motion.button>
   );

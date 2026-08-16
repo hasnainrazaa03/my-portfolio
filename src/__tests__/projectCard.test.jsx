@@ -60,11 +60,21 @@ describe('ProjectCard keyboard operability', () => {
 
   it('announces the project, its category and status, and what activating does', () => {
     render(<ProjectCard project={project} onClick={() => {}} />);
-    const label = screen.getByRole('button').getAttribute('aria-label');
-    expect(label).toContain('Project Vimaan');
-    expect(label).toContain('AI/ML');
-    expect(label).toContain('In Progress');
-    expect(label).toMatch(/details/i);
+    // The accessible name is COMPUTED from the card's content plus a visually
+    // hidden action hint — deliberately not an aria-label, which would replace
+    // the name and break WCAG 2.5.3 (Label in Name) against the visible text.
+    const name = screen.getByRole('button').textContent;
+    expect(name).toContain('Project Vimaan');
+    expect(name).toContain('AI/ML');
+    expect(name).toContain('In Progress');
+    expect(name).toMatch(/View mission details/i);
+  });
+
+  it('does not override its accessible name with an aria-label', () => {
+    // Regression guard for WCAG 2.5.3: an aria-label here made the name stop
+    // containing the card's own visible text, which breaks speech input.
+    render(<ProjectCard project={project} onClick={() => {}} />);
+    expect(screen.getByRole('button')).not.toHaveAttribute('aria-label');
   });
 
   it('does not nest interactive elements inside the card button', () => {

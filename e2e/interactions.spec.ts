@@ -15,7 +15,7 @@ test.describe('project modal', () => {
     await page.goto('/');
     await page.locator('#projects').scrollIntoViewIfNeeded();
 
-    const card = page.locator('#projects button[aria-label*="View mission details"]').first();
+    const card = page.getByRole('button', { name: /View mission details/i }).first();
     await expect(card).toBeVisible();
 
     await card.focus();
@@ -38,7 +38,7 @@ test.describe('project modal', () => {
     await page.goto('/');
     await page.locator('#projects').scrollIntoViewIfNeeded();
 
-    const cards = page.locator('#projects button[aria-label*="View mission details"]');
+    const cards = page.getByRole('button', { name: /View mission details/i });
     await expect(cards.first()).toBeVisible();
 
     await page.getByRole('button', { name: 'Aerospace', exact: true }).click();
@@ -48,9 +48,7 @@ test.describe('project modal', () => {
     // grid has settled on the filtered category.
     await expect
       .poll(async () => {
-        const labels = await cards.evaluateAll((els) =>
-          els.map((e) => e.getAttribute('aria-label') ?? ''),
-        );
+        const labels = await cards.evaluateAll((els) => els.map((e) => e.textContent ?? ''));
         return labels.length > 0 && labels.every((l) => l.includes('Aerospace'));
       }, { message: 'grid never settled on Aerospace-only cards' })
       .toBe(true);

@@ -5,6 +5,14 @@
     <!-- Rocket Favicon (SVG Data URI) -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%232DD4BF%22 stroke-width=%222%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22><path d=%22M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z%22/><path d=%22m12 15-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z%22/><path d=%22M9 12H4s.55-3.03 2-4c1.62-1.08 5 0 5 0%22/><path d=%22M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5%22/></svg>" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- The only third-party origins the page still talks to (all image hosts
+         were self-hosted away). Lighthouse measured ~365ms of connection setup
+         that these overlap with the rest of the load. `crossorigin` is required
+         on preconnect for CORS fetches or the socket is opened twice. -->
+    <link rel="preconnect" href="https://github-contributions-api.jogruber.de" crossorigin />
+    <link rel="preconnect" href="https://api.github.com" crossorigin />
+    <link rel="dns-prefetch" href="https://api.emailjs.com" />
     
     <!-- PRIMARY META TAGS -->
     <title>Hasnain Raza | Portfolio</title>

@@ -42,7 +42,7 @@ const Navigation = ({ isDark, toggleTheme }: NavigationProps) => {
           type="button"
           onClick={() => scrollToSection('hero')}
           className="text-2xl font-bold text-primary tracking-tighter flex items-center gap-2 cursor-pointer z-50 bg-transparent"
-          aria-label="Scroll to top"
+          aria-label={`${PERSONAL_INFO.name.split(' ')[0]} — scroll to top`}
         >
           <Rocket size={24} className="text-accent transform -rotate-45" />
           <span>{PERSONAL_INFO.name.split(' ')[0]}<span className="text-accent">.</span></span>
@@ -95,8 +95,10 @@ const Navigation = ({ isDark, toggleTheme }: NavigationProps) => {
           >
             <Contrast size={20} />
           </button>
-          <button 
+          <button
+            type="button"
             onClick={toggleTheme}
+            aria-label="Toggle Dark Mode"
             className="p-2 rounded-full bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-yellow-400"
           >
             {isDark ? <Sun size={20} /> : <Moon size={20} />}

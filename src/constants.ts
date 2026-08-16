@@ -378,46 +378,46 @@ export const SKILLS: SkillGroup[] = [
     category: "Languages", 
     icon: 'terminal',
     items: [
-      { name: "Python", level: "Expert", pct: 95, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" },
-      { name: "C++", level: "Expert", pct: 90, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg" },
-      { name: "C", level: "Expert", pct: 88, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/c/c-original.svg" },
-      { name: "MATLAB", level: "Expert", pct: 90, image: "https://upload.wikimedia.org/wikipedia/commons/2/21/Matlab_Logo.png" },
-      { name: "Java", level: "Intermediate", pct: 70, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/java/java-original.svg" },
-      { name: "JavaScript", level: "Intermediate", pct: 65, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/javascript/javascript-original.svg" },
-      { name: "TypeScript", level: "Intermediate", pct: 75, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/typescript/typescript-original.svg" },
-      { name: "SQL", level: "Advanced", pct: 85, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mysql/mysql-original.svg" },
-      { name: "R", level: "Intermediate", pct: 70, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/r/r-original.svg" }
+      { name: "Python", level: "Expert", pct: 95, image: "/icons/python.svg" },
+      { name: "C++", level: "Expert", pct: 90, image: "/icons/cplusplus.svg" },
+      { name: "C", level: "Expert", pct: 88, image: "/icons/c.svg" },
+      { name: "MATLAB", level: "Expert", pct: 90, image: "/icons/matlab.png" },
+      { name: "Java", level: "Intermediate", pct: 70, image: "/icons/java.svg" },
+      { name: "JavaScript", level: "Intermediate", pct: 65, image: "/icons/javascript.svg" },
+      { name: "TypeScript", level: "Intermediate", pct: 75, image: "/icons/typescript.svg" },
+      { name: "SQL", level: "Advanced", pct: 85, image: "/icons/mysql.svg" },
+      { name: "R", level: "Intermediate", pct: 70, image: "/icons/r.svg" }
     ]
   },
   { 
     category: "AI & ML", 
     icon: 'cpu',
     items: [
-      { name: "PyTorch", level: "Expert", pct: 92, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/pytorch/pytorch-original.svg" },
+      { name: "PyTorch", level: "Expert", pct: 92, image: "/icons/pytorch.svg" },
       { name: "Computer Vision", level: "Expert", pct: 88, image: "https://cdn-icons-png.flaticon.com/512/2103/2103633.png" },
-      { name: "TensorFlow", level: "Intermediate", pct: 75, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/tensorflow/tensorflow-original.svg" },
+      { name: "TensorFlow", level: "Intermediate", pct: 75, image: "/icons/tensorflow.svg" },
       { name: "NLP", level: "Intermediate", pct: 70, image: "https://cdn-icons-png.flaticon.com/512/10435/10435171.png" },
-      { name: "Scikit-learn", level: "Expert", pct: 85, image: "https://upload.wikimedia.org/wikipedia/commons/0/05/Scikit_learn_logo_small.svg" },
+      { name: "Scikit-learn", level: "Expert", pct: 85, image: "/icons/scikitlearn.svg" },
       { name: "Transformers", level: "Advanced", pct: 90, image: "https://cdn-icons-png.flaticon.com/512/2103/2103633.png" },
       { name: "LLM Fine-Tuning", level: "Advanced", pct: 88, image: "https://cdn-icons-png.flaticon.com/512/4712/4712109.png" },
       { name: "Prompt Engineering", level: "Advanced", pct: 90, image: "https://cdn-icons-png.flaticon.com/512/4712/4712109.png" },
-      { name: "Hugging Face", level: "Advanced", pct: 88, image: "https://huggingface.co/front/assets/huggingface_logo-noborder.svg" }
+      { name: "Hugging Face", level: "Advanced", pct: 88, image: "/icons/huggingface.svg" }
     ]
   },
   { 
     category: "Backend & Data", 
     icon: 'database',
     items: [
-      { name: "SQL/Postgres", level: "Intermediate", pct: 78, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" },
-      { name: "MongoDB", level: "Intermediate", pct: 75, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg" },
-      { name: "Node.js", level: "Intermediate", pct: 70, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/nodejs/nodejs-original.svg" },
-      { name: "Docker", level: "Intermediate", pct: 65, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/docker/docker-original.svg" },
+      { name: "SQL/Postgres", level: "Intermediate", pct: 78, image: "/icons/postgresql.svg" },
+      { name: "MongoDB", level: "Intermediate", pct: 75, image: "/icons/mongodb.svg" },
+      { name: "Node.js", level: "Intermediate", pct: 70, image: "/icons/nodejs.svg" },
+      { name: "Docker", level: "Intermediate", pct: 65, image: "/icons/docker.svg" },
       { name: "REST APIs", level: "Expert", pct: 85, image: "https://cdn-icons-png.flaticon.com/512/8297/8297437.png" },
       { name: "System Design", level: "Advanced", pct: 85, image: "https://cdn-icons-png.flaticon.com/512/8297/8297437.png" },
       { name: "Concurrency Control", level: "Advanced", pct: 85, image: "https://cdn-icons-png.flaticon.com/512/3524/3524659.png" },
       { name: "Data Pipelines (ETL)", level: "Advanced", pct: 88, image: "https://cdn-icons-png.flaticon.com/512/888/888879.png" },
-      { name: "MongoDB Indexing", level: "Advanced", pct: 85, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg" },
-      { name: "Express.js", level: "Advanced", pct: 80, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/express/express-original.svg" }
+      { name: "MongoDB Indexing", level: "Advanced", pct: 85, image: "/icons/mongodb.svg" },
+      { name: "Express.js", level: "Advanced", pct: 80, image: "/icons/express.svg" }
     ]
   },
   { 
@@ -425,12 +425,12 @@ export const SKILLS: SkillGroup[] = [
     icon: 'wind',
     items: [
       { name: "CFD Analysis", level: "Expert", pct: 95, image: "https://cdn-icons-png.flaticon.com/512/5405/5405929.png" },
-      { name: "Ansys", level: "Expert", pct: 95, image: "https://upload.wikimedia.org/wikipedia/commons/1/14/Ansys_logo_%282019%29.svg" },
-      { name: "CATIA", level: "Expert", pct: 95, image: "https://upload.wikimedia.org/wikipedia/commons/d/dd/CATIA_Logotype_RGB_Blue.png" },
-      { name: "Simulink", level: "Expert", pct: 90, image: "https://upload.wikimedia.org/wikipedia/commons/3/36/Simulink_Logo_%28non-wordmark%29.png" },
-      { name: "SolidWorks", level: "Intermediate", pct: 70, image: "https://upload.wikimedia.org/wikipedia/en/thumb/d/d2/SolidWorks_Logo.svg/330px-SolidWorks_Logo.svg.png?20130509090050" },
-      { name: "Git", level: "Expert", pct: 88, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/git/git-original.svg" },
-      { name: "Linux", level: "Intermediate", pct: 75, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/linux/linux-original.svg" }
+      { name: "Ansys", level: "Expert", pct: 95, image: "/icons/ansys.svg" },
+      { name: "CATIA", level: "Expert", pct: 95, image: "/icons/catia.png" },
+      { name: "Simulink", level: "Expert", pct: 90, image: "/icons/simulink.png" },
+      { name: "SolidWorks", level: "Intermediate", pct: 70, image: "/icons/solidworks.png" },
+      { name: "Git", level: "Expert", pct: 88, image: "/icons/git.svg" },
+      { name: "Linux", level: "Intermediate", pct: 75, image: "/icons/linux.svg" }
     ]
   },
 ];

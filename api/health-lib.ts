@@ -60,6 +60,21 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     }
   }
 
+  // ?hf=1 lists what this HuggingFace token can route to. The default model
+  // errors with "not supported by any provider you have".
+  let hfModels: unknown = 'skipped (pass ?hf=1)';
+  if (_req.query?.hf === '1' && process.env.HUGGINGFACE_API_KEY) {
+    try {
+      const r = await fetch('https://router.huggingface.co/v1/models', {
+        headers: { Authorization: `Bearer ${process.env.HUGGINGFACE_API_KEY}` },
+      });
+      const j = (await r.json()) as { data?: { id: string }[] };
+      hfModels = (j.data ?? []).map((m) => m.id).filter((id) => /instruct|chat|it$/i.test(id)).slice(0, 25);
+    } catch (e) {
+      hfModels = e instanceof Error ? e.message : String(e);
+    }
+  }
+
   // Presence only — never values. Tells us which providers the chain can even
   // attempt, which is otherwise invisible without Vercel log access.
   const present = (k: string) => Boolean(process.env[k]);
@@ -67,6 +82,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     ...results,
     chain,
     geminiModels,
+    hfModels,
     keys: {
       ANTHROPIC_API_KEY: present('ANTHROPIC_API_KEY'),
       GEMINI_API_KEY: present('GEMINI_API_KEY'),

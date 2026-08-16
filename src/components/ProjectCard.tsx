@@ -10,6 +10,12 @@ interface ProjectCardProps {
   onClick: (project: Project) => void;
 }
 
+// Projects carry 8-18 technologies. Showing 3 made the overflow counter the
+// loudest thing in the row ("+15 more"); 6 is a representative sample that
+// still wraps to two tidy lines in the 3-column grid. The modal lists all of
+// them, so nothing is lost — this is a display choice, not a data one.
+const TECH_SHOWN = 6;
+
 const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
   const isInProgress = project.status === "In Progress";
   const thumbnail = project.images?.[0];
@@ -17,7 +23,7 @@ const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
   // (replaces a direct `e.target.parentElement.style.display` DOM mutation).
   const [thumbErrored, setThumbErrored] = useState(false);
 
-  const extraTech = Math.max(0, (project.techStack?.length ?? 0) - 3);
+  const extraTech = Math.max(0, (project.techStack?.length ?? 0) - TECH_SHOWN);
 
   return (
     // A real <button>, not a div with onClick. The cards were plain divs, so
@@ -89,15 +95,15 @@ const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
       </p>
       
       <div className="flex flex-wrap gap-2 flex-none">
-        {project.techStack?.slice(0, 3).map(tag => (
+        {project.techStack?.slice(0, TECH_SHOWN).map(tag => (
           <span key={tag} className="px-2 py-0.5 bg-slate-100 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-primary text-xs rounded-full font-semibold">
             {tag}
           </span>
         ))}
-        {/* The card shows three; without this the rest were silently dropped. */}
+        {/* Reads as "there is more behind this card", not as stray text. */}
         {extraTech > 0 && (
-          <span className="px-2 py-0.5 text-slate-600 dark:text-slate-300 text-xs rounded-full font-semibold">
-            +{extraTech} more
+          <span className="px-2 py-0.5 border border-dashed border-slate-300 dark:border-white/20 text-slate-500 dark:text-slate-400 text-xs rounded-full font-semibold">
+            +{extraTech}
           </span>
         )}
       </div>

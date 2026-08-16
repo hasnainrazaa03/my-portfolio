@@ -158,7 +158,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(502).json({ error: 'Upstream chat provider unavailable', requestId });
     }
 
+    // Which provider actually answered is otherwise invisible outside Vercel's
+    // logs, so failover can't be verified from the outside. This names the
+    // vendor but never the key or the prompt; the rate limiter is what protects
+    // spend, not obscurity about which model is behind the endpoint.
     console.log(`[chat:${requestId}] served by ${result.provider}/${result.model}`);
+    res.setHeader('x-llm-provider', result.provider);
     return res.status(200).json({ reply: formatReply(result.text), requestId });
   } catch (error) {
     console.error(`[chat:${requestId}] Internal error:`, error);

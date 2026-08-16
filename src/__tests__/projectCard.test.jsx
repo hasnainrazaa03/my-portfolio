@@ -86,18 +86,21 @@ describe('ProjectCard keyboard operability', () => {
 });
 
 describe('ProjectCard tech stack', () => {
-  it('shows the first three and counts the remainder', () => {
-    render(<ProjectCard project={project} onClick={() => {}} />);
-    expect(screen.getByText('Python')).toBeInTheDocument();
-    expect(screen.getByText('Hugging Face Transformers')).toBeInTheDocument();
-    // 5 total, 3 shown — the other 2 were previously dropped with no trace.
-    expect(screen.getByText('+2 more')).toBeInTheDocument();
+  it('counts the remainder when the stack overflows the card', () => {
+    // 8 total, 6 shown. Projects carry 8-18 technologies, so showing 3 made the
+    // counter the loudest element in the row.
+    const big = { ...project, techStack: ['a','b','c','d','e','f','g','h'] };
+    render(<ProjectCard project={big} onClick={() => {}} />);
+    expect(screen.getByText('a')).toBeInTheDocument();
+    expect(screen.getByText('f')).toBeInTheDocument();
+    expect(screen.queryByText('g')).not.toBeInTheDocument();
+    expect(screen.getByText('+2')).toBeInTheDocument();
   });
 
-  it('omits the counter when nothing is truncated', () => {
+  it('omits the counter when the whole stack fits', () => {
     render(
       <ProjectCard project={{ ...project, techStack: ['React', 'Vite'] }} onClick={() => {}} />,
     );
-    expect(screen.queryByText(/more$/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/^\+\d+$/)).not.toBeInTheDocument();
   });
 });

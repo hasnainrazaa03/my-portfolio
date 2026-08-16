@@ -97,7 +97,7 @@ export function applyCors(
   }
   res.setHeader('Access-Control-Allow-Methods', methods);
   res.setHeader('Access-Control-Allow-Headers', headers);
-  res.setHeader('Access-Control-Expose-Headers', 'x-request-id');
+  res.setHeader('Access-Control-Expose-Headers', 'x-request-id, x-llm-provider');
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('Referrer-Policy', 'no-referrer');
 

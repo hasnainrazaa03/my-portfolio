@@ -8,7 +8,7 @@ import LazyImage from './ui/LazyImage';
 const Education = () => (
   <section id="education" className="py-20 relative">
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <SectionHeading number="02" title="Education" subtitle="Where the engineering foundation was built" />
+      <SectionHeading number="02" title="Education" subtitle="Degrees, institutions, and coursework" />
       
       <div className="grid md:grid-cols-3 gap-8"> 
         {EDUCATION?.map((edu, index) => (

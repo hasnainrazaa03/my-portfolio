@@ -5,9 +5,22 @@ import { applyCors } from './_lib/cors';
 import { createDurableLimiter, getClientIp } from './_lib/rateLimit';
 import { hashIp } from './_lib/hashIp';
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
-const supabase = createClient(supabaseUrl, supabaseKey);
+/**
+ * Supabase client is created LAZILY. At module scope, `createClient` runs on
+ * every cold start — including for requests that never touch the database
+ * (OPTIONS preflights, 401s, 429s) — and it throws on missing env vars, which
+ * surfaces as an opaque 500 for the whole function rather than a clear error.
+ * Deferring it means a misconfigured deploy fails only the DB path, with a
+ * message that says what's actually wrong.
+ */
+function getSupabase() {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_SERVICE_KEY;
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('SUPABASE_URL / SUPABASE_SERVICE_KEY not configured');
+  }
+  return createClient(supabaseUrl, supabaseKey);
+}
 
 /**
  * PRIVACY POSTURE
@@ -22,7 +35,17 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 const writeLimiter = createDurableLimiter({ windowMs: 60_000, max: 30, prefix: 'analytics' });
 
-function safeEq(a, b) {
+/** A row of the `jarvis_analytics` table, as consumed by the insights pass. */
+interface AnalyticsRow {
+  question?: string | null;
+  session_id?: string | null;
+  timestamp: string;
+}
+
+/** Keyed occurrence counts (topics, entities, hour buckets). */
+type Counter = Record<string, number>;
+
+function safeEq(a: unknown, b: unknown): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
   const ab = Buffer.from(a);
   const bb = Buffer.from(b);
@@ -65,7 +88,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(400).json({ error: 'Missing required fields', requestId });
       }
 
-      const { data, error } = await supabase.from('jarvis_analytics').insert([
+      const { data, error } = await getSupabase().from('jarvis_analytics').insert([
         {
           id: randomUUID(),
           question: String(question).slice(0, 1000),
@@ -102,7 +125,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .json({ error: 'Unauthorized', message: 'Provide the analytics secret token', requestId });
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await getSupabase()
         .from('jarvis_analytics')
         .select('*')
         .order('timestamp', { ascending: false })
@@ -130,7 +153,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 }
 
 // ── Insights (unchanged shape) ─────────────────────────────────────────────
-function processAnalyticsData(data) {
+function processAnalyticsData(data: AnalyticsRow[]) {
   if (!data || data.length === 0) {
     return {
       totalSessions: 0,
@@ -142,11 +165,11 @@ function processAnalyticsData(data) {
     };
   }
 
-  const topicBreakdown = {};
-  const entityMentions = {};
-  const hourlyBreakdown = {};
+  const topicBreakdown: Counter = {};
+  const entityMentions: Counter = {};
+  const hourlyBreakdown: Counter = {};
 
-  data.forEach((interaction) => {
+  data.forEach((interaction: AnalyticsRow) => {
     const topics = extractTopics(interaction.question);
     const entities = extractEntities(interaction.question);
     const hour = new Date(interaction.timestamp).getHours();
@@ -161,7 +184,7 @@ function processAnalyticsData(data) {
     .map(([topic, count]) => ({ topic, count }));
 
   const topEntities = Object.entries(entityMentions).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  const uniqueSessions = new Set(data.map((d) => d.session_id)).size;
+  const uniqueSessions = new Set(data.map((d: AnalyticsRow) => d.session_id)).size;
 
   return {
     totalSessions: uniqueSessions,
@@ -173,9 +196,9 @@ function processAnalyticsData(data) {
   };
 }
 
-function extractTopics(question) {
+function extractTopics(question: unknown): string[] {
   const lower = String(question || '').toLowerCase();
-  const topics = [];
+  const topics: string[] = [];
   if (/(project|vimaan|tumor|brain)/.test(lower)) topics.push('projects');
   if (/(skill|tech|language|proficient)/.test(lower)) topics.push('skills');
   if (/(experience|work|deloitte|drdo|prana)/.test(lower)) topics.push('experience');
@@ -186,9 +209,9 @@ function extractTopics(question) {
   return topics;
 }
 
-function extractEntities(question) {
+function extractEntities(question: unknown): string[] {
   const lower = String(question || '').toLowerCase();
-  const entities = [];
+  const entities: string[] = [];
   const dict = [
     'vimaan', 'brain tumor', 'segmentation', 'recipe vault', 'expense tracker', 'cfd', 'aerodynamic',
     'python', 'pytorch', 'tensorflow', 'react', 'nodejs', 'matlab', 'sql', 'java', 'cpp', 'javascript',

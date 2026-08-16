@@ -31,10 +31,44 @@ const ALLOWED_EVENT_TYPES = new Set([
   'WatchEvent',
 ]);
 
-const cache = new Map(); // username -> { data, expiresAt }
+/** The subset of GitHub's event payload the UI actually renders. */
+interface GitHubEvent {
+  id?: string;
+  type?: string;
+  created_at?: string;
+  repo?: { name?: string } | null;
+  payload?: {
+    action?: string;
+    ref?: string;
+    ref_type?: string;
+    commits?: { message?: string }[];
+    pull_request?: { title?: string };
+  };
+}
+
+type StrippedEvent = ReturnType<typeof stripPayload>;
+
+interface CacheEntry {
+  data: StrippedEvent[];
+  expiresAt: number;
+}
+
+const cache = new Map<string, CacheEntry>();
 const limiter = createDurableLimiter({ windowMs: 60_000, max: 30, prefix: 'github' });
 
-function stripPayload(event) {
+/** Error carrying upstream context for logging (never sent to the client). */
+class UpstreamError extends Error {
+  upstreamStatus: number;
+  upstreamBody: string;
+  constructor(message: string, status: number, body: string) {
+    super(message);
+    this.name = 'UpstreamError';
+    this.upstreamStatus = status;
+    this.upstreamBody = body;
+  }
+}
+
+function stripPayload(event: GitHubEvent) {
   // Keep only what the UI actually renders.
   return {
     id: event.id,
@@ -55,8 +89,8 @@ function stripPayload(event) {
   };
 }
 
-async function fetchEventsFromGitHub(username) {
-  const headers = { 'User-Agent': 'hasnainrazaa-portfolio' };
+async function fetchEventsFromGitHub(username: string): Promise<StrippedEvent[]> {
+  const headers: Record<string, string> = { 'User-Agent': 'hasnainrazaa-portfolio' };
   if (process.env.GITHUB_TOKEN) {
     headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   }
@@ -68,15 +102,14 @@ async function fetchEventsFromGitHub(username) {
 
   if (!res.ok) {
     const body = await res.text().catch(() => '');
-    const err = new Error(`GitHub responded ${res.status}`);
-    err.upstreamStatus = res.status;
-    err.upstreamBody = body.slice(0, 200);
-    throw err;
+    throw new UpstreamError(`GitHub responded ${res.status}`, res.status, body.slice(0, 200));
   }
 
-  const data = await res.json();
+  const data = (await res.json()) as GitHubEvent[];
+  if (!Array.isArray(data)) throw new UpstreamError('GitHub returned a non-array body', 502, '');
+
   return data
-    .filter((e) => ALLOWED_EVENT_TYPES.has(e.type))
+    .filter((e) => typeof e?.type === 'string' && ALLOWED_EVENT_TYPES.has(e.type))
     .slice(0, MAX_EVENTS)
     .map(stripPayload);
 }
@@ -115,7 +148,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
     return res.status(200).json({ events, requestId, cached: false });
   } catch (err) {
-    console.error(`[github][${requestId}] fetch failed:`, err.message);
+    console.error(
+      `[github][${requestId}] fetch failed:`,
+      err instanceof Error ? err.message : String(err),
+    );
     // Serve a stale cache rather than failing the UI, if we have one.
     if (cached) {
       res.setHeader('x-cache', 'STALE');

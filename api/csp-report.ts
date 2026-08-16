@@ -21,8 +21,22 @@ const reportLimiter = createDurableLimiter({ windowMs: 60_000, max: 30, prefix: 
 
 // Cap payload size so we never log unbounded text.
 const MAX_FIELD_LEN = 256;
-const trunc = (s) =>
+const trunc = (s: unknown): unknown =>
   typeof s === 'string' && s.length > MAX_FIELD_LEN ? `${s.slice(0, MAX_FIELD_LEN)}…` : s;
+
+/** Union of the CSP Level 2 (`csp-report`) and Level 3 (Reporting API) shapes. */
+interface CspReportBody {
+  'violated-directive'?: unknown;
+  effectiveDirective?: unknown;
+  'blocked-uri'?: unknown;
+  blockedURL?: unknown;
+  'document-uri'?: unknown;
+  documentURL?: unknown;
+  'source-file'?: unknown;
+  sourceFile?: unknown;
+  'line-number'?: unknown;
+  lineNumber?: unknown;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   applyCors(req, res, { methods: 'POST, OPTIONS', headers: 'Content-Type' });
@@ -35,9 +49,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (limited) return res.status(204).end();
 
   try {
-    const body = req.body || {};
+    const body = (req.body || {}) as Record<string, unknown> | unknown[];
     // Both shapes have nested objects — normalise to a small subset.
-    const report = body['csp-report'] || (Array.isArray(body) ? body[0]?.body : body) || {};
+    const report = (Array.isArray(body)
+      ? (body[0] as { body?: CspReportBody } | undefined)?.body
+      : ((body as Record<string, unknown>)['csp-report'] as CspReportBody) || body) as CspReportBody ?? {};
 
     console.warn('[csp-report]', {
       directive: trunc(report['violated-directive'] || report.effectiveDirective),

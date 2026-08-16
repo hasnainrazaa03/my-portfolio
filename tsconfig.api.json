@@ -1,0 +1,27 @@
+{
+  /**
+   * Typecheck scope for the serverless handlers.
+   *
+   * WHY SEPARATE: the base tsconfig deliberately includes only `src` and
+   * `api/_lib`, on the theory that Vercel's esbuild only type-STRIPS handler
+   * files so checking them was optional. In practice that left api/*.ts
+   * unchecked — which is how `createClient(supabaseUrl, supabaseKey)` shipped
+   * with `string | undefined` arguments, and why handler bugs only surfaced as
+   * 500s in production. This config puts them back under the compiler.
+   *
+   * It's a second project rather than a widened `include` because the handlers
+   * are Node-runtime code (no DOM), while `src` is browser code.
+   */
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": true
+  },
+  "include": [
+    "api",
+    // Pulled in by api/chat.ts as the content single-source-of-truth.
+    "src/constants.ts",
+    "src/data/buildKnowledge.ts",
+    "src/types"
+  ]
+}

@@ -183,7 +183,7 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }: AnalyticsViewerPro
             className={`fixed bottom-24 left-6 z-50 w-[400px] max-w-[calc(100vw-48px)] rounded-2xl shadow-2xl glass-panel border border-slate-200 dark:border-white/10 overflow-hidden ${className}`}
           >
             <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
-              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Lock size={16} /> Analytics Vault
               </h3>
             </div>
@@ -289,7 +289,7 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }: AnalyticsViewerPro
         >
           <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
                 <Eye size={16} /> 📊 Owner Analytics
               </h3>
               <button onClick={onClose} className="p-2 hover:bg-slate-200 dark:hover:bg-white/10 rounded-lg">

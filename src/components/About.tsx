@@ -48,7 +48,13 @@ const About = () => (
             {PERSONAL_INFO.bioHeadline}
           </p>
 
-          <p className="text-lg text-slate-700 dark:text-slate-200 leading-loose font-medium opacity-90">
+          {/* Body copy overrides the section's text-center: a centred
+              multi-line paragraph has a ragged LEFT edge, so the eye has to
+              hunt for the start of each line. The headline above stays centred.
+              max-w-prose (65ch) caps the measure — in the 4xl card this
+              rendered at 94 characters per line, well past the 45-75 readable
+              range; everything else on the page sits at 60-64. */}
+          <p className="mx-auto max-w-prose text-left text-lg text-slate-700 dark:text-slate-200 leading-relaxed font-medium opacity-90">
             {PERSONAL_INFO.bioStory}
           </p>
         </div>

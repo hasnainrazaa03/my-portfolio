@@ -50,7 +50,7 @@ const Achievements = () => {
                   </span>
                 </div>
 
-                <h3 className="mb-1 text-base font-semibold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
+                <h3 className="mb-1 text-lg font-bold text-slate-900 dark:text-white group-hover:text-primary transition-colors">
                   {item.title}
                   {item.url && (
                     <ExternalLink

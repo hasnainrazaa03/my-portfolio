@@ -197,7 +197,7 @@ const GitHubFeed = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Github className="text-slate-900 dark:text-white" size={20} />
-            <h3 className="font-bold text-slate-900 dark:text-white">Recent Activity</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Recent Activity</h3>
           </div>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">

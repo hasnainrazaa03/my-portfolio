@@ -24,7 +24,7 @@ const Skills = () => (
               <div className="p-2.5 bg-primary/10 rounded-lg text-primary">
                 <ContentIcon name={skillGroup.icon} size={20} />
               </div>
-              <h3 className="font-bold text-lg text-slate-900 dark:text-white">{skillGroup.category}</h3>
+              <h3 className="text-lg font-bold text-slate-900 dark:text-white">{skillGroup.category}</h3>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

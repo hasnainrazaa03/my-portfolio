@@ -30,3 +30,9 @@ AUDIT_CHECKLIST.md
 
 # Local-only implementation roadmap / planning checklists (not for git)
 _roadmap/
+
+# Playwright
+/test-results/
+/playwright-report/
+/blob-report/
+/playwright/.cache/

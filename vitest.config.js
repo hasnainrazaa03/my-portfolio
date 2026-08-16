@@ -7,6 +7,8 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     include: ['src/__tests__/**/*.test.{js,jsx}'],
+    // Playwright owns e2e/; vitest must not try to run those specs.
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
     setupFiles: ['./src/__tests__/setup.js'],
     coverage: {
       // v8 ships with vitest 4; no extra dep needed.

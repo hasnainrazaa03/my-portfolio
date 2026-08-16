@@ -75,6 +75,30 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     }
   }
 
+  // ?raw=1 returns Gemini's finishReason + token usage for one call, so we can
+  // see whether thinking tokens are eating the output budget.
+  let geminiRaw: unknown = 'skipped (pass ?raw=1)';
+  if (_req.query?.raw === '1' && process.env.GEMINI_API_KEY) {
+    const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+    const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-goog-api-key': process.env.GEMINI_API_KEY },
+      body: JSON.stringify({
+        system_instruction: { parts: [{ text: 'Answer in one sentence.' }] },
+        contents: [{ role: 'user', parts: [{ text: 'Name three Python ML libraries and what each is for.' }] }],
+        generationConfig: { maxOutputTokens: 1024, temperature: 0.4, thinkingConfig: { thinkingBudget: 0 } },
+      }),
+    });
+    const j = (await r.json()) as Record<string, any>;
+    geminiRaw = {
+      status: r.status,
+      finishReason: j.candidates?.[0]?.finishReason,
+      usage: j.usageMetadata,
+      text: (j.candidates?.[0]?.content?.parts ?? []).map((x: any) => x.text ?? '').join(''),
+      error: j.error?.message?.slice(0, 200),
+    };
+  }
+
   // Presence only — never values. Tells us which providers the chain can even
   // attempt, which is otherwise invisible without Vercel log access.
   const present = (k: string) => Boolean(process.env[k]);
@@ -82,6 +106,7 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     ...results,
     chain,
     geminiModels,
+    geminiRaw,
     hfModels,
     keys: {
       ANTHROPIC_API_KEY: present('ANTHROPIC_API_KEY'),

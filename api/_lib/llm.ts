@@ -32,6 +32,8 @@ export interface LlmResult {
   text: string;
   provider: ProviderName;
   model: string;
+  /** Upstream stopped early (token budget), so `text` is a fragment. */
+  truncated?: boolean;
 }
 
 export interface ProviderAttempt {
@@ -186,13 +188,23 @@ async function callGemini(system: string, turns: ChatTurn[]): Promise<LlmResult>
   if (!response.ok) throw new Error(`Gemini ${response.status}: ${body.substring(0, 120)}`);
 
   const data = JSON.parse(body);
-  const text = (data.candidates?.[0]?.content?.parts ?? [])
+  const candidate = data.candidates?.[0];
+  const text = (candidate?.content?.parts ?? [])
     .map((p: { text?: string }) => p.text ?? '')
     .join('')
     .trim();
 
   if (!text) throw new Error('empty completion');
-  return { text, provider: 'gemini', model };
+
+  // A MAX_TOKENS finish means the reply was cut mid-thought. Surface it rather
+  // than silently returning a fragment — thinking tokens come out of the same
+  // budget on current Gemini models, so this is the signal that the budget or
+  // the thinking config needs revisiting.
+  if (candidate?.finishReason && candidate.finishReason !== 'STOP') {
+    console.warn(`[llm] gemini finishReason=${candidate.finishReason} usage=${JSON.stringify(data.usageMetadata ?? {})}`);
+  }
+
+  return { text, provider: 'gemini', model, truncated: candidate?.finishReason === 'MAX_TOKENS' };
 }
 
 // ── HuggingFace ────────────────────────────────────────────────────────────

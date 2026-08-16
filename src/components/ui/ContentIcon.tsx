@@ -1,3 +1,4 @@
+import { createElement } from 'react';
 import type { LucideProps } from 'lucide-react';
 import { getIcon } from './iconMap';
 import type { IconKey } from './iconMap';
@@ -18,6 +19,10 @@ export interface ContentIconProps extends Omit<LucideProps, 'ref'> {
 }
 
 export default function ContentIcon({ name, ...props }: ContentIconProps) {
-  const Icon = getIcon(name);
-  return <Icon {...props} />;
+  // `createElement` rather than binding to a capitalized local and rendering
+  // <Icon />: the React Compiler lint reads that binding as defining a
+  // component during render ("Cannot create components during render"), which
+  // would opt this component out of compilation. The lookup is a plain read
+  // from a module-level frozen registry — no component is being created.
+  return createElement(getIcon(name), props);
 }

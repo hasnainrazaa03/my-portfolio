@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { PROJECTS } from '../constants';
 import ProjectCard from './ProjectCard';
 import SectionHeading from './ui/SectionHeading';
@@ -111,26 +112,59 @@ const Projects = () => {
           )}
 
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-3 mt-12">
+            <nav className="mt-12 flex items-center justify-center gap-2" aria-label="Project pages">
+              <button
+                type="button"
+                onClick={() => goToPage(Math.max(0, currentPage - 1))}
+                disabled={currentPage === 0}
+                aria-label="Previous page"
+                className="grid h-11 w-11 place-items-center rounded-full text-slate-600 transition-colors hover:bg-slate-200 disabled:pointer-events-none disabled:opacity-30 dark:text-slate-300 dark:hover:bg-white/10"
+              >
+                <ChevronLeft size={20} aria-hidden="true" />
+              </button>
+
               {Array.from({ length: totalPages }).map((_, idx) => (
-                <motion.button
+                // The visible dot stays small, but the BUTTON is 44px so the
+                // hit area clears the 24px WCAG 2.5.8 minimum — the old dots
+                // were 12x12 with no padding.
+                <button
                   key={idx}
+                  type="button"
                   onClick={() => goToPage(idx)}
-                  whileHover={{ scale: 1.2 }}
-                  whileTap={{ scale: 0.9 }}
-                  className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                    currentPage === idx
-                      ? 'bg-primary w-8'
-                      : 'bg-slate-300 dark:bg-white/20 hover:bg-slate-400 dark:hover:bg-white/30'
-                  }`}
-                  aria-label={`Go to page ${idx + 1}`}
-                />
+                  aria-label={`Go to page ${idx + 1} of ${totalPages}`}
+                  aria-current={currentPage === idx ? 'true' : undefined}
+                  className="group grid h-11 w-11 place-items-center rounded-full"
+                >
+                  <span
+                    className={`block h-3 rounded-full transition-all duration-300 ${
+                      currentPage === idx
+                        ? 'w-8 bg-primary'
+                        : 'w-3 bg-slate-300 group-hover:bg-slate-400 dark:bg-white/20 dark:group-hover:bg-white/30'
+                    }`}
+                  />
+                </button>
               ))}
-            </div>
+
+              <button
+                type="button"
+                onClick={() => goToPage(Math.min(totalPages - 1, currentPage + 1))}
+                disabled={currentPage === totalPages - 1}
+                aria-label="Next page"
+                className="grid h-11 w-11 place-items-center rounded-full text-slate-600 transition-colors hover:bg-slate-200 disabled:pointer-events-none disabled:opacity-30 dark:text-slate-300 dark:hover:bg-white/10"
+              >
+                <ChevronRight size={20} aria-hidden="true" />
+              </button>
+            </nav>
           )}
 
           {totalPages > 1 && (
-            <div className="text-center mt-4 text-sm text-slate-600 dark:text-slate-300 font-medium">
+            // aria-live so the count is announced when the page changes —
+            // otherwise a screen-reader user gets no feedback that the grid
+            // behind them was replaced.
+            <div
+              className="text-center mt-2 text-sm text-slate-600 dark:text-slate-300 font-medium"
+              aria-live="polite"
+            >
               Page {currentPage + 1} of {totalPages}
             </div>
           )}

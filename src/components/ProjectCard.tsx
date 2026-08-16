@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ExternalLink, CheckCircle, Zap } from 'lucide-react';
+import { Maximize2, CheckCircle, Zap } from 'lucide-react';
 import { scaleIn } from '../animations';
 import LazyImage from './ui/LazyImage';
 import type { Project } from '../types/content';
@@ -17,11 +17,21 @@ const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
   // (replaces a direct `e.target.parentElement.style.display` DOM mutation).
   const [thumbErrored, setThumbErrored] = useState(false);
 
+  const extraTech = Math.max(0, (project.techStack?.length ?? 0) - 3);
+
   return (
-    <motion.div 
+    // A real <button>, not a div with onClick. The cards were plain divs, so
+    // the entire project catalogue — the thing a recruiter most wants to open —
+    // was unreachable by keyboard and invisible to screen readers: the section
+    // exposed only its filter and pagination controls. A button gets focus,
+    // Enter/Space and the correct role for free, and ProjectModal already traps
+    // focus and restores it here on close.
+    <motion.button
+      type="button"
       variants={scaleIn}
       onClick={() => onClick(project)}
-      className="group rounded-2xl overflow-hidden h-full flex flex-col bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] cursor-pointer hover:-translate-y-2"
+      aria-label={`${project.title} — ${project.category}, ${project.status}. View mission details.`}
+      className="group w-full text-left rounded-2xl overflow-hidden h-full flex flex-col bg-white dark:bg-white/5 border border-slate-200 dark:border-white/10 shadow-sm dark:shadow-none hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] cursor-pointer hover:-translate-y-2"
     >
       {/* Thumbnail */}
       {thumbnail && !thumbErrored && (
@@ -61,7 +71,13 @@ const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
               </>
             )}
           </div>
-          <ExternalLink size={16} className="text-slate-400 dark:text-white group-hover:text-primary transition-colors" />
+          {/* Maximize, not ExternalLink: this opens a detail modal, it does
+              not navigate away. The old glyph promised the wrong thing. */}
+          <Maximize2
+            size={16}
+            aria-hidden="true"
+            className="text-slate-500 dark:text-white group-hover:text-primary transition-colors"
+          />
         </div>
       </div>
       
@@ -79,9 +95,15 @@ const ProjectCard = ({ project, onClick }: ProjectCardProps) => {
             {tag}
           </span>
         ))}
+        {/* The card shows three; without this the rest were silently dropped. */}
+        {extraTech > 0 && (
+          <span className="px-2 py-0.5 text-slate-600 dark:text-slate-300 text-xs rounded-full font-semibold">
+            +{extraTech} more
+          </span>
+        )}
       </div>
       </div>
-    </motion.div>
+    </motion.button>
   );
 };
 

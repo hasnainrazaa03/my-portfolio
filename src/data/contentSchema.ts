@@ -26,8 +26,9 @@ import {
   EXPERIENCE,
 } from '../constants';
 
-// An asset reference is either an absolute public path ("/USC.png") or an
-// http(s) URL (skill icons are hosted on CDNs).
+// An asset reference is either an absolute public path ("/icons/python.svg")
+// or an http(s) URL. All first-party assets are self-hosted; the http(s) form
+// remains allowed for any future external reference.
 const assetRef = z
   .string()
   .refine(
@@ -121,12 +122,19 @@ export const AchievementSchema = z.object({
   url: z.url().nullable(),
 });
 
-export const SkillItemSchema = z.object({
-  name: z.string().min(1),
-  level: z.string().min(1),
-  pct: z.number().min(0).max(100),
-  image: assetRef,
-});
+export const SkillItemSchema = z
+  .object({
+    name: z.string().min(1),
+    level: z.string().min(1),
+    pct: z.number().min(0).max(100),
+    // Product logos are self-hosted assets; abstract concepts use an icon key.
+    image: assetRef.optional(),
+    icon: iconRef.optional(),
+  })
+  .refine(
+    (v) => Boolean(v.image) !== Boolean(v.icon),
+    'a skill needs exactly one of `image` (a logo asset) or `icon` (a Lucide key)',
+  );
 
 export const SkillGroupSchema = z.object({
   category: z.string().min(1),

@@ -8,6 +8,15 @@ import {
   Rocket,
   Briefcase,
   GitBranch,
+  Eye,
+  Layers,
+  MessageSquareText,
+  SlidersHorizontal,
+  Sparkles,
+  Webhook,
+  Network,
+  GitMerge,
+  Workflow,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -29,6 +38,7 @@ import type { LucideIcon } from 'lucide-react';
  * space at runtime.
  */
 export const ICONS = {
+  // Section / stat icons
   code: Code,
   cpu: Cpu,
   database: Database,
@@ -38,6 +48,20 @@ export const ICONS = {
   rocket: Rocket,
   briefcase: Briefcase,
   'git-branch': GitBranch,
+
+  // Skill-concept icons. These replaced Flaticon clipart: those are generic
+  // concepts with no real logo, and Flaticon's free licence requires
+  // attribution the site doesn't carry. Lucide is already bundled, so these
+  // cost zero additional bytes and removed the last third-party image host.
+  eye: Eye,
+  layers: Layers,
+  'message-square-text': MessageSquareText,
+  'sliders-horizontal': SlidersHorizontal,
+  sparkles: Sparkles,
+  webhook: Webhook,
+  network: Network,
+  'git-merge': GitMerge,
+  workflow: Workflow,
 } satisfies Record<string, LucideIcon>;
 
 export type IconKey = keyof typeof ICONS;

@@ -394,13 +394,13 @@ export const SKILLS: SkillGroup[] = [
     icon: 'cpu',
     items: [
       { name: "PyTorch", level: "Expert", pct: 92, image: "/icons/pytorch.svg" },
-      { name: "Computer Vision", level: "Expert", pct: 88, image: "https://cdn-icons-png.flaticon.com/512/2103/2103633.png" },
+      { name: "Computer Vision", level: "Expert", pct: 88, icon: 'eye' },
       { name: "TensorFlow", level: "Intermediate", pct: 75, image: "/icons/tensorflow.svg" },
-      { name: "NLP", level: "Intermediate", pct: 70, image: "https://cdn-icons-png.flaticon.com/512/10435/10435171.png" },
+      { name: "NLP", level: "Intermediate", pct: 70, icon: 'message-square-text' },
       { name: "Scikit-learn", level: "Expert", pct: 85, image: "/icons/scikitlearn.svg" },
-      { name: "Transformers", level: "Advanced", pct: 90, image: "https://cdn-icons-png.flaticon.com/512/2103/2103633.png" },
-      { name: "LLM Fine-Tuning", level: "Advanced", pct: 88, image: "https://cdn-icons-png.flaticon.com/512/4712/4712109.png" },
-      { name: "Prompt Engineering", level: "Advanced", pct: 90, image: "https://cdn-icons-png.flaticon.com/512/4712/4712109.png" },
+      { name: "Transformers", level: "Advanced", pct: 90, icon: 'layers' },
+      { name: "LLM Fine-Tuning", level: "Advanced", pct: 88, icon: 'sliders-horizontal' },
+      { name: "Prompt Engineering", level: "Advanced", pct: 90, icon: 'sparkles' },
       { name: "Hugging Face", level: "Advanced", pct: 88, image: "/icons/huggingface.svg" }
     ]
   },
@@ -412,10 +412,10 @@ export const SKILLS: SkillGroup[] = [
       { name: "MongoDB", level: "Intermediate", pct: 75, image: "/icons/mongodb.svg" },
       { name: "Node.js", level: "Intermediate", pct: 70, image: "/icons/nodejs.svg" },
       { name: "Docker", level: "Intermediate", pct: 65, image: "/icons/docker.svg" },
-      { name: "REST APIs", level: "Expert", pct: 85, image: "https://cdn-icons-png.flaticon.com/512/8297/8297437.png" },
-      { name: "System Design", level: "Advanced", pct: 85, image: "https://cdn-icons-png.flaticon.com/512/8297/8297437.png" },
-      { name: "Concurrency Control", level: "Advanced", pct: 85, image: "https://cdn-icons-png.flaticon.com/512/3524/3524659.png" },
-      { name: "Data Pipelines (ETL)", level: "Advanced", pct: 88, image: "https://cdn-icons-png.flaticon.com/512/888/888879.png" },
+      { name: "REST APIs", level: "Expert", pct: 85, icon: 'webhook' },
+      { name: "System Design", level: "Advanced", pct: 85, icon: 'network' },
+      { name: "Concurrency Control", level: "Advanced", pct: 85, icon: 'git-merge' },
+      { name: "Data Pipelines (ETL)", level: "Advanced", pct: 88, icon: 'workflow' },
       { name: "MongoDB Indexing", level: "Advanced", pct: 85, image: "/icons/mongodb.svg" },
       { name: "Express.js", level: "Advanced", pct: 80, image: "/icons/express.svg" }
     ]
@@ -424,7 +424,7 @@ export const SKILLS: SkillGroup[] = [
     category: "Aerospace & Tools", 
     icon: 'wind',
     items: [
-      { name: "CFD Analysis", level: "Expert", pct: 95, image: "https://cdn-icons-png.flaticon.com/512/5405/5405929.png" },
+      { name: "CFD Analysis", level: "Expert", pct: 95, icon: 'wind' },
       { name: "Ansys", level: "Expert", pct: 95, image: "/icons/ansys.svg" },
       { name: "CATIA", level: "Expert", pct: 95, image: "/icons/catia.png" },
       { name: "Simulink", level: "Expert", pct: 90, image: "/icons/simulink.png" },

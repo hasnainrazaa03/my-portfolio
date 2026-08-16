@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import LazyImage from './ui/LazyImage';
+import ContentIcon from './ui/ContentIcon';
 import type { SkillItem } from '../types/content';
 
 interface SkillBarProps {
@@ -29,16 +30,26 @@ const SkillBar = ({ skill, index }: SkillBarProps) => {
       transition={{ delay: index * 0.05 }}
     >
       <div className="flex items-center gap-3">
-        <div className="w-8 h-8 rounded-lg bg-white p-1.5 flex items-center justify-center shadow-sm">
-          <LazyImage
-            src={skill.image}
-            alt={skill.name}
-            width={20}
-            height={20}
-            className="w-full h-full object-contain"
-          />
-        </div>
-        
+        {/* A skill shows either a real product logo or, for abstract concepts
+            with no logo, a Lucide glyph. The logo tile keeps its white plate so
+            multi-colour logos stay legible on both themes; the icon tile uses
+            the accent treatment instead of sitting on an odd white square. */}
+        {skill.icon ? (
+          <div className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center ring-1 ring-primary/20">
+            <ContentIcon name={skill.icon} size={17} aria-hidden="true" />
+          </div>
+        ) : (
+          <div className="w-8 h-8 rounded-lg bg-white p-1.5 flex items-center justify-center shadow-sm">
+            <LazyImage
+              src={skill.image}
+              alt={skill.name}
+              width={20}
+              height={20}
+              className="w-full h-full object-contain"
+            />
+          </div>
+        )}
+
         <span className="font-bold text-slate-700 dark:text-white text-sm">
           {skill.name}
         </span>

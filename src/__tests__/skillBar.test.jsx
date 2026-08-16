@@ -23,3 +23,30 @@ describe('SkillBar a11y', () => {
     expect(bar).toHaveAttribute('aria-valuetext', 'Intermediate');
   });
 });
+
+describe('SkillBar icon vs logo', () => {
+  it('renders a logo <img> when the skill has an image', () => {
+    const { container } = render(
+      <SkillBar skill={{ name: 'Python', level: 'Expert', pct: 95, image: '/icons/python.svg' }} index={0} />,
+    );
+    expect(screen.getByAltText('Python')).toHaveAttribute('src', '/icons/python.svg');
+    expect(container.querySelector('svg.lucide')).toBeNull();
+  });
+
+  it('renders a Lucide glyph when the skill has an icon key', () => {
+    // Abstract concepts (Computer Vision, REST APIs, …) have no real logo.
+    // These used to be Flaticon clipart; the swap removed the last external
+    // image host and the attribution obligation that came with it.
+    const { container } = render(
+      <SkillBar skill={{ name: 'Computer Vision', level: 'Expert', pct: 88, icon: 'eye' }} index={0} />,
+    );
+    expect(container.querySelector('svg')).toBeInTheDocument();
+    // No <img> at all — nothing to 404 or hotlink.
+    expect(container.querySelector('img')).toBeNull();
+  });
+
+  it('still exposes the progressbar in the icon variant', () => {
+    render(<SkillBar skill={{ name: 'REST APIs', level: 'Expert', pct: 85, icon: 'webhook' }} index={0} />);
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuetext', 'Expert');
+  });
+});

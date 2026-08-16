@@ -83,11 +83,17 @@ export interface Achievement {
   url: string | null;
 }
 
+/**
+ * A skill shows EITHER a real product logo (`image`, self-hosted under
+ * /icons/) or, for abstract concepts with no logo, a Lucide `icon` key.
+ * Exactly one of the two is expected — the schema enforces it.
+ */
 export interface SkillItem {
   name: string;
   level: string;
   pct: number;
-  image: string;
+  image?: string;
+  icon?: IconKey;
 }
 
 export interface SkillGroup {

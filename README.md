@@ -35,12 +35,20 @@ Embedding an LLM into a portfolio introduces security, reliability, and UX chall
 - CORS failures and cold-start latency with hosted inference endpoints
 - Generic chatbot responses that don't reflect real experience
 
-**The Solution — Dual-Provider Vercel Proxy with Hardened Server**
+**The Solution — Multi-Provider Vercel Proxy with Hardened Server**
 
 - Requests are routed through **Vercel Serverless Functions**, fully hiding credentials
-- **Server-controlled LLM provider selection** (client cannot override):
-  - Default: **HuggingFace Inference (Llama 3 8B)** — free tier, generous limits
-  - Optional: **Google Gemini 2.0 Flash** — enable via `LLM_PROVIDER=gemini`
+- **Server-controlled provider chain** (client cannot override provider or model).
+  `LLM_CHAIN` defines an ordered fallback list; each provider is tried in turn and
+  the first success wins. Default `anthropic,gemini,huggingface`:
+  - **Anthropic Claude** (`ANTHROPIC_MODEL`, default `claude-sonnet-5`) — primary
+  - **Google Gemini Flash** (`GEMINI_MODEL`, default `gemini-2.5-flash`) — free-tier fallback
+  - **HuggingFace Inference** (`HF_MODEL`, default Llama 3 8B) — last resort
+  - Providers with no API key configured are skipped, so a deploy that sets only
+    `GEMINI_API_KEY` runs Gemini-first with zero code changes
+  - If every provider fails, the client falls back to canned local responses
+- **Conversation memory** — the last 10 turns are sent and re-validated server-side,
+  so follow-up questions resolve against context
 - **Per-IP rate limiting** — fixed-window in-memory limiter (10/min on `/api/chat`, 30/min on `/api/analytics`)
 - **Input Sanitization & Prompt-Injection Defense**:
   - Unicode normalization (NFKC), zero-width character stripping, control-char removal
@@ -197,10 +205,20 @@ npm install
 Create a `.env.local` file in the root directory:
 
 ```bash
-# AI Chat — at least one LLM provider required
-HUGGINGFACE_API_KEY="hf_your_token"                # default provider
-GEMINI_API_KEY="your_gemini_key"                   # optional, if LLM_PROVIDER=gemini
-LLM_PROVIDER="huggingface"                         # 'huggingface' (default) or 'gemini'
+# AI Chat — at least one provider key required. Unconfigured providers are
+# skipped, so you only need keys for the ones you actually want in the chain.
+LLM_CHAIN="anthropic,gemini,huggingface"           # ordered fallback list
+
+ANTHROPIC_API_KEY="sk-ant-..."                     # primary
+ANTHROPIC_MODEL="claude-sonnet-5"                  # or claude-haiku-4-5 (~3x cheaper)
+
+GEMINI_API_KEY="your_gemini_key"                   # free-tier fallback
+GEMINI_MODEL="gemini-2.5-flash"
+
+HUGGINGFACE_API_KEY="hf_your_token"                # last-resort fallback
+HF_MODEL="meta-llama/Meta-Llama-3-8B-Instruct"
+
+LLM_TIMEOUT_MS="8000"                              # per-provider budget
 
 # CORS allow-list (comma-separated). Vercel preview deploys & localhost are auto-allowed.
 ALLOWED_ORIGIN="https://your-domain.vercel.app"

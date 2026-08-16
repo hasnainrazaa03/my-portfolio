@@ -36,13 +36,25 @@ export const getChatResponse = async (
   const lastUserMessage = messages[messages.length - 1].content;
   // `persona` is the only optional client-controllable knob. The server
   // validates it against an allow-list and falls back to "default" — see
-  // resolvePersona() in api/chat.js.
+  // resolvePersona() in api/chat.ts.
   const persona = typeof options.persona === 'string' ? options.persona : 'default';
+
+  // Send the whole conversation window so follow-ups ("tell me more about
+  // that one") resolve. This previously sent ONLY the last message, so the
+  // history useChat carefully assembled was discarded and the bot had no
+  // memory. The server re-validates and re-trims every turn regardless.
+  const turns = messages.map((m) => ({
+    role: m.role === 'assistant' ? 'assistant' : 'user',
+    content: m.content,
+  }));
+
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: lastUserMessage, persona }),
+      // `message` is retained for backwards compatibility with any older
+      // cached bundle still hitting this deploy.
+      body: JSON.stringify({ messages: turns, message: lastUserMessage, persona }),
     });
 
     if (!response.ok) {

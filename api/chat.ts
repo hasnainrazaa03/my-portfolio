@@ -1,7 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { sanitizeInput } from './_lib/sanitize';
 import { createDurableLimiter, getClientIp } from './_lib/rateLimit';
 import { applyCors } from './_lib/cors';
+import { runChain, AllProvidersFailedError } from './_lib/llm';
+import { buildTurns } from './_lib/history';
+import { formatReply } from './_lib/replyFormat';
 import { randomUUID } from 'node:crypto';
 import { PERSONAL_INFO, PROJECTS, EXPERIENCE, SKILLS, EDUCATION } from '../src/constants';
 import { buildKnowledgeBlock } from '../src/data/buildKnowledge';
@@ -9,21 +11,22 @@ import { buildKnowledgeBlock } from '../src/data/buildKnowledge';
 /**
  * LLM Provider Configuration (server-only, env-driven)
  * ─────────────────────────────────────────────────────
- * LLM_PROVIDER         — 'gemini' | 'huggingface' (default 'huggingface')
- * GEMINI_API_KEY       — Google AI Studio key (server-only)
- * HUGGINGFACE_API_KEY  — HuggingFace Inference API token
- * ALLOWED_ORIGIN       — comma-separated list of allowed origins
+ * Provider selection, models and the fallback order all live in
+ * api/_lib/llm.ts and are driven by LLM_CHAIN. See that file for the full
+ * env-var reference.
  *
  * SECURITY POSTURE
  *  - Client `context` is IGNORED. The system prompt is built server-side
  *    only. This prevents prompt-injection via the context channel.
- *  - Client `provider` is IGNORED. Provider routing is purely server-side
- *    to prevent cost-steering attacks.
+ *  - Client `provider` and `model` are IGNORED. Routing is purely
+ *    server-side to prevent cost-steering attacks.
+ *  - Conversation history IS accepted but every turn is sanitized — including
+ *    assistant turns, which a direct caller can forge. See _lib/history.ts.
  *  - Upstream provider errors are logged server-side but NEVER echoed
  *    to the client (information disclosure).
- *  - Per-IP rate limiting (in-memory, per-instance — see README).
+ *  - Per-IP rate limiting, durable across instances when Upstash is
+ *    configured (see _lib/rateLimit.ts).
  */
-const LLM_PROVIDER = process.env.LLM_PROVIDER === 'gemini' ? 'gemini' : 'huggingface';
 
 const RATE_LIMIT_MAX = Number.parseInt(process.env.CHAT_RATE_LIMIT_MAX || '10', 10);
 const RATE_LIMIT_WINDOW_MS = Number.parseInt(process.env.CHAT_RATE_LIMIT_WINDOW_MS || '60000', 10);
@@ -91,64 +94,14 @@ const PERSONA_OVERLAYS = {
     `MERN systems, fast iteration, and ML product shipping. Emphasize pragmatism over polish.`,
 };
 
-function resolvePersona(raw) {
+type PersonaKey = keyof typeof PERSONA_OVERLAYS;
+
+function resolvePersona(raw: unknown): PersonaKey {
   if (typeof raw !== 'string') return 'default';
   const key = raw.toLowerCase().trim();
-  return Object.prototype.hasOwnProperty.call(PERSONA_OVERLAYS, key) ? key : 'default';
-}
-
-async function callHuggingFace(systemPrompt, userMessage) {
-  const hfToken = process.env.HUGGINGFACE_API_KEY;
-  if (!hfToken) throw new Error('HUGGINGFACE_API_KEY not configured');
-
-  const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${hfToken}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'meta-llama/Meta-Llama-3-8B-Instruct',
-      messages: [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: userMessage },
-      ],
-      max_tokens: 90,
-      temperature: 0.4,
-      top_p: 0.7,
-      stop: ['\n\n', '\n\n\n'],
-      stream: false,
-    }),
-  });
-
-  const text = await response.text();
-  if (!response.ok) throw new Error(`HuggingFace ${response.status}: ${text.substring(0, 120)}`);
-
-  const data = JSON.parse(text);
-  return data.choices?.[0]?.message?.content || 'Unable to generate response';
-}
-
-async function callGeminiFlash(systemPrompt, userMessage) {
-  const geminiKey = process.env.GEMINI_API_KEY;
-  if (!geminiKey) throw new Error('GEMINI_API_KEY not configured');
-
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents: [{ role: 'user', parts: [{ text: userMessage }] }],
-      generationConfig: { maxOutputTokens: 200, temperature: 0.4, topP: 0.8 },
-    }),
-  });
-
-  const text = await response.text();
-  if (!response.ok) throw new Error(`Gemini ${response.status}: ${text.substring(0, 120)}`);
-
-  const data = JSON.parse(text);
-  return data.candidates?.[0]?.content?.parts?.[0]?.text || 'Unable to generate response';
+  return Object.prototype.hasOwnProperty.call(PERSONA_OVERLAYS, key)
+    ? (key as PersonaKey)
+    : 'default';
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -172,65 +125,41 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   try {
     // SECURITY: explicitly destructure ONLY what we use.
-    // Client-supplied `context` and `provider` are intentionally discarded.
+    // Client-supplied `context`, `provider` and `model` are discarded.
     // `persona` IS read but is validated against an allow-list (resolvePersona).
-    const rawMessage = req.body?.message;
     const personaKey = resolvePersona(req.body?.persona);
-    const personaOverlay = PERSONA_OVERLAYS[personaKey];
-    const effectiveSystemPrompt = SYSTEM_PROMPT + personaOverlay;
+    const effectiveSystemPrompt = SYSTEM_PROMPT + PERSONA_OVERLAYS[personaKey];
 
-    const { safe, cleaned: message, reason } = sanitizeInput(rawMessage);
+    // Accepts the multi-turn `messages` array (or the legacy `message`
+    // string). Every turn is sanitized; assistant turns are untrusted too.
+    const history = buildTurns(req.body);
 
-    if (!message) {
-      return res.status(400).json({ error: 'Invalid message', requestId });
-    }
-
-    if (!safe) {
-      console.warn(`[chat:${requestId}] Flagged input — reason: ${reason}`);
+    if (!history.ok) {
+      if (history.reason === 'invalid_input' || history.reason === 'too_many_turns') {
+        return res.status(400).json({ error: 'Invalid message', requestId });
+      }
+      console.warn(`[chat:${requestId}] Flagged input — reason: ${history.reason}`);
       return res.status(200).json({
         flagged: true,
-        reason,
+        reason: history.reason,
         reply: "Hey, that message didn't look quite right. Ask me about my projects, skills, or experience instead!",
         requestId,
       });
     }
 
-    // Defense-in-depth: wrap user input in a delimited untrusted-data block.
-    const wrappedUserMessage = `<<USER>>\n${message}\n<<END_USER>>`;
-
-    let answer;
+    let result;
     try {
-      answer = LLM_PROVIDER === 'gemini'
-        ? await callGeminiFlash(effectiveSystemPrompt, wrappedUserMessage)
-        : await callHuggingFace(effectiveSystemPrompt, wrappedUserMessage);
-    } catch (providerErr) {
-      console.warn(`[chat:${requestId}] ${LLM_PROVIDER} failed: ${providerErr.message} — trying fallback`);
-      try {
-        answer = LLM_PROVIDER === 'gemini'
-          ? await callHuggingFace(effectiveSystemPrompt, wrappedUserMessage)
-          : await callGeminiFlash(effectiveSystemPrompt, wrappedUserMessage);
-      } catch (fallbackErr) {
-        console.error(
-          `[chat:${requestId}] Both providers failed. Primary: ${providerErr.message}; Fallback: ${fallbackErr.message}`
-        );
-        return res.status(502).json({ error: 'Upstream chat provider unavailable', requestId });
-      }
+      result = await runChain(effectiveSystemPrompt, history.turns, ({ provider, error }) => {
+        console.warn(`[chat:${requestId}] provider ${provider} failed: ${error}`);
+      });
+    } catch (chainErr) {
+      const detail = chainErr instanceof AllProvidersFailedError ? chainErr.message : String(chainErr);
+      console.error(`[chat:${requestId}] ${detail}`);
+      return res.status(502).json({ error: 'Upstream chat provider unavailable', requestId });
     }
 
-    if (!answer.includes('[') || answer.split('[')[0].trim().split(/[.!?]/).length > 2) {
-      const sentences = answer.split(/[.!?]/);
-      const shortAnswer = sentences.slice(0, 2).join('. ').trim();
-      const suggestions = [
-        'specific tech stack used',
-        'project details or achievements',
-        'other work experience',
-        'skills or technologies',
-      ];
-      const picks = suggestions.sort(() => 0.5 - Math.random()).slice(0, 2).join(' or ');
-      answer = `${shortAnswer}. [Ask about: ${picks}?]`;
-    }
-
-    return res.status(200).json({ reply: answer, requestId });
+    console.log(`[chat:${requestId}] served by ${result.provider}/${result.model}`);
+    return res.status(200).json({ reply: formatReply(result.text), requestId });
   } catch (error) {
     console.error(`[chat:${requestId}] Internal error:`, error);
     return res.status(500).json({ error: 'Internal server error', requestId });

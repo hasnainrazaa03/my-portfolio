@@ -17,15 +17,15 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
     }
   };
 
-  await probe('cors', () => import('./_lib/cors'));
-  await probe('rateLimit', () => import('./_lib/rateLimit'));
-  await probe('sanitize', () => import('./_lib/sanitize'));
-  await probe('hashIp', () => import('./_lib/hashIp'));
-  await probe('replyFormat', () => import('./_lib/replyFormat'));
-  await probe('history', () => import('./_lib/history'));
-  await probe('llm', () => import('./_lib/llm'));
-  await probe('constants', () => import('../src/constants'));
-  await probe('buildKnowledge', () => import('../src/data/buildKnowledge'));
+  await probe('cors', () => import('./_lib/cors.js'));
+  await probe('rateLimit', () => import('./_lib/rateLimit.js'));
+  await probe('sanitize', () => import('./_lib/sanitize.js'));
+  await probe('hashIp', () => import('./_lib/hashIp.js'));
+  await probe('replyFormat', () => import('./_lib/replyFormat.js'));
+  await probe('history', () => import('./_lib/history.js'));
+  await probe('llm', () => import('./_lib/llm.js'));
+  await probe('constants', () => import('../src/constants.js'));
+  await probe('buildKnowledge', () => import('../src/data/buildKnowledge.js'));
 
   res.status(200).json(results);
 }

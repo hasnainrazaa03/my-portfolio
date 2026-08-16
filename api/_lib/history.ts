@@ -1,5 +1,5 @@
-import { sanitizeInput } from './sanitize';
-import type { ChatTurn } from './llm';
+import { sanitizeInput } from './sanitize.js';
+import type { ChatTurn } from './llm.js';
 
 /**
  * history.ts — validates and normalizes client-supplied conversation history.

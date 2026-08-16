@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID, timingSafeEqual as nodeTimingSafeEqual } from 'node:crypto';
-import { applyCors } from './_lib/cors';
-import { createDurableLimiter, getClientIp } from './_lib/rateLimit';
-import { hashIp } from './_lib/hashIp';
+import { applyCors } from './_lib/cors.js';
+import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
+import { hashIp } from './_lib/hashIp.js';
 
 /**
  * Supabase client is created LAZILY. At module scope, `createClient` runs on

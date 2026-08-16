@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createDurableLimiter, getClientIp } from './_lib/rateLimit';
-import { applyCors } from './_lib/cors';
-import { runChain, AllProvidersFailedError } from './_lib/llm';
-import { buildTurns } from './_lib/history';
-import { formatReply } from './_lib/replyFormat';
+import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
+import { applyCors } from './_lib/cors.js';
+import { runChain, AllProvidersFailedError } from './_lib/llm.js';
+import { buildTurns } from './_lib/history.js';
+import { formatReply } from './_lib/replyFormat.js';
 import { randomUUID } from 'node:crypto';
-import { PERSONAL_INFO, PROJECTS, EXPERIENCE, SKILLS, EDUCATION } from '../src/constants';
-import { buildKnowledgeBlock } from '../src/data/buildKnowledge';
+import { PERSONAL_INFO, PROJECTS, EXPERIENCE, SKILLS, EDUCATION } from '../src/constants.js';
+import { buildKnowledgeBlock } from '../src/data/buildKnowledge.js';
 
 /**
  * LLM Provider Configuration (server-only, env-driven)

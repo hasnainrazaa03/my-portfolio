@@ -13,8 +13,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  *
  * We accept both. Always returns 204 No Content.
  */
-import { applyCors } from './_lib/cors';
-import { createDurableLimiter, getClientIp } from './_lib/rateLimit';
+import { applyCors } from './_lib/cors.js';
+import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
 
 // Cheap rate-limit so a misbehaving extension can't flood logs.
 const reportLimiter = createDurableLimiter({ windowMs: 60_000, max: 30, prefix: 'csp' });

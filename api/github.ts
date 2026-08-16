@@ -17,8 +17,8 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  *     internal IDs / gravatar URLs to clients).
  */
 
-import { applyCors } from './_lib/cors';
-import { createDurableLimiter, getClientIp } from './_lib/rateLimit';
+import { applyCors } from './_lib/cors.js';
+import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
 import { randomUUID } from 'node:crypto';
 
 const DEFAULT_USERNAME = 'hasnainrazaa03';

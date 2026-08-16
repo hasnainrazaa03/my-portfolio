@@ -42,8 +42,15 @@ export interface ProviderAttempt {
 const VALID_PROVIDERS: readonly ProviderName[] = ['anthropic', 'gemini', 'huggingface'];
 const DEFAULT_CHAIN: ProviderName[] = ['anthropic', 'gemini', 'huggingface'];
 
-/** Answers are 1-3 sentences; this is headroom, not a target. */
-const MAX_OUTPUT_TOKENS = 320;
+/**
+ * Answers are 1-3 sentences, so this is headroom rather than a target.
+ *
+ * It is deliberately generous because current Gemini models spend *thinking*
+ * tokens from this same budget: at 320 the observed reply was cut mid-word
+ * ("...for the N") because reasoning had eaten the allowance. We also ask
+ * Gemini to skip thinking outright (thinkingBudget: 0) — belt and braces.
+ */
+const MAX_OUTPUT_TOKENS = 1024;
 
 function timeoutMs(): number {
   const parsed = Number.parseInt(process.env.LLM_TIMEOUT_MS || '', 10);
@@ -164,7 +171,14 @@ async function callGemini(system: string, turns: ChatTurn[]): Promise<LlmResult>
         role: t.role === 'assistant' ? 'model' : 'user',
         parts: [{ text: t.content }],
       })),
-      generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS, temperature: 0.4, topP: 0.8 },
+      generationConfig: {
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+        temperature: 0.4,
+        topP: 0.8,
+        // No reasoning needed to recite a résumé fact, and thinking tokens
+        // come out of maxOutputTokens on Gemini 2.5+.
+        thinkingConfig: { thinkingBudget: 0 },
+      },
     }),
   });
 
@@ -187,7 +201,7 @@ async function callHuggingFace(system: string, turns: ChatTurn[]): Promise<LlmRe
   const token = process.env.HUGGINGFACE_API_KEY;
   if (!token) throw new Error('HUGGINGFACE_API_KEY not configured');
 
-  const model = process.env.HF_MODEL || 'meta-llama/Meta-Llama-3-8B-Instruct';
+  const model = process.env.HF_MODEL || 'meta-llama/Llama-3.1-8B-Instruct';
 
   const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
     method: 'POST',

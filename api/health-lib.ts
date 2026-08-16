@@ -27,5 +27,19 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
   await probe('constants', () => import('../src/constants.js'));
   await probe('buildKnowledge', () => import('../src/data/buildKnowledge.js'));
 
-  res.status(200).json(results);
+  // Presence only — never values. Tells us which providers the chain can even
+  // attempt, which is otherwise invisible without Vercel log access.
+  const present = (k: string) => Boolean(process.env[k]);
+  res.status(200).json({
+    ...results,
+    keys: {
+      ANTHROPIC_API_KEY: present('ANTHROPIC_API_KEY'),
+      GEMINI_API_KEY: present('GEMINI_API_KEY'),
+      HUGGINGFACE_API_KEY: present('HUGGINGFACE_API_KEY'),
+      LLM_CHAIN: process.env.LLM_CHAIN || '(default)',
+      ANTHROPIC_MODEL: process.env.ANTHROPIC_MODEL || '(default)',
+      GEMINI_MODEL: process.env.GEMINI_MODEL || '(default)',
+      legacy_LLM_PROVIDER: process.env.LLM_PROVIDER || '(unset)',
+    },
+  });
 }

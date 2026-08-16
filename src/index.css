@@ -144,34 +144,91 @@ body {
 
 /* --- A11Y: High-contrast theme variant ---
    Activated by `useHighContrast()` toggling the `.hc` class on <html>.
-   Goal: bump foreground/background contrast past WCAG AAA for the
-   most common surfaces without rewriting the design system. Specific
-   components can opt-in to extra `hc:` Tailwind variants where needed. */
-html.hc {
-  color-scheme: dark;
-}
-html.hc body {
-  background: #000 !important;
-  color: #fff !important;
-}
-html.hc .text-slate-400,
-html.hc .text-slate-500,
-html.hc .text-slate-600,
-html.hc .text-slate-700,
-html.hc .dark\:text-slate-300,
-html.hc .dark\:text-slate-400 {
-  color: #f8fafc !important;
-}
-html.hc a,
-html.hc .text-primary {
-  color: #5eead4 !important; /* lighter teal — 7:1 on black */
-}
-html.hc .border-slate-200,
-html.hc .dark\:border-white\/10,
-html.hc .border-white\/10 {
-  border-color: #fff !important;
+   Goal: bump foreground/background contrast past WCAG AAA for the most common
+   surfaces without rewriting the design system.
+
+   THIS MUST BE THEME-AWARE. The original rules assumed a black page and forced
+   every slate text tone to near-white (#f8fafc). In LIGHT mode that produced
+   near-white text on white cards — invisible, site-wide — because blackening
+   `body` doesn't blacken anything else: the decorative starfield canvas paints
+   the light gradient over the body background, and cards carry their own
+   `bg-white`. Turning on high contrast made the page strictly less readable,
+   which is the opposite of the point.
+
+   Rules are therefore split on `.dark`, which useDarkMode() puts on <html>. */
+
+/* The starfield is decorative and sits above the body background, defeating the
+   flat surface high contrast depends on. Hide it in both hc themes — it is also
+   texture behind text, which is a contrast hazard in its own right. */
+html.hc .space-bg {
+  display: none !important;
 }
 html.hc *:focus-visible {
   outline: 3px solid #fde047 !important; /* high-vis yellow */
   outline-offset: 3px !important;
+}
+
+/* ── High contrast, DARK ─────────────────────────────────────────────────── */
+html.hc.dark {
+  color-scheme: dark;
+}
+html.hc.dark body {
+  background: #000 !important;
+  color: #fff !important;
+}
+html.hc.dark .text-slate-400,
+html.hc.dark .text-slate-500,
+html.hc.dark .text-slate-600,
+html.hc.dark .text-slate-700,
+html.hc.dark .dark\:text-slate-300,
+html.hc.dark .dark\:text-slate-400 {
+  color: #f8fafc !important;
+}
+html.hc.dark a,
+html.hc.dark .text-primary {
+  color: #5eead4 !important; /* lighter teal — 7:1 on black */
+}
+html.hc.dark .border-slate-200,
+html.hc.dark .dark\:border-white\/10,
+html.hc.dark .border-white\/10 {
+  border-color: #fff !important;
+}
+
+/* ── High contrast, LIGHT ────────────────────────────────────────────────── */
+html.hc:not(.dark) {
+  color-scheme: light;
+}
+html.hc:not(.dark) body {
+  background: #fff !important;
+  color: #000 !important;
+}
+/* Mirror of the dark block: push muted tones toward black, not away from it. */
+html.hc:not(.dark) .text-slate-400,
+html.hc:not(.dark) .text-slate-500,
+html.hc:not(.dark) .text-slate-600,
+html.hc:not(.dark) .text-slate-700 {
+  color: #0f172a !important; /* slate-900 — 17:1 on white */
+}
+html.hc:not(.dark) a,
+html.hc:not(.dark) .text-primary {
+  color: #115e59 !important; /* teal-800 — 7.3:1 on white */
+}
+html.hc:not(.dark) .border-slate-200,
+html.hc:not(.dark) .border-white\/10 {
+  border-color: #0f172a !important;
+}
+/* Card surfaces stay opaque white so the forced-dark text has a flat ground. */
+html.hc:not(.dark) .bg-white,
+html.hc:not(.dark) .bg-slate-100,
+html.hc:not(.dark) .bg-slate-200 {
+  background-color: #fff !important;
+}
+
+/* The skip link is an <a> on a coloured ground, so the anchor-colour rules
+   above tinted it teal-on-teal (measured 1.26:1). This needs equal specificity
+   to `html.hc.dark a` (0,2,2) AND to come later, hence `a.skip-to-content`
+   placed at the end rather than beside the other shared hc rules. */
+html.hc a.skip-to-content {
+  background: #fde047 !important;
+  color: #000 !important;
 }

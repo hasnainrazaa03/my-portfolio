@@ -16,8 +16,19 @@ test.describe('page boot', () => {
 
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
+    // Everything below the fold is React.lazy behind Suspense, so the sections
+    // do not exist until their chunks arrive. Locally that is instant and the
+    // assertion passed by luck; against the live site it raced and flaked.
+    // Drive the page to the bottom first so the lazy boundaries actually mount.
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.body.scrollHeight; y += 800) {
+        window.scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 100));
+      }
+    });
+
     for (const id of ['about', 'education', 'projects', 'github', 'experience', 'skills', 'achievements', 'contact']) {
-      await expect(page.locator(`#${id}`)).toBeAttached();
+      await expect(page.locator(`#${id}`), `#${id} never mounted`).toBeAttached({ timeout: 15_000 });
     }
   });
 

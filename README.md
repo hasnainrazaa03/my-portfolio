@@ -200,6 +200,44 @@ cd my-portfolio
 npm install
 ```
 
+### ⚠️ Serverless imports must carry `.js` extensions
+
+Vercel transpiles each `api/*.ts` handler to `.js` **individually** rather than
+bundling it. `package.json` declares `"type": "module"`, so that output is ESM —
+and **Node ESM does not resolve extensionless relative specifiers**.
+
+```ts
+import { applyCors } from './_lib/cors';      // ❌ FUNCTION_INVOCATION_FAILED at module load
+import { applyCors } from './_lib/cors.js';   // ✅
+```
+
+TypeScript maps `'./_lib/cors.js'` back to the `.ts` source, so the extension
+costs nothing at authoring time. `src/__tests__/apiEsmImports.test.js` enforces
+this — it exists because getting it wrong took **every** API endpoint down
+silently for an extended period (the client falls back to canned responses, so
+the UI looked healthy while the API was dead). Note that local `esbuild`
+bundling passes either way, so it is *not* a valid check for this.
+
+### Chat provider models
+
+Model IDs rot. Two defaults were already dead when this was last audited:
+`gemini-2.5-flash` returned *"no longer available to new users"* and
+`meta-llama/Meta-Llama-3-8B-Instruct` was *"not supported by any provider you
+have"*. Current defaults are `gemini-flash-latest` (a tracking alias, so it
+can't rot the same way) and `meta-llama/Llama-3.1-8B-Instruct`.
+
+To see what a key can actually call:
+
+```bash
+curl -H "x-goog-api-key: $GEMINI_API_KEY" https://generativelanguage.googleapis.com/v1beta/models
+curl -H "Authorization: Bearer $HUGGINGFACE_API_KEY" https://router.huggingface.co/v1/models
+```
+
+Also note current Gemini models spend **thinking tokens from `maxOutputTokens`**
+(observed: 380 thinking + 51 answer), and `thinkingConfig.thinkingBudget: 0` is
+not honoured on `gemini-flash-latest`. Hence the generous 1024 budget — at 320
+replies came back cut mid-word.
+
 ### Asset pipeline (images)
 
 Every raster image in `public/` ships in two forms: the original `.png`/`.jpg`

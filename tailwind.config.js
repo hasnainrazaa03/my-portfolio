@@ -33,11 +33,19 @@ export default {
         'spin-slow': 'spin 3s linear infinite',
         'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
         'fade-slide': 'fadeSlideIn 0.3s ease-out',
+        // Used by Hero3DFallback (the no-WebGL orbital visual).
+        'spin-slower': 'spin 18s linear infinite',
+        'spin-reverse-slow': 'spin 26s linear infinite reverse',
+        'float-slow': 'floatSlow 6s ease-in-out infinite',
       },
       keyframes: {
         fadeSlideIn: {
           '0%': { opacity: '0', transform: 'translateY(6px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        floatSlow: {
+          '0%, 100%': { transform: 'translateY(0)', opacity: '0.4' },
+          '50%': { transform: 'translateY(-10px)', opacity: '1' },
         },
       },
     },

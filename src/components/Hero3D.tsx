@@ -1,26 +1,83 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import Hero3DFallback from './Hero3DFallback';
+
+/**
+ * Probe for a usable WebGL context BEFORE constructing THREE.WebGLRenderer.
+ *
+ * WHY: `new THREE.WebGLRenderer()` THROWS when no context can be created
+ * (headless/sandboxed browsers, GPU blocklists, driver resets, some corporate
+ * VMs). That throw happens inside an effect, which React surfaces to the
+ * nearest error boundary — previously the app-level one, so a missing GPU took
+ * the entire site down. We probe first and catch second; see also the local
+ * ErrorBoundary around <Hero3D> in Hero.tsx.
+ *
+ * The probe's own context is explicitly released via WEBGL_lose_context so we
+ * don't burn one of the browser's limited live contexts just to feature-detect.
+ */
+function isWebGLAvailable(): boolean {
+  if (typeof document === 'undefined') return false;
+  try {
+    const canvas = document.createElement('canvas');
+    const gl = (canvas.getContext('webgl2') ||
+      canvas.getContext('webgl')) as WebGLRenderingContext | null;
+    if (!gl) return false;
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 const Hero3D = () => {
   const mountRef = useRef<HTMLDivElement>(null);
+  // When true we render the CSS fallback instead of a canvas. Starts false so
+  // the mount node exists on first render for the effect to attach to.
+  const [unsupported, setUnsupported] = useState(false);
 
   useEffect(() => {
     const mount = mountRef.current;
     if (!mount) return;
 
+    if (!isWebGLAvailable()) {
+      console.warn('[Hero3D] WebGL unavailable — rendering the static fallback.');
+      setUnsupported(true);
+      return;
+    }
+
     const scene = new THREE.Scene();
 
-    const width = mount.clientWidth;
-    const height = mount.clientHeight;
+    // Guard against a zero-height mount (aspect = NaN produces a blank canvas).
+    const width = mount.clientWidth || 1;
+    const height = mount.clientHeight || 1;
     const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
     camera.position.z = 5;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    let renderer: THREE.WebGLRenderer;
+    try {
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    } catch (err) {
+      // Context creation can still fail after a successful probe (GPU reset,
+      // context limit reached). Degrade instead of throwing out of the effect.
+      console.warn('[Hero3D] WebGL context creation failed — rendering the static fallback.', err);
+      setUnsupported(true);
+      return;
+    }
     renderer.setSize(width, height);
     // PERF: lower DPR ceiling — the visual difference >1.5 is imperceptible
     // for this scene and the GPU cost on retina displays is significant.
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     mount.appendChild(renderer.domElement);
+
+    // A live context can still be reclaimed mid-session (GPU process crash,
+    // driver reset, too many contexts). Swap to the fallback rather than
+    // leaving a frozen or blank canvas on the page.
+    const handleContextLost = (event: Event) => {
+      event.preventDefault();
+      console.warn('[Hero3D] WebGL context lost — rendering the static fallback.');
+      setUnsupported(true);
+    };
+    renderer.domElement.addEventListener('webglcontextlost', handleContextLost);
 
     const pivotGroup = new THREE.Group(); 
     scene.add(pivotGroup);
@@ -174,8 +231,8 @@ const Hero3D = () => {
 
     const handleResize = () => {
       if (!mount) return;
-      const w = mount.clientWidth;
-      const h = mount.clientHeight;
+      const w = mount.clientWidth || 1;
+      const h = mount.clientHeight || 1;
       renderer.setSize(w, h);
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
@@ -194,7 +251,10 @@ const Hero3D = () => {
         mountEl.removeEventListener('mousemove', handleMouseMove);
         mountEl.removeEventListener('click', handleClick);
         mountEl.removeEventListener('keydown', handleKeyDown);
-        if (renderer.domElement) mountEl.removeChild(renderer.domElement);
+        renderer.domElement.removeEventListener('webglcontextlost', handleContextLost);
+        // `contains` guard: if we swapped to the fallback mid-session React
+        // already detached this subtree, so the child may be gone.
+        if (mountEl.contains(renderer.domElement)) mountEl.removeChild(renderer.domElement);
       }
       
       geometryCore.dispose(); geometryRing1.dispose(); geometryRing2.dispose(); particlesGeometry.dispose();
@@ -203,10 +263,12 @@ const Hero3D = () => {
     };
   }, []);
 
+  if (unsupported) return <Hero3DFallback />;
+
   return (
-    <div 
-      ref={mountRef} 
-      className="w-full h-full min-h-[400px] cursor-pointer relative z-30" 
+    <div
+      ref={mountRef}
+      className="w-full h-full min-h-[400px] cursor-pointer relative z-30"
       title="Click the shapes or press Enter to change colors"
       role="button"
       tabIndex={0}

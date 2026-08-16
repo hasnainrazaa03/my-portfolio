@@ -8,11 +8,22 @@ const SpaceBackground = ({ isDark }: SpaceBackgroundProps) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    // The canvas ref is always attached by the time this effect runs, and a 2d
-    // context is universally available — assert non-null so the Star class
-    // methods below (where TS drops flow-narrowing) type cleanly.
-    const canvas = canvasRef.current!;
-    const ctx = canvas.getContext('2d')!;
+    // A 2d context is near-universally available, but `getContext` still
+    // returns null in sandboxed/headless contexts — and this component renders
+    // full-screen under only the app-level error boundary, so an unguarded
+    // throw here blanks the entire site (same failure mode Hero3D had).
+    // Degrade to no starfield instead; the CSS background still renders.
+    const canvasEl = canvasRef.current;
+    if (!canvasEl) return;
+    const context = canvasEl.getContext('2d');
+    if (!context) {
+      console.warn('[SpaceBackground] 2D canvas context unavailable — skipping starfield.');
+      return;
+    }
+    // Re-bind the narrowed values so the `class Star` methods below (where TS
+    // drops flow-narrowing) see non-nullable types without `!` assertions.
+    const canvas: HTMLCanvasElement = canvasEl;
+    const ctx: CanvasRenderingContext2D = context;
 
     let resizeTimeout: ReturnType<typeof setTimeout> | undefined;
 

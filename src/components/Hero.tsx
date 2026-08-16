@@ -5,6 +5,8 @@ import { PERSONAL_INFO } from '../constants';
 import { fadeInUp } from '../animations';
 import { scrollToSection } from '../utils/scroll';
 import SocialLinks from './SocialLinks';
+import ErrorBoundary from './ErrorBoundary';
+import Hero3DFallback from './Hero3DFallback';
 
 const Hero3D = React.lazy(() => import('./Hero3D'));
 
@@ -119,13 +121,18 @@ const Hero = () => {
             transition={{ duration: 1 }}
             className="hidden md:block relative h-[600px] w-full"
           >
-             <Suspense fallback={
-                <div className="w-full h-full flex items-center justify-center">
-                  <Loader2 className="animate-spin text-primary" size={40} />
-                </div>
-             }>
-                <Hero3D />
-             </Suspense>
+             {/* Local boundary: a WebGL/three failure must degrade to the CSS
+                 orbital, never bubble to the app-level boundary and blank the
+                 whole page (which is exactly what it used to do). */}
+             <ErrorBoundary fallback={<Hero3DFallback />}>
+               <Suspense fallback={
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Loader2 className="animate-spin text-primary" size={40} />
+                  </div>
+               }>
+                  <Hero3D />
+               </Suspense>
+             </ErrorBoundary>
           </motion.div>
         </div>
       </div>

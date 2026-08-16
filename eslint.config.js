@@ -8,7 +8,10 @@ import tseslint from 'typescript-eslint'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
 export default defineConfig([
-  globalIgnores(['dist']),
+  // `coverage/` holds istanbul's generated report bundle (prettify.js, sorter.js,
+  // …). Linting it produced six "unused eslint-disable" warnings against files
+  // nobody maintains, and `--fix` edited generated output.
+  globalIgnores(['dist', 'coverage']),
   {
     files: ['src/**/*.{js,jsx}'],
     extends: [

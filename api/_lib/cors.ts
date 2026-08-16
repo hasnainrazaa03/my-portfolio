@@ -12,16 +12,33 @@
 
 const DEFAULT_ORIGINS = ['https://hasnainrazaa.vercel.app'];
 
-function parseConfiguredOrigins(): string[] {
-  const raw = process.env.ALLOWED_ORIGIN || '';
-  const list = raw
+/**
+ * Host prefixes whose *.vercel.app preview deployments are trusted.
+ *
+ * Previously this accepted ANY `*.vercel.app` host, which meant anyone could
+ * deploy a page to Vercel and drive this project's LLM spend from a browser.
+ * Preview URLs are `<project>-<hash>-<scope>.vercel.app` /
+ * `<project>-git-<branch>-<scope>.vercel.app`, so matching on the project
+ * prefix keeps previews working while closing that door.
+ *
+ * Override with VERCEL_PREVIEW_PREFIX (comma-separated) if the project is
+ * renamed — a wrong prefix costs preview-only CORS, never production.
+ */
+const DEFAULT_PREVIEW_PREFIXES = ['hasnainrazaa', 'my-portfolio'];
+
+function parseList(raw: string | undefined, fallback: string[]): string[] {
+  const list = (raw || '')
     .split(',')
     .map((s) => s.trim().replace(/\/+$/, ''))
     .filter(Boolean);
-  return list.length ? list : DEFAULT_ORIGINS;
+  return list.length ? list : fallback;
 }
 
-const CONFIGURED = parseConfiguredOrigins();
+const CONFIGURED = parseList(process.env.ALLOWED_ORIGIN, DEFAULT_ORIGINS);
+const PREVIEW_PREFIXES = parseList(
+  process.env.VERCEL_PREVIEW_PREFIX,
+  DEFAULT_PREVIEW_PREFIXES,
+).map((p) => p.toLowerCase());
 
 export function isAllowedOrigin(origin: string | null | undefined): boolean {
   if (!origin) return false;
@@ -30,10 +47,18 @@ export function isAllowedOrigin(origin: string | null | undefined): boolean {
 
   try {
     const url = new URL(normalized);
-    // Vercel preview deployments
-    if (url.hostname.endsWith('.vercel.app')) return true;
+    const host = url.hostname.toLowerCase();
+
+    // Vercel preview deployments for THIS project only.
+    if (host.endsWith('.vercel.app')) {
+      const label = host.slice(0, -'.vercel.app'.length);
+      return PREVIEW_PREFIXES.some(
+        (prefix) => label === prefix || label.startsWith(`${prefix}-`),
+      );
+    }
+
     // Local dev
-    if (url.hostname === 'localhost' || url.hostname === '127.0.0.1') return true;
+    if (host === 'localhost' || host === '127.0.0.1') return true;
   } catch {
     return false;
   }

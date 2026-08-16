@@ -12,8 +12,10 @@ export default defineConfig({
         manualChunks: {
           three: ['three'],
           motion: ['framer-motion'],
-          supabase: ['@supabase/supabase-js'],
           github: ['react-github-calendar'],
+          // `@supabase/supabase-js` is deliberately NOT listed: it is only
+          // imported by the serverless handler in api/analytics.ts, never by
+          // client code, so naming it here just emitted an empty 0-byte chunk.
         },
       },
     },

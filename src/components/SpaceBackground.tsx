@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from 'react';
+import { Star, starCountFor } from '../utils/starfield';
+import type { StarfieldEnv } from '../utils/starfield';
 
 interface SpaceBackgroundProps {
   isDark: boolean;
@@ -20,8 +22,8 @@ const SpaceBackground = ({ isDark }: SpaceBackgroundProps) => {
       console.warn('[SpaceBackground] 2D canvas context unavailable — skipping starfield.');
       return;
     }
-    // Re-bind the narrowed values so the `class Star` methods below (where TS
-    // drops flow-narrowing) see non-nullable types without `!` assertions.
+    // Re-bind the narrowed values so they can be handed to StarfieldEnv as
+    // non-nullable types without `!` assertions.
     const canvas: HTMLCanvasElement = canvasEl;
     const ctx: CanvasRenderingContext2D = context;
 
@@ -36,54 +38,15 @@ const SpaceBackground = ({ isDark }: SpaceBackgroundProps) => {
     setCanvasSize();
 
     const isMobile = window.innerWidth < 768;
-    const numStars = isMobile ? 60 : 150;
+    const numStars = starCountFor(window.innerWidth);
 
-    class Star {
-      x!: number;
-      y!: number;
-      size!: number;
-      speedY!: number;
-      brightness!: number;
+    // Per-run environment for the Star particles (see utils/starfield.ts).
+    const env: StarfieldEnv = { canvas, ctx, isMobile, isDark, prefersReducedMotion };
 
-      constructor() {
-        this.init();
-      }
-
-      init() {
-        this.x = Math.random() * canvas.width;
-        this.y = Math.random() * canvas.height;
-        const sizeBase = isMobile ? 1 : (isDark ? 2 : 1.5);
-        this.size = Math.random() * sizeBase; 
-        this.speedY = Math.random() * 0.5 + 0.1;
-        this.brightness = Math.random();
-      }
-
-      update() {
-        if (prefersReducedMotion) return;
-
-        this.y += this.speedY; 
-        if (this.y > canvas.height) {
-          this.y = 0;
-          this.x = Math.random() * canvas.width;
-        }
-        
-        this.brightness += (Math.random() - 0.5) * 0.1;
-        if (this.brightness > 1) this.brightness = 1;
-        if (this.brightness < 0.3) this.brightness = 0.3;
-      }
-
-      draw() {
-        const color = isDark ? `rgba(255, 255, 255, ${this.brightness})` : `rgba(15, 23, 42, ${this.brightness * 0.5})`;
-        ctx.fillStyle = color;
-        ctx.beginPath();
-        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
 
     const stars: Star[] = [];
     for (let i = 0; i < numStars; i++) {
-      stars.push(new Star());
+      stars.push(new Star(env));
     }
 
     let animationFrameId = 0;
@@ -137,12 +100,14 @@ const SpaceBackground = ({ isDark }: SpaceBackgroundProps) => {
       resizeTimeout = setTimeout(() => {
         setCanvasSize();
         
-        const newIsMobile = window.innerWidth < 768;
-        const newNumStars = newIsMobile ? 60 : 150;
+        // The viewport class can change across a resize; keep env in sync
+        // so star sizing matches the new breakpoint.
+        env.isMobile = window.innerWidth < 768;
+        const newNumStars = starCountFor(window.innerWidth);
         
         stars.length = 0;
         for (let i = 0; i < newNumStars; i++) {
-          stars.push(new Star());
+          stars.push(new Star(env));
         }
       }, 200);
     };

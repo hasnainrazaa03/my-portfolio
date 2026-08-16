@@ -7,11 +7,19 @@ import { scrollToSection } from '../utils/scroll';
 import SocialLinks from './SocialLinks';
 import ErrorBoundary from './ErrorBoundary';
 import Hero3DFallback from './Hero3DFallback';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 const Hero3D = React.lazy(() => import('./Hero3D'));
 
+/** Tailwind's `md` breakpoint — must stay in step with the `md:block` below. */
+const MD_BREAKPOINT = '(min-width: 768px)';
+
 const Hero = () => {
   const { scrollY } = useScroll();
+  // PERF: the wrapper is `hidden md:block`, but CSS only hides — React still
+  // mounts, so every mobile visitor was downloading the three.js chunk
+  // (~127 KB gzip) for a canvas they could never see. Gate the mount itself.
+  const showHero3D = useMediaQuery(MD_BREAKPOINT);
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
   
   const [isDownloaded, setIsDownloaded] = useState(false);
@@ -124,15 +132,17 @@ const Hero = () => {
              {/* Local boundary: a WebGL/three failure must degrade to the CSS
                  orbital, never bubble to the app-level boundary and blank the
                  whole page (which is exactly what it used to do). */}
-             <ErrorBoundary fallback={<Hero3DFallback />}>
-               <Suspense fallback={
-                  <div className="w-full h-full flex items-center justify-center">
-                    <Loader2 className="animate-spin text-primary" size={40} />
-                  </div>
-               }>
-                  <Hero3D />
-               </Suspense>
-             </ErrorBoundary>
+             {showHero3D && (
+               <ErrorBoundary fallback={<Hero3DFallback />}>
+                 <Suspense fallback={
+                    <div className="w-full h-full flex items-center justify-center">
+                      <Loader2 className="animate-spin text-primary" size={40} />
+                    </div>
+                 }>
+                    <Hero3D />
+                 </Suspense>
+               </ErrorBoundary>
+             )}
           </motion.div>
         </div>
       </div>

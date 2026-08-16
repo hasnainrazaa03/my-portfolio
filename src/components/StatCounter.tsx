@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { motion, useInView, useMotionValue, useSpring } from 'framer-motion';
 import type { Stat } from '../types/content';
+import ContentIcon from './ui/ContentIcon';
 
 interface StatCounterProps {
   stat: Stat;
@@ -43,7 +44,7 @@ const StatCounter = ({ stat, index }: StatCounterProps) => {
       className="relative flex flex-col items-center justify-center p-6 bg-slate-50/50 dark:bg-white/5 rounded-2xl border border-slate-200 dark:border-white/10 hover:border-primary/50 transition-all duration-300 group shadow-lg dark:shadow-none hover:shadow-[0_0_30px_rgba(45,212,191,0.15)]"
     >
       <div className="mb-4 p-3 bg-white dark:bg-white/10 rounded-xl text-primary shadow-sm ring-1 ring-black/5 dark:ring-white/10 group-hover:scale-110 transition-transform duration-300 relative z-10">
-        <stat.icon size={28} />
+        <ContentIcon name={stat.icon} size={28} />
       </div>
       
       <div className="flex items-baseline gap-1 font-bold relative z-10">

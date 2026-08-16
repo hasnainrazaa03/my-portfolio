@@ -14,6 +14,7 @@
  * `z.string().email()` form is deprecated in v4).
  */
 import { z } from 'zod';
+import { isIconKey, ICON_KEYS } from '../components/ui/iconMap';
 import {
   PERSONAL_INFO,
   STATS,
@@ -34,8 +35,18 @@ const assetRef = z
     'must be an absolute asset path (starts with "/") or an http(s) URL',
   );
 
-// Lucide icon components are objects/functions; we only assert they're present.
-const iconRef = z.custom((v) => v != null, 'icon is required');
+/**
+ * Icons are now plain string keys rather than imported lucide components, so
+ * this can validate them for real. Previously it could only assert "not null",
+ * because a component is an opaque function — a typo'd icon silently rendered
+ * nothing. An unknown key is now a schema failure at test time.
+ */
+const iconRef = z
+  .string()
+  .refine(
+    isIconKey,
+    `unknown icon key — add it to ICONS in components/ui/iconMap.ts. Known keys: ${ICON_KEYS.join(', ')}`,
+  );
 
 const isoDate = z
   .string()

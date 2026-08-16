@@ -1,4 +1,3 @@
-import { Code, Cpu, Database, Terminal, Wind, BookOpen, Rocket, Briefcase, GitBranch } from "lucide-react";
 import type {
   SiteConfig,
   PersonalInfo,
@@ -34,10 +33,10 @@ export const PERSONAL_INFO: PersonalInfo = {
 };
 
 export const STATS: Stat[] = [
-  { target: 500, label: "Total Commits", suffix: "+", icon: GitBranch },
-  { target: 10, label: "Projects Built", suffix: "+", icon: Rocket },
-  { target: 3, label: "Years Experience", suffix: "+", icon: Briefcase },
-  { target: 6, label: "Pro Languages", suffix: "+", icon: Code }
+  { target: 500, label: "Total Commits", suffix: "+", icon: 'git-branch' },
+  { target: 10, label: "Projects Built", suffix: "+", icon: 'rocket' },
+  { target: 3, label: "Years Experience", suffix: "+", icon: 'briefcase' },
+  { target: 6, label: "Pro Languages", suffix: "+", icon: 'code' }
 ];
 
 /**
@@ -377,7 +376,7 @@ export const ACHIEVEMENTS: Achievement[] = [
 export const SKILLS: SkillGroup[] = [
   { 
     category: "Languages", 
-    icon: Terminal,
+    icon: 'terminal',
     items: [
       { name: "Python", level: "Expert", pct: 95, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" },
       { name: "C++", level: "Expert", pct: 90, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/cplusplus/cplusplus-original.svg" },
@@ -392,7 +391,7 @@ export const SKILLS: SkillGroup[] = [
   },
   { 
     category: "AI & ML", 
-    icon: Cpu,
+    icon: 'cpu',
     items: [
       { name: "PyTorch", level: "Expert", pct: 92, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/pytorch/pytorch-original.svg" },
       { name: "Computer Vision", level: "Expert", pct: 88, image: "https://cdn-icons-png.flaticon.com/512/2103/2103633.png" },
@@ -407,7 +406,7 @@ export const SKILLS: SkillGroup[] = [
   },
   { 
     category: "Backend & Data", 
-    icon: Database,
+    icon: 'database',
     items: [
       { name: "SQL/Postgres", level: "Intermediate", pct: 78, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/postgresql/postgresql-original.svg" },
       { name: "MongoDB", level: "Intermediate", pct: 75, image: "https://cdn.jsdelivr.net/gh/devicons/devicon/icons/mongodb/mongodb-original.svg" },
@@ -423,7 +422,7 @@ export const SKILLS: SkillGroup[] = [
   },
   { 
     category: "Aerospace & Tools", 
-    icon: Wind,
+    icon: 'wind',
     items: [
       { name: "CFD Analysis", level: "Expert", pct: 95, image: "https://cdn-icons-png.flaticon.com/512/5405/5405929.png" },
       { name: "Ansys", level: "Expert", pct: 95, image: "https://upload.wikimedia.org/wikipedia/commons/1/14/Ansys_logo_%282019%29.svg" },

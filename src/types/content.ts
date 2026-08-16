@@ -1,3 +1,4 @@
+import type { IconKey } from '../components/ui/iconMap';
 /**
  * Type definitions for all site content (src/constants.ts).
  *
@@ -8,7 +9,6 @@
  * contentSchema.test.js checks it conforms to the schemas. If the two ever
  * disagree, one of those gates fails.
  */
-import type { LucideIcon } from 'lucide-react';
 
 export interface Socials {
   github: string;
@@ -31,7 +31,7 @@ export interface Stat {
   target: number;
   label: string;
   suffix: string;
-  icon: LucideIcon;
+  icon: IconKey;
 }
 
 export interface NowItem {
@@ -92,7 +92,7 @@ export interface SkillItem {
 
 export interface SkillGroup {
   category: string;
-  icon: LucideIcon;
+  icon: IconKey;
   items: SkillItem[];
 }
 

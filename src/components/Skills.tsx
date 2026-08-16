@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { SKILLS } from '../constants';
 import SkillBar from './SkillBar';
+import ContentIcon from './ui/ContentIcon';
 
 const Skills = () => (
   <section id="skills" className="py-20 relative">
@@ -23,7 +24,7 @@ const Skills = () => (
           >
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2.5 bg-primary/10 rounded-lg text-primary">
-                <skillGroup.icon size={20} />
+                <ContentIcon name={skillGroup.icon} size={20} />
               </div>
               <h3 className="font-bold text-lg text-slate-900 dark:text-white">{skillGroup.category}</h3>
             </div>

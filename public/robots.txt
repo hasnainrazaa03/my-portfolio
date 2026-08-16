@@ -1,5 +1,7 @@
 User-agent: *
 Allow: /
 
-# TODO: Generate a real sitemap at https://www.xml-sitemaps.com/ and host it.
+# The API is not content — keep it out of the index.
+Disallow: /api/
+
 Sitemap: https://hasnainrazaa.vercel.app/sitemap.xml

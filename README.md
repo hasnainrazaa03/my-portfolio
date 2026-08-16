@@ -200,6 +200,25 @@ cd my-portfolio
 npm install
 ```
 
+### Asset pipeline (images)
+
+Every raster image in `public/` ships in two forms: the original `.png`/`.jpg`
+and a generated `.webp` sibling. `LazyImage` wraps local rasters in a
+`<picture>` and offers the `.webp` first — about an 80% byte saving
+(11.7 MB → 1.06 MB across the site).
+
+**If you add an image to `public/`, generate its sibling**, or `LazyImage` will
+select a `<source>` that 404s and the browser will render it broken (a failed
+`<source>` does *not* fall back to the `<img>`):
+
+```bash
+# Resize to a 1600px max dimension, then emit the webp sibling
+sips -Z 1600 public/NewImage.png --out public/NewImage.png
+cwebp -q 82 -metadata none public/NewImage.png -o public/NewImage.webp
+```
+
+Remote/CDN image URLs are left alone — no sibling is assumed for those.
+
 ### 2. Environment Setup
 
 Create a `.env.local` file in the root directory:

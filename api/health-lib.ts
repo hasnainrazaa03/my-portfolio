@@ -27,11 +27,27 @@ export default async function handler(_req: VercelRequest, res: VercelResponse) 
   await probe('constants', () => import('../src/constants.js'));
   await probe('buildKnowledge', () => import('../src/data/buildKnowledge.js'));
 
+  // Optional live chain probe: ?chain=1 runs a trivial prompt through the
+  // provider chain and reports each provider's error. Temporary diagnostic.
+  let chain: unknown = 'skipped (pass ?chain=1)';
+  if (_req.query?.chain === '1') {
+    const { runChain } = await import('./_lib/llm.js');
+    const attempts: unknown[] = [];
+    try {
+      const r = await runChain('You are a test.', [{ role: 'user', content: 'Say OK.' }],
+        (a) => attempts.push(a));
+      chain = { ok: true, provider: r.provider, model: r.model, text: r.text.slice(0, 80), attempts };
+    } catch (e) {
+      chain = { ok: false, attempts, error: e instanceof Error ? e.message.slice(0, 500) : String(e) };
+    }
+  }
+
   // Presence only — never values. Tells us which providers the chain can even
   // attempt, which is otherwise invisible without Vercel log access.
   const present = (k: string) => Boolean(process.env[k]);
   res.status(200).json({
     ...results,
+    chain,
     keys: {
       ANTHROPIC_API_KEY: present('ANTHROPIC_API_KEY'),
       GEMINI_API_KEY: present('GEMINI_API_KEY'),

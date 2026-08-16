@@ -4,6 +4,7 @@ import { applyCors } from './_lib/cors.js';
 import { runChain, AllProvidersFailedError } from './_lib/llm.js';
 import { buildTurns } from './_lib/history.js';
 import { formatReply } from './_lib/replyFormat.js';
+import { captureServerError, flushSentry } from './_lib/sentry.js';
 import { randomUUID } from 'node:crypto';
 import { PERSONAL_INFO, PROJECTS, EXPERIENCE, SKILLS, EDUCATION } from '../src/constants.js';
 import { buildKnowledgeBlock } from '../src/data/buildKnowledge.js';
@@ -155,6 +156,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } catch (chainErr) {
       const detail = chainErr instanceof AllProvidersFailedError ? chainErr.message : String(chainErr);
       console.error(`[chat:${requestId}] ${detail}`);
+      // Every provider failing is the signal worth waking up for — the client
+      // hides it behind canned answers, so nothing else surfaces it.
+      await captureServerError(chainErr, { requestId, route: '/api/chat' });
+      await flushSentry();
       return res.status(502).json({ error: 'Upstream chat provider unavailable', requestId });
     }
 
@@ -167,6 +172,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(200).json({ reply: formatReply(result.text), requestId });
   } catch (error) {
     console.error(`[chat:${requestId}] Internal error:`, error);
+    await captureServerError(error, { requestId, route: '/api/chat' });
+    await flushSentry();
     return res.status(500).json({ error: 'Internal server error', requestId });
   }
 }

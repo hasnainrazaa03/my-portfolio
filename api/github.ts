@@ -20,6 +20,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { applyCors } from './_lib/cors.js';
 import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
 import { randomUUID } from 'node:crypto';
+import { captureServerError, flushSentry } from './_lib/sentry.js';
 
 const DEFAULT_USERNAME = 'hasnainrazaa03';
 const CACHE_TTL_MS = 60_000; // 1 minute
@@ -157,6 +158,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       res.setHeader('x-cache', 'STALE');
       return res.status(200).json({ events: cached.data, requestId, cached: true, stale: true });
     }
+    // Only worth reporting when there was no stale cache to fall back on —
+    // a served-stale response is a working degradation, not an incident.
+    await captureServerError(err, { requestId, route: '/api/github' });
+    await flushSentry();
     return res
       .status(502)
       .json({ error: 'Upstream GitHub API unavailable', requestId });

@@ -2,6 +2,12 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
+import { initSentry } from './config/sentry'
+
+// Before render, so an error thrown during the first mount is still captured —
+// which is exactly the class of failure that blanked this site once (a WebGL
+// context throwing inside an effect and escalating to the app error boundary).
+initSentry()
 
 // DEV-ONLY: validate all site content against its schema so a malformed edit
 // to constants.js surfaces immediately in the console. Guarded by

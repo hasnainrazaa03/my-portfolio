@@ -1,5 +1,6 @@
 import React from 'react';
 import type { ReactNode, ErrorInfo } from 'react';
+import { reportError } from '../config/sentry';
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -33,6 +34,9 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
 
   componentDidCatch(error: Error, info: ErrorInfo) {
     console.error('[ErrorBoundary] caught:', error, info.componentStack);
+    // The console line only helps if someone is watching. This is the boundary
+    // that once swallowed a whole-page crash in production; report it.
+    reportError(error, { componentStack: info.componentStack });
   }
 
   render() {

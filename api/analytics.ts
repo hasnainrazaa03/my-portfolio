@@ -4,6 +4,7 @@ import { randomUUID, timingSafeEqual as nodeTimingSafeEqual } from 'node:crypto'
 import { applyCors } from './_lib/cors.js';
 import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
 import { hashIp } from './_lib/hashIp.js';
+import { captureServerError, flushSentry } from './_lib/sentry.js';
 
 /**
  * Supabase client is created LAZILY. At module scope, `createClient` runs on
@@ -108,6 +109,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(200).json({ success: true, data, requestId });
     } catch (err) {
       console.error(`[analytics][${requestId}] write error:`, err);
+      await captureServerError(err, { requestId, route: '/api/analytics:write' });
+      await flushSentry();
       return res.status(500).json({ error: 'Internal error', requestId });
     }
   }
@@ -145,6 +148,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       });
     } catch (err) {
       console.error(`[analytics][${requestId}] read error:`, err);
+      await captureServerError(err, { requestId, route: '/api/analytics:read' });
+      await flushSentry();
       return res.status(500).json({ error: 'Internal error', requestId });
     }
   }

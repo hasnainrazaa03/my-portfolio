@@ -4,6 +4,7 @@ import { Github, ExternalLink, Code, Star, GitCommit } from 'lucide-react';
 import { GitHubCalendar } from 'react-github-calendar';
 import { PERSONAL_INFO } from '../constants';
 import GitHubFeed from './GitHubFeed';
+import SectionHeading from './ui/SectionHeading';
 import { fadeInUp } from '../animations';
 
 const GitHubSection = ({ isDark }: { isDark: boolean }) => {
@@ -29,13 +30,13 @@ const GitHubSection = ({ isDark }: { isDark: boolean }) => {
           whileInView="visible"
           viewport={{ once: true }}
           variants={fadeInUp}
-          className="text-center mb-12"
         >
-          <div className="flex items-center justify-center gap-3 mb-4">
-            <Github size={40} className="text-slate-900 dark:text-white" />
-          </div>
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white"><span className="text-primary">Open Source</span> Activity</h2>
-          <p className="mt-4 text-slate-600 dark:text-white font-medium text-lg">Real-time contribution data from GitHub</p>
+          <SectionHeading
+            number="04"
+            title="Open Source Activity"
+            subtitle="Real-time contribution data from GitHub"
+            eyebrow={<Github size={40} className="text-slate-900 dark:text-white" />}
+          />
         </motion.div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">

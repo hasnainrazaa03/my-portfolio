@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PROJECTS } from '../constants';
 import ProjectCard from './ProjectCard';
+import SectionHeading from './ui/SectionHeading';
 import ProjectModal from './ProjectModal';
 import type { Project } from '../types/content';
 
@@ -44,15 +45,11 @@ const Projects = () => {
       <section id="projects" className="py-20 relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <div className="text-center mb-10">
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white">
-              <span className="text-primary">03.</span> Featured Missions
-            </h2>
-            <p className="mt-4 text-slate-600 dark:text-slate-200 font-medium text-lg">
-              Click on a mission card to view classified details.
-            </p>
-          </div>
-
+          <SectionHeading
+            number="03"
+            title="Featured Missions"
+            subtitle="Click on a mission card to view classified details."
+          />
           <div className="flex justify-center mb-12 overflow-x-auto pb-4 scrollbar-hide">
             <div className="flex space-x-2 bg-slate-200/50 dark:bg-white/10 p-1.5 rounded-xl border border-slate-300 dark:border-white/20 backdrop-blur-sm">
               {categories.map((category) => (

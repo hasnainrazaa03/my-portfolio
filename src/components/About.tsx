@@ -4,6 +4,7 @@ import { PERSONAL_INFO, STATS, NOW } from '../constants';
 import { fadeInUp } from '../animations';
 import StatCounter from './StatCounter';
 import LazyImage from './ui/LazyImage';
+import SectionHeading from './ui/SectionHeading';
 
 const About = () => (
   <section id="about" className="py-20 relative">
@@ -15,7 +16,7 @@ const About = () => (
         variants={fadeInUp}
         className="text-center mb-16"
       >
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-10"><span className="text-primary">01.</span> About Me</h2>
+        <SectionHeading number="01" title="About Me" className="mb-10" />
         
         {/* Portrait — circular avatar with glow accent */}
         <motion.div

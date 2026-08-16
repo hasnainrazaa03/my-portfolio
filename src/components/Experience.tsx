@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { EXPERIENCE } from '../constants';
+import SectionHeading from './ui/SectionHeading';
 import TimelineItem from './TimelineItem';
 
 const Experience = () => {
@@ -8,10 +9,7 @@ const Experience = () => {
     <section id="experience" className="py-20 relative">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-slate-900 dark:text-white"><span className="text-primary">04.</span> Flight Log</h2>
-          <p className="mt-4 text-slate-600 dark:text-slate-200 font-medium text-lg">Career trajectory and mission history</p>
-        </div>
+        <SectionHeading number="05" title="Flight Log" subtitle="Career trajectory and mission history" />
 
         <div className="relative">
           <div className="absolute left-4 md:left-1/2 transform md:-translate-x-1/2 top-0 bottom-0 w-[2px] bg-slate-200 dark:bg-white/10">

@@ -2,12 +2,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, ExternalLink } from 'lucide-react';
 import { EDUCATION } from '../constants';
+import SectionHeading from './ui/SectionHeading';
 import LazyImage from './ui/LazyImage';
 
 const Education = () => (
   <section id="education" className="py-20 relative">
     <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-      <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-12 text-center"><span className="text-primary">02.</span> Education</h2>
+      <SectionHeading number="02" title="Education" subtitle="Where the engineering foundation was built" />
       
       <div className="grid md:grid-cols-3 gap-8"> 
         {EDUCATION?.map((edu, index) => (

@@ -7,6 +7,7 @@ import { fadeInUp } from '../animations';
 import { PERSONAL_INFO } from '../constants';
 import { env } from '../config/env';
 import SocialLinks from './SocialLinks';
+import SectionHeading from './ui/SectionHeading';
 
 
 const errorVariant = {
@@ -113,12 +114,12 @@ const Contact = () => {
         >
           <div className="relative">
             
-            <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-6 text-center">
-              <span className="text-primary">07.</span> Initialize Contact
-            </h2>
-            <p className="text-center text-slate-600 dark:text-white mb-8 font-medium opacity-90">
-              Have a project idea, opportunity, or just want to say hi? I'd love to hear from you.
-            </p>
+            <SectionHeading
+              number="08"
+              title="Initialize Contact"
+              subtitle="Have a project idea, opportunity, or just want to say hi? I'd love to hear from you."
+              className="mb-10"
+            />
 
             <div className="flex flex-col items-center justify-center mb-10 gap-6">
               <div className="inline-flex items-center gap-3 p-3 rounded-xl bg-slate-200/50 dark:bg-white/5 border border-slate-300 dark:border-white/10 backdrop-blur-md hover:border-primary/30 transition-colors group">

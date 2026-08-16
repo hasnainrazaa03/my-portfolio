@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Award, ExternalLink } from 'lucide-react';
 import { ACHIEVEMENTS } from '../constants';
+import SectionHeading from './ui/SectionHeading';
 
 /**
  * Achievements / Badges Wall
@@ -17,13 +18,11 @@ const Achievements = () => {
   return (
     <section id="achievements" className="py-20 relative">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2 text-center">
-          <span className="text-primary">06.</span> Achievements
-        </h2>
-        <p className="text-center text-slate-600 dark:text-slate-400 mb-12 text-sm">
-          A short wall of recognitions, certifications, and milestones — receipts, not flexes.
-        </p>
-
+        <SectionHeading
+          number="07"
+          title="Achievements"
+          subtitle="A short wall of recognitions, certifications, and milestones — receipts, not flexes."
+        />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {ACHIEVEMENTS.map((item, idx) => {
             const Wrapper = item.url ? motion.a : motion.div;

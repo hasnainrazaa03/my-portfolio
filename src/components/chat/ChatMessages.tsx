@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { User } from 'lucide-react';
 import Avatar from './Avatar';
 import { AVATAR_SRC } from './chatConstants';
@@ -38,9 +39,12 @@ interface ChatMessagesProps {
 const ChatMessages = ({ messages, isTyping }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Auto-scroll to the newest message. Framer's MotionConfig can't reach a
+  // native scrollIntoView, so this checks the preference itself.
+  const reducedMotion = useReducedMotion();
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, isTyping]);
+    messagesEndRef.current?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
+  }, [messages, isTyping, reducedMotion]);
 
   return (
     <div

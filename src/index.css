@@ -19,8 +19,29 @@
 }
 
 html {
-  scroll-behavior: smooth;
   transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Smooth scrolling is opt-OUT in CSS, so it has to be gated the other way:
+   declare it only when the user has expressed no preference. `scrollToSection`
+   already honoured the query in JS, but this rule applied to everything else —
+   anchor jumps, browser find, keyboard paging. */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+/* Belt and braces for anything that animates outside Framer's control. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* PERF/UX: account for the fixed nav (~70px) when scroll-anchoring to a section. */

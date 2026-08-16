@@ -1,4 +1,5 @@
 import React, { Suspense, lazy } from 'react';
+import { MotionConfig } from 'framer-motion';
 import { Analytics } from "@vercel/analytics/react";
 
 // Hooks & Config
@@ -37,6 +38,19 @@ const SectionFallback = () => (
   <div aria-hidden="true" className="min-h-[40vh]" />
 );
 
+/**
+ * `reducedMotion="user"` is the single switch for the whole motion system.
+ *
+ * The app had 16 `whileInView` reveals and 9 hover animations across 11
+ * components — 40px slides, 0.8->1 scales, spring bounces — and the
+ * `useReducedMotion()` hook was wired into exactly ONE of them (CursorGlow).
+ * Everyone who asks their OS for less motion got all of it anyway.
+ *
+ * MotionConfig makes Framer honour the media query globally: transform-based
+ * animations (x/y/scale/rotate) are skipped while opacity still animates, so
+ * content fades in without moving. That is the recommended behaviour and it
+ * beats threading a hook through every call site, which drifts.
+ */
 export default function App() {
   const [isDark, setIsDark] = useDarkMode();
   const toggleTheme = () => setIsDark(!isDark);
@@ -65,6 +79,7 @@ export default function App() {
   }
 
   return (
+    <MotionConfig reducedMotion="user">
     <ErrorBoundary>
       <div className="relative min-h-screen font-sans selection:bg-primary selection:text-black overflow-hidden">
         {/* A11Y: Skip-to-content link — invisible until focused via Tab */}
@@ -101,5 +116,6 @@ export default function App() {
         <Analytics />
       </div>
     </ErrorBoundary>
+    </MotionConfig>
   );
 }

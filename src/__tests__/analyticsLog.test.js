@@ -231,13 +231,32 @@ describe('recorded question is unwrapped', () => {
     const { resolve } = await import('node:path');
     const src = readFileSync(resolve(process.cwd(), 'api/chat.ts'), 'utf8');
 
-    const questionLines = src
-      .split('\n')
-      .filter((l) => /^\s*question:/.test(l));
+    const values = [...src.matchAll(/^\s*question:\s*(.+?),\s*$/gm)].map((m) => m[1].trim());
+    expect(values.length).toBeGreaterThan(0);
 
-    expect(questionLines.length).toBeGreaterThan(0);
-    for (const line of questionLines) {
-      expect(line, `raw turn content recorded: ${line.trim()}`).toMatch(/unwrapUser\(/);
+    for (const value of values) {
+      // Either unwrapped inline, or a plain identifier that the file assigns
+      // from unwrapUser(). Checking provenance rather than the literal line
+      // keeps this honest across refactors — hoisting the call into a variable
+      // is fine, passing a raw turn is not.
+      if (/unwrapUser\(/.test(value)) continue;
+
+      expect(value, `not a plain identifier: ${value}`).toMatch(/^[A-Za-z_$][\w$]*$/);
+      const assigned = new RegExp(`(?:const|let)\\s+${value}\\s*=\\s*unwrapUser\\(`);
+      expect(
+        assigned.test(src),
+        `recorded question "${value}" is never assigned from unwrapUser()`,
+      ).toBe(true);
     }
+  });
+
+  it('never records a raw turn\'s .content directly', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const src = readFileSync(resolve(process.cwd(), 'api/chat.ts'), 'utf8');
+    const raw = [...src.matchAll(/^\s*question:\s*(.*\.content.*)$/gm)]
+      .map((m) => m[1])
+      .filter((v) => !/unwrapUser\(/.test(v));
+    expect(raw, 'a raw wrapped turn is being recorded').toEqual([]);
   });
 });

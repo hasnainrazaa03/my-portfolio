@@ -34,6 +34,19 @@ export interface ChatOptions {
    * rows, so a forged value groups someone's own turns wrongly and nothing else.
    */
   sessionId?: string;
+  /**
+   * Sections of the page that back the answer, delivered once the reply is
+   * complete. A separate callback rather than a changed return type: the
+   * `string` contract here is relied on by the local-fallback path and by every
+   * existing caller and test.
+   */
+  onSources?: (sources: SourceLink[]) => void;
+}
+
+/** A section of the page the answer drew on. Mirrors api/_lib/sourceLinks.ts. */
+export interface SourceLink {
+  id: string;
+  label: string;
 }
 
 /**
@@ -46,6 +59,7 @@ export interface ChatOptions {
 async function readEventStream(
   response: Response,
   onDelta: (text: string) => void,
+  onSources?: (sources: SourceLink[]) => void,
 ): Promise<string> {
   const reader = response.body?.getReader();
   if (!reader) throw new Error('no response body');
@@ -69,7 +83,7 @@ async function readEventStream(
       const raw = frame.match(/^data:\s*(.*)$/m)?.[1];
       if (!raw) continue;
 
-      let data: { text?: string; reply?: string; partial?: string };
+      let data: { text?: string; reply?: string; partial?: string; sources?: SourceLink[] };
       try {
         data = JSON.parse(raw);
       } catch {
@@ -86,6 +100,7 @@ async function readEventStream(
         // the close would make the reader pay for a database insert they have
         // no stake in. Everything needed is already in this frame.
         final = data.reply;
+        if (data.sources?.length) onSources?.(data.sources);
         await reader.cancel().catch(() => {});
         return final;
       } else if (event === 'error') {
@@ -156,7 +171,7 @@ export const getChatResponse = async (
     // request with plain JSON, and that must not be parsed as SSE.
     if (wantsStream && response.headers.get('content-type')?.includes('text/event-stream')) {
       try {
-        return await readEventStream(response, options.onDelta!);
+        return await readEventStream(response, options.onDelta!, options.onSources);
       } catch (streamErr) {
         console.error('Chat stream error:', streamErr);
         return getLocalResponse(lastUserMessage);
@@ -176,6 +191,8 @@ export const getChatResponse = async (
     if (!data.reply) {
       return getLocalResponse(lastUserMessage);
     }
+
+    if (data.sources?.length) options.onSources?.(data.sources);
 
     return data.reply;
   } catch (error) {

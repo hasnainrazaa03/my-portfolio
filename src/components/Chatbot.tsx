@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChatLauncher from './ChatLauncher';
 import QnASearch from './QnASearch';
 import ChatHeader from './chat/ChatHeader';
 import ChatMessages from './chat/ChatMessages';
+import { scrollToSection } from '../utils/scroll';
 import ChatInput from './chat/ChatInput';
 import { useChat } from '../hooks/useChat';
 import { useChatVoice } from '../hooks/useChatVoice';
@@ -31,6 +32,16 @@ const Chatbot = () => {
 
   // Tab-cycle focus trap + Escape-to-close + focus restoration.
   useFocusTrap(panelRef, { active: isOpen, onEscape: () => setIsOpen(false) });
+
+  /**
+   * "Read more" chip: close the panel, then scroll. Closing first matters — the
+   * chat is a fixed overlay, so scrolling underneath it would land the reader
+   * on a section hidden behind the panel they just used.
+   */
+  const handleNavigateToSection = useCallback((sectionId: string) => {
+    setIsOpen(false);
+    scrollToSection(sectionId);
+  }, []);
 
   // Close the analytics vault whenever the panel closes.
   useEffect(() => {
@@ -99,7 +110,11 @@ const Chatbot = () => {
               onDemoReset={chat.handleDemoReset}
             />
 
-            <ChatMessages messages={chat.messages} isTyping={chat.isTyping} />
+            <ChatMessages
+              messages={chat.messages}
+              isTyping={chat.isTyping}
+              onNavigate={handleNavigateToSection}
+            />
 
             {/* QnA Search panel */}
             {!chat.demoMode && (

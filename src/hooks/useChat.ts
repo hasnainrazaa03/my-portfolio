@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import { getChatResponse } from '../services/chatService';
 import { analyticsService } from '../services/analyticsService';
 import { INITIAL_MESSAGE } from '../components/chat/chatConstants';
-import type { ChatMessage } from '../components/chat/types';
+import type { ChatMessage, SourceLink } from '../components/chat/types';
 
 /**
  * useChat — owns the chat conversation state and message lifecycle, extracted
@@ -72,6 +72,7 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
     // turn or replace it, and an empty assistant bubble appearing before we
     // know which of those happened would flicker on screen.
     let streaming = false;
+    let sources: SourceLink[] | undefined;
 
     try {
       const responseResult = await getChatResponse(historyForApi, {
@@ -79,6 +80,11 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
         // The server writes the analytics row now; it needs this only to group
         // a visitor's turns together.
         sessionId: analyticsService.sessionId,
+        // Arrives with the final reply, so it is attached when the message is
+        // finalised below rather than mid-stream.
+        onSources: (s) => {
+          sources = s;
+        },
         onDelta: (piece) => {
           setMessages((prev) => {
             if (!streaming) {
@@ -112,8 +118,8 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
         // only by the "[Ask about: …]" affordance the server withholds during
         // streaming, so this reads as the chips arriving, not as a rewrite.
         streaming
-          ? [...prev.slice(0, -1), { role: 'assistant', content: responseText }]
-          : [...prev, { role: 'assistant', content: responseText }],
+          ? [...prev.slice(0, -1), { role: 'assistant', content: responseText, sources }]
+          : [...prev, { role: 'assistant', content: responseText, sources }],
       );
 
       analyticsService.logInteraction(text, responseText, {

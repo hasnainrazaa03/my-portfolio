@@ -10,6 +10,7 @@ import {
 } from './_lib/llm.js';
 import { createReplyStreamer } from './_lib/streamFormat.js';
 import { recordInteraction } from './_lib/analyticsLog.js';
+import { deriveSources } from './_lib/sourceLinks.js';
 import { buildTurns, unwrapUser } from './_lib/history.js';
 import { formatReply } from './_lib/replyFormat.js';
 import { captureServerError, flushSentry } from './_lib/sentry.js';
@@ -180,7 +181,16 @@ async function streamResponse(
     // swaps its accumulated text for this, which attaches the "[Ask about: …]"
     // affordance the streamer deliberately withheld.
     const reply = streamer.finish();
-    sse(res, 'done', { reply, provider: result.provider, requestId });
+    const question = unwrapUser(turns[turns.length - 1]?.content ?? '');
+    // Sections backing this answer, so the reader can go read the real thing.
+    // Sent on `done` rather than streamed: they are derived from the COMPLETE
+    // reply, and a chip that appeared then changed mid-answer would be noise.
+    sse(res, 'done', {
+      reply,
+      sources: deriveSources(question, reply),
+      provider: result.provider,
+      requestId,
+    });
 
     // BEFORE res.end(), deliberately. The first version awaited this *after*
     // res.end() to avoid adding latency, and the rows never appeared: once the
@@ -192,7 +202,7 @@ async function streamResponse(
     await recordInteraction({
       // unwrapped: the <<USER>> delimiters are a prompt artifact, not part
       // of what the visitor asked, and they were leaking into every row.
-      question: unwrapUser(turns[turns.length - 1]?.content ?? ''),
+      question,
       response: reply,
       sessionId,
       ip,
@@ -296,20 +306,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`[chat:${requestId}] served by ${result.provider}/${result.model}`);
     res.setHeader('x-llm-provider', result.provider);
     const reply = formatReply(result.text);
+    const jsonQuestion = unwrapUser(history.turns[history.turns.length - 1]?.content ?? '');
 
     // Before responding, for the same reason as the streaming path: work queued
     // after the response may never run. This one does cost the caller the
     // insert latency, but this path is now only reached by bundles cached from
     // before streaming shipped and by direct API calls — the app always streams.
     await recordInteraction({
-      question: unwrapUser(history.turns[history.turns.length - 1]?.content ?? ''),
+      question: jsonQuestion,
       response: reply,
       sessionId,
       ip,
       requestId,
     });
 
-    return res.status(200).json({ reply, requestId });
+    return res.status(200).json({ reply, sources: deriveSources(jsonQuestion, reply), requestId });
   } catch (error) {
     console.error(`[chat:${requestId}] Internal error:`, error);
     await captureServerError(error, { requestId, route: '/api/chat' });

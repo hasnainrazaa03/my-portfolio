@@ -34,9 +34,15 @@ const renderMessageWithEmojis = (content: string) => {
 interface ChatMessagesProps {
   messages: ChatMessage[];
   isTyping: boolean;
+  /**
+   * Invoked with a section id when a "Read more" chip is used. Optional so the
+   * transcript stays renderable in isolation (tests, demo mode); the chips
+   * simply do nothing without it.
+   */
+  onNavigate?: (sectionId: string) => void;
 }
 
-const ChatMessages = ({ messages, isTyping }: ChatMessagesProps) => {
+const ChatMessages = ({ messages, isTyping, onNavigate }: ChatMessagesProps) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Auto-scroll to the newest message. Framer's MotionConfig can't reach a
@@ -79,6 +85,39 @@ const ChatMessages = ({ messages, isTyping }: ChatMessagesProps) => {
               ? <>{renderMessageWithEmojis(msg.content)}<span className="block text-[10px] opacity-50 mt-1.5 font-medium">— Hasnain</span></>
               : msg.content
             }
+
+            {/*
+              Sections backing the answer. Real <button>s, not styled spans:
+              they move focus and the page, so they must be reachable and
+              operable from the keyboard. min-h-[24px] keeps them at the WCAG
+              2.5.8 target size inside a cramped bubble.
+            */}
+            {msg.role === 'assistant' && msg.sources && msg.sources.length > 0 && (
+              <div className="mt-2.5 pt-2.5 border-t border-slate-200/70 dark:border-white/10">
+                <span id={`sources-label-${idx}`} className="text-[10px] uppercase tracking-wide opacity-60 font-semibold">
+                  Read more
+                </span>
+                <div className="flex flex-wrap gap-1.5 mt-1.5" role="group" aria-labelledby={`sources-label-${idx}`}>
+                  {msg.sources.map((source) => (
+                    <button
+                      key={source.id}
+                      type="button"
+                      onClick={() => onNavigate?.(source.id)}
+                      className="min-h-[24px] px-2.5 py-1 rounded-full text-[11px] font-medium
+                                 bg-primary/10 text-primary border border-primary/30
+                                 hover:bg-primary/20 transition-colors
+                                 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                    >
+                      {source.label}
+                      {/* The visible label alone would read as ambiguous out of
+                          context; this keeps the accessible name a superset of
+                          it (WCAG 2.5.3 Label in Name). */}
+                      <span className="sr-only"> — jump to the {source.label} section</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </motion.div>
       ))}

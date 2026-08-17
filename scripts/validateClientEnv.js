@@ -35,6 +35,21 @@ const MASK_CHARS = new Set([
 ]);
 
 /**
+ * Variables the PLATFORM injects, which no human ever typed into a form.
+ *
+ * Vercel exposes its whole system family to the build, and because Vite
+ * forwards every `VITE_`-prefixed variable, they land here alongside real
+ * config. They are exempt from the whitespace heuristic below — that rule
+ * assumes a hand-pasted single-line credential, which these are not.
+ *
+ * This is not hypothetical tidying: the rule as first written failed a
+ * production deploy on `VITE_VERCEL_GIT_COMMIT_MESSAGE`, whose value is the
+ * commit message itself. Multi-line commit messages end in a newline, so every
+ * deploy with one was rejected as "a stray newline from a copy-paste".
+ */
+const PLATFORM_PREFIXES = ['VITE_VERCEL_'];
+
+/**
  * @typedef {{ key: string, fatal: boolean, message: string }} EnvProblem
  */
 
@@ -71,7 +86,13 @@ export function findEnvProblems(env) {
       continue;
     }
 
-    if (raw.trim() !== raw) {
+    // The whitespace heuristic only makes sense for a single-line value someone
+    // pasted by hand. Skip anything the platform injected, and anything whose
+    // value is genuinely multi-line (a commit message, an embedded JSON blob) —
+    // there a newline is content, not a paste artifact.
+    const platformInjected = PLATFORM_PREFIXES.some((p) => key.startsWith(p));
+    const multiline = /[\r\n]/.test(raw.trim());
+    if (!platformInjected && !multiline && raw.trim() !== raw) {
       problems.push({
         key,
         fatal: true,

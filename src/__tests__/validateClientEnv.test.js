@@ -53,6 +53,33 @@ describe('findEnvProblems', () => {
     expect(problems[0].message).toMatch(/whitespace/);
   });
 
+  it('does NOT flag whitespace on platform-injected VITE_VERCEL_* variables', () => {
+    // This exact value failed a real production deploy: Vercel injects the
+    // commit message as an env var, Vite forwards every VITE_-prefixed value to
+    // the build, and multi-line commit messages end in a newline. Nobody pasted
+    // anything — the rule simply did not apply.
+    expect(
+      findEnvProblems({
+        VITE_VERCEL_GIT_COMMIT_MESSAGE: 'feat: a thing\n\nWith a body paragraph.\n',
+      }),
+    ).toEqual([]);
+  });
+
+  it('does NOT flag a genuinely multi-line value', () => {
+    // A newline inside the value is content, not a paste artifact.
+    expect(findEnvProblems({ VITE_NOTE: 'line one\nline two\n' })).toEqual([]);
+  });
+
+  it('still flags whitespace on an ordinary single-line variable', () => {
+    expect(findEnvProblems({ VITE_TOKEN: 'abc123 ' })).toHaveLength(1);
+  });
+
+  it('still flags a masked platform variable — that rule always applies', () => {
+    // Exempting platform vars from the whitespace heuristic must not exempt
+    // them from the mask check, which is unambiguous wherever it fires.
+    expect(findEnvProblems({ VITE_VERCEL_THING: '•'.repeat(32) })).toHaveLength(1);
+  });
+
   it('ignores empty values — absence is a separate, already-handled concern', () => {
     expect(findEnvProblems({ VITE_ANALYTICS_WRITE_TOKEN: '', VITE_OTHER: undefined })).toEqual([]);
   });

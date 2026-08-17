@@ -5,6 +5,7 @@
  * cheap first line of defense; for distributed/persistent limiting, add
  * Vercel KV + `@upstash/ratelimit` in front (see README → Audit Checklist).
  */
+import { usableSecret } from './secrets.js';
 
 export interface RateLimitOptions {
   windowMs: number;
@@ -54,10 +55,22 @@ export interface DurableRateLimitOptions extends RateLimitOptions {
 
 export type AsyncRateLimiter = (key: string | null | undefined) => Promise<RateLimitResult>;
 
-/** Read Upstash creds from either the native or the Vercel KV env var names. */
+/**
+ * Read Upstash creds from either the native or the Vercel KV env var names.
+ *
+ * Routed through `usableSecret` so a masked placeholder is rejected here rather
+ * than downstream: a bullet-string token still produces a well-formed request,
+ * Upstash answers 401, `!res.ok` is true, and the limiter quietly degrades to
+ * per-instance memory — silently undoing the durability this module exists for.
+ * Failing at the credential makes that a logged error instead of a mystery.
+ */
 function upstashCreds(): { url: string; token: string } | null {
-  const url = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+  const url =
+    usableSecret(process.env.UPSTASH_REDIS_REST_URL, 'UPSTASH_REDIS_REST_URL') ||
+    usableSecret(process.env.KV_REST_API_URL, 'KV_REST_API_URL');
+  const token =
+    usableSecret(process.env.UPSTASH_REDIS_REST_TOKEN, 'UPSTASH_REDIS_REST_TOKEN') ||
+    usableSecret(process.env.KV_REST_API_TOKEN, 'KV_REST_API_TOKEN');
   return url && token ? { url, token } : null;
 }
 

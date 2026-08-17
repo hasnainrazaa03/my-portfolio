@@ -5,6 +5,7 @@ import { applyCors } from './_lib/cors.js';
 import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
 import { hashIp } from './_lib/hashIp.js';
 import { captureServerError, flushSentry } from './_lib/sentry.js';
+import { usableSecret } from './_lib/secrets.js';
 
 /**
  * Supabase client is created LAZILY. At module scope, `createClient` runs on
@@ -68,7 +69,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── WRITE ────────────────────────────────────────────────────────────────
   if (req.method === 'POST') {
-    const expectedWriteToken = process.env.ANALYTICS_WRITE_TOKEN;
+    const expectedWriteToken = usableSecret(
+      process.env.ANALYTICS_WRITE_TOKEN,
+      'ANALYTICS_WRITE_TOKEN',
+    );
     const writeToken = req.headers['x-analytics-token'];
 
     if (!expectedWriteToken) {
@@ -119,7 +123,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === 'GET') {
     try {
       const authHeader = req.headers.authorization || '';
-      const expectedToken = process.env.ANALYTICS_SECRET_TOKEN;
+      const expectedToken = usableSecret(
+        process.env.ANALYTICS_SECRET_TOKEN,
+        'ANALYTICS_SECRET_TOKEN',
+      );
       const expectedHeader = expectedToken ? `Bearer ${expectedToken}` : null;
 
       if (!expectedHeader || !safeEq(authHeader, expectedHeader)) {

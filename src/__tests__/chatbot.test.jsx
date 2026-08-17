@@ -57,7 +57,11 @@ describe('Chatbot (characterization)', () => {
     await waitFor(() => expect(getChatResponse).toHaveBeenCalledTimes(1));
     const [history, opts] = getChatResponse.mock.calls[0];
     expect(history[history.length - 1]).toEqual({ role: 'user', content: 'tell me about projects' });
-    expect(opts).toEqual({ persona: 'default' });
+    // `onDelta` is supplied on every request now — passing it is what opts the
+    // call into streaming. Assert on persona rather than the whole object so
+    // this does not re-break each time an option is added.
+    expect(opts.persona).toBe('default');
+    expect(typeof opts.onDelta).toBe('function');
 
     expect(await screen.findByText('Here is my answer.')).toBeInTheDocument();
     expect(screen.getByText('tell me about projects')).toBeInTheDocument();
@@ -81,7 +85,7 @@ describe('Chatbot (characterization)', () => {
     sendText('hello');
 
     await waitFor(() => expect(getChatResponse).toHaveBeenCalledTimes(1));
-    expect(getChatResponse.mock.calls[0][1]).toEqual({ persona: 'recruiter' });
+    expect(getChatResponse.mock.calls[0][1].persona).toBe('recruiter');
   });
 
   it('clears the conversation back to the greeting', async () => {

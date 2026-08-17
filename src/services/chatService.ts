@@ -20,6 +20,73 @@ export interface ChatMessage {
 
 export interface ChatOptions {
   persona?: string;
+  /**
+   * Called with each incremental piece of the answer. Supplying it opts this
+   * request into streaming; without it the request stays on the JSON path.
+   *
+   * The server guarantees every delta is a prefix of the final reply, so this
+   * can append blindly — see api/_lib/streamFormat.ts.
+   */
+  onDelta?: (text: string) => void;
+}
+
+/**
+ * Consume the SSE body of a streaming /api/chat response.
+ *
+ * Returns the canonical reply from the `done` event. Throws if the stream ends
+ * without one, so the caller can fall back exactly as it does for any other
+ * failure — a half-answer is not a success.
+ */
+async function readEventStream(
+  response: Response,
+  onDelta: (text: string) => void,
+): Promise<string> {
+  const reader = response.body?.getReader();
+  if (!reader) throw new Error('no response body');
+
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let streamed = '';
+  let final: string | null = null;
+
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buffer += decoder.decode(value, { stream: true });
+
+    // Frames are blank-line delimited; keep the trailing partial for next read.
+    const frames = buffer.split('\n\n');
+    buffer = frames.pop() ?? '';
+
+    for (const frame of frames) {
+      const event = frame.match(/^event:\s*(.+)$/m)?.[1]?.trim();
+      const raw = frame.match(/^data:\s*(.*)$/m)?.[1];
+      if (!raw) continue;
+
+      let data: { text?: string; reply?: string; partial?: string };
+      try {
+        data = JSON.parse(raw);
+      } catch {
+        continue;
+      }
+
+      if (event === 'delta' && data.text) {
+        streamed += data.text;
+        onDelta(data.text);
+      } else if (event === 'done' && data.reply) {
+        final = data.reply;
+      } else if (event === 'error') {
+        // Mid-stream failure. Anything already painted is real text from a real
+        // model, so keep it rather than yanking it back for a canned answer.
+        if (data.partial) return data.partial;
+        if (streamed) return streamed;
+        throw new Error('stream error');
+      }
+    }
+  }
+
+  if (final === null) throw new Error('stream ended without a reply');
+  return final;
 }
 
 export interface FlaggedResponse {
@@ -48,19 +115,33 @@ export const getChatResponse = async (
     content: m.content,
   }));
 
+  const wantsStream = typeof options.onDelta === 'function';
+
   try {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       // `message` is retained for backwards compatibility with any older
       // cached bundle still hitting this deploy.
-      body: JSON.stringify({ messages: turns, message: lastUserMessage, persona }),
+      body: JSON.stringify({ messages: turns, message: lastUserMessage, persona, stream: wantsStream }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       console.error('Chat API error:', errorData);
       return getLocalResponse(lastUserMessage);
+    }
+
+    // The server only streams when asked, but check the actual content type
+    // rather than assuming: a proxy or an older deploy can answer a stream
+    // request with plain JSON, and that must not be parsed as SSE.
+    if (wantsStream && response.headers.get('content-type')?.includes('text/event-stream')) {
+      try {
+        return await readEventStream(response, options.onDelta!);
+      } catch (streamErr) {
+        console.error('Chat stream error:', streamErr);
+        return getLocalResponse(lastUserMessage);
+      }
     }
 
     const data = await response.json();

@@ -255,6 +255,227 @@ export class AllProvidersFailedError extends Error {
   }
 }
 
+// ── Streaming ──────────────────────────────────────────────────────────────
+
+/**
+ * Called for each text delta. Return `true` to stop reading upstream — the
+ * caller uses this once the visible answer has hit its sentence cap, which
+ * saves the tokens the model would have spent finishing a reply nobody sees.
+ */
+export type DeltaSink = (text: string) => boolean | void;
+
+/**
+ * Thrown when a provider fails AFTER it has already emitted text.
+ *
+ * This is the case that must NOT fall through to the next provider: the client
+ * has already painted those bytes, and a second provider would restart the
+ * answer from scratch mid-paragraph. Distinguishing it from a clean pre-first-
+ * token failure is the whole reason streaming needs its own chain runner.
+ */
+export class StreamInterruptedError extends Error {
+  provider: ProviderName;
+  partial: string;
+  constructor(provider: ProviderName, partial: string, cause: unknown) {
+    super(`${provider} stream interrupted: ${cause instanceof Error ? cause.message : String(cause)}`);
+    this.name = 'StreamInterruptedError';
+    this.provider = provider;
+    this.partial = partial;
+  }
+}
+
+/**
+ * Split an SSE buffer into complete `data:` payloads, returning any trailing
+ * partial line for the next read. Network chunks do not respect event
+ * boundaries, so a naive split drops or corrupts whichever event straddles them.
+ */
+export function parseSseBuffer(buffer: string): { payloads: string[]; rest: string } {
+  const parts = buffer.split('\n');
+  const rest = parts.pop() ?? '';
+  const payloads: string[] = [];
+  for (const line of parts) {
+    const trimmed = line.trim();
+    if (!trimmed.startsWith('data:')) continue;
+    const payload = trimmed.slice(5).trim();
+    if (payload && payload !== '[DONE]') payloads.push(payload);
+  }
+  return { payloads, rest };
+}
+
+async function streamAnthropic(system: string, turns: ChatTurn[], onDelta: DeltaSink): Promise<LlmResult> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
+
+  const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
+  const tuning = tuningFor(model);
+  const client = new Anthropic({ apiKey, timeout: timeoutMs(), maxRetries: 1 });
+
+  const stream = client.messages.stream({
+    model,
+    max_tokens: MAX_OUTPUT_TOKENS,
+    system: [{ type: 'text', text: system, cache_control: { type: 'ephemeral' } }],
+    messages: turns.map((t) => ({ role: t.role, content: t.content })),
+    ...(tuning.thinking === 'disable' ? { thinking: { type: 'disabled' as const } } : {}),
+    ...(tuning.effort ? { output_config: { effort: tuning.effort } } : {}),
+    ...(tuning.temperature !== null ? { temperature: tuning.temperature } : {}),
+  });
+
+  let text = '';
+  let stoppedEarly = false;
+  try {
+    for await (const event of stream) {
+      if (event.type !== 'content_block_delta' || event.delta.type !== 'text_delta') continue;
+      text += event.delta.text;
+      if (onDelta(event.delta.text) === true) {
+        stoppedEarly = true;
+        break;
+      }
+    }
+  } catch (err) {
+    if (text) throw new StreamInterruptedError('anthropic', text, err);
+    throw err;
+  } finally {
+    if (stoppedEarly) stream.abort();
+  }
+
+  // A refusal arrives as HTTP 200 with no text blocks, so it lands here as an
+  // empty completion and falls through to the next provider.
+  if (!text.trim()) throw new Error('empty completion');
+  return { text: text.trim(), provider: 'anthropic', model };
+}
+
+async function streamGemini(system: string, turns: ChatTurn[], onDelta: DeltaSink): Promise<LlmResult> {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+
+  const model = process.env.GEMINI_MODEL || 'gemini-flash-latest';
+  // `alt=sse` is required — without it this endpoint returns a JSON array that
+  // only completes at the end, which is not streaming in any useful sense.
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:streamGenerateContent?alt=sse`;
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
+    signal: AbortSignal.timeout(timeoutMs()),
+    body: JSON.stringify({
+      system_instruction: { parts: [{ text: system }] },
+      contents: turns.map((t) => ({
+        role: t.role === 'assistant' ? 'model' : 'user',
+        parts: [{ text: t.content }],
+      })),
+      generationConfig: {
+        maxOutputTokens: MAX_OUTPUT_TOKENS,
+        temperature: 0.4,
+        topP: 0.8,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    }),
+  });
+
+  if (!response.ok || !response.body) {
+    const body = await response.text().catch(() => '');
+    throw new Error(`Gemini ${response.status}: ${body.substring(0, 120)}`);
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
+  let text = '';
+
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const { payloads, rest } = parseSseBuffer(buffer);
+      buffer = rest;
+
+      let stop = false;
+      for (const payload of payloads) {
+        let piece = '';
+        try {
+          const data = JSON.parse(payload);
+          piece = (data.candidates?.[0]?.content?.parts ?? [])
+            .map((p: { text?: string }) => p.text ?? '')
+            .join('');
+        } catch {
+          continue; // a malformed frame is not worth failing the whole stream
+        }
+        if (!piece) continue;
+        text += piece;
+        if (onDelta(piece) === true) {
+          stop = true;
+          break;
+        }
+      }
+      if (stop) break;
+    }
+  } catch (err) {
+    if (text) throw new StreamInterruptedError('gemini', text, err);
+    throw err;
+  } finally {
+    reader.cancel().catch(() => {});
+  }
+
+  if (!text.trim()) throw new Error('empty completion');
+  return { text: text.trim(), provider: 'gemini', model };
+}
+
+/**
+ * HuggingFace has no streaming path here on purpose: it is the last resort in
+ * the chain and its job is to answer at all, not to answer prettily. Wrapping
+ * the existing call and emitting once keeps the chain uniform without a third
+ * bespoke SSE parser to maintain.
+ */
+async function streamHuggingFace(system: string, turns: ChatTurn[], onDelta: DeltaSink): Promise<LlmResult> {
+  const result = await callHuggingFace(system, turns);
+  onDelta(result.text);
+  return result;
+}
+
+const STREAM_PROVIDERS: Record<
+  ProviderName,
+  (system: string, turns: ChatTurn[], onDelta: DeltaSink) => Promise<LlmResult>
+> = {
+  anthropic: streamAnthropic,
+  gemini: streamGemini,
+  huggingface: streamHuggingFace,
+};
+
+/**
+ * Streaming twin of `runChain`.
+ *
+ * Fallback rule: a provider may be replaced only while it has produced NOTHING.
+ * `StreamInterruptedError` (a failure after the first delta) propagates
+ * immediately, because the client is already showing that provider's words and
+ * restarting the answer underneath the reader is worse than a truncated one.
+ */
+export async function runChainStream(
+  system: string,
+  turns: ChatTurn[],
+  onDelta: DeltaSink,
+  onAttemptFailure?: (attempt: ProviderAttempt) => void,
+  registry: Partial<
+    Record<ProviderName, (s: string, t: ChatTurn[], d: DeltaSink) => Promise<LlmResult>>
+  > = STREAM_PROVIDERS,
+): Promise<LlmResult> {
+  const attempts: ProviderAttempt[] = [];
+
+  for (const name of resolveChain()) {
+    const call = registry[name];
+    if (!call) continue;
+    try {
+      return await call(system, turns, onDelta);
+    } catch (err) {
+      if (err instanceof StreamInterruptedError) throw err;
+      const attempt = { provider: name, error: err instanceof Error ? err.message : String(err) };
+      attempts.push(attempt);
+      onAttemptFailure?.(attempt);
+    }
+  }
+
+  throw new AllProvidersFailedError(attempts);
+}
+
 /**
  * Try each provider in chain order, returning the first success.
  *

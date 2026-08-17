@@ -1,7 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
 import { applyCors } from './_lib/cors.js';
-import { runChain, AllProvidersFailedError } from './_lib/llm.js';
+import {
+  runChain,
+  runChainStream,
+  AllProvidersFailedError,
+  StreamInterruptedError,
+  type ChatTurn,
+} from './_lib/llm.js';
+import { createReplyStreamer } from './_lib/streamFormat.js';
 import { buildTurns } from './_lib/history.js';
 import { formatReply } from './_lib/replyFormat.js';
 import { captureServerError, flushSentry } from './_lib/sentry.js';
@@ -105,6 +112,83 @@ function resolvePersona(raw: unknown): PersonaKey {
     : 'default';
 }
 
+/** Write one SSE frame. Named events keep the client's switch explicit. */
+function sse(res: VercelResponse, event: string, data: unknown): void {
+  res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+}
+
+/**
+ * Server-sent-events branch of the chat endpoint.
+ *
+ * Headers go out BEFORE the first upstream token so the connection is
+ * established while the model is still thinking — that early flush is most of
+ * the perceived speedup. It also means the status code is committed at 200: any
+ * later failure has to be reported as an `error` event, never a 502, which is
+ * why the client keeps a local fallback.
+ */
+async function streamResponse(
+  req: VercelRequest,
+  res: VercelResponse,
+  requestId: string,
+  system: string,
+  turns: ChatTurn[],
+): Promise<void> {
+  res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  // Proxies that buffer would collect the whole answer and defeat the point.
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders?.();
+
+  const streamer = createReplyStreamer();
+  let clientGone = false;
+  req.on('close', () => {
+    clientGone = true;
+  });
+
+  try {
+    const result = await runChainStream(
+      system,
+      turns,
+      (delta) => {
+        if (clientGone) return true;
+        const { emit, complete } = streamer.push(delta);
+        if (emit) sse(res, 'delta', { text: emit });
+        // Returning true aborts upstream: the visible answer is already
+        // complete, so the remaining tokens would be paid for and discarded.
+        return complete;
+      },
+      ({ provider, error }) => {
+        console.warn(`[chat:${requestId}] provider ${provider} failed: ${error}`);
+      },
+    );
+
+    if (clientGone) return void res.end();
+
+    console.log(`[chat:${requestId}] streamed by ${result.provider}/${result.model}`);
+    res.setHeader('x-llm-provider', result.provider);
+    // The canonical reply, byte-identical to the non-streaming body. The client
+    // swaps its accumulated text for this, which attaches the "[Ask about: …]"
+    // affordance the streamer deliberately withheld.
+    sse(res, 'done', { reply: streamer.finish(), provider: result.provider, requestId });
+    res.end();
+  } catch (err) {
+    const interrupted = err instanceof StreamInterruptedError;
+    console.error(`[chat:${requestId}] stream failed: ${err instanceof Error ? err.message : String(err)}`);
+    if (!interrupted) {
+      await captureServerError(err, { requestId, route: '/api/chat:stream' });
+      await flushSentry();
+    }
+    if (clientGone) return void res.end();
+
+    // Mid-stream failure: hand back whatever is coherent rather than nothing.
+    // The client keeps partial text if it has any, and falls back locally if not.
+    const partial = interrupted ? streamer.finish() : '';
+    sse(res, 'error', { error: 'Upstream chat provider unavailable', partial, requestId });
+    res.end();
+  }
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   // Correlation ID for log/trace stitching. Set BEFORE any early returns.
   const requestId = randomUUID();
@@ -146,6 +230,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         reply: "Hey, that message didn't look quite right. Ask me about my projects, skills, or experience instead!",
         requestId,
       });
+    }
+
+    // Streaming is OPT-IN via `stream: true`. A bundle cached from before this
+    // shipped still gets the JSON body it expects, so no client is stranded by
+    // a deploy. The security work above — rate limit, sanitize, persona
+    // allow-list — has already run either way.
+    if (req.body?.stream === true) {
+      return streamResponse(req, res, requestId, effectiveSystemPrompt, history.turns);
     }
 
     let result;

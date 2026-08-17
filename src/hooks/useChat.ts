@@ -67,8 +67,28 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
       ? fullHistory
       : [fullHistory[0], ...fullHistory.slice(-(maxHistoryLength - 1))];
 
+    // The streaming placeholder is only appended on the FIRST delta, never up
+    // front. A flagged message and a failed request both remove the user's
+    // turn or replace it, and an empty assistant bubble appearing before we
+    // know which of those happened would flicker on screen.
+    let streaming = false;
+
     try {
-      const responseResult = await getChatResponse(historyForApi, { persona });
+      const responseResult = await getChatResponse(historyForApi, {
+        persona,
+        onDelta: (piece) => {
+          setMessages((prev) => {
+            if (!streaming) {
+              streaming = true;
+              return [...prev, { role: 'assistant', content: piece }];
+            }
+            const last = prev[prev.length - 1];
+            return [...prev.slice(0, -1), { ...last, content: last.content + piece }];
+          });
+          // Typing indicator is redundant once words are appearing.
+          setIsTyping(false);
+        },
+      });
 
       // Handle flagged input (prompt-injection / abuse detection)
       if (responseResult && typeof responseResult === 'object' && responseResult.__flagged) {
@@ -83,7 +103,15 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
       const responseText = typeof responseResult === 'string'
         ? responseResult
         : responseResult?.text || 'Unable to generate response';
-      setMessages((prev) => [...prev, { role: 'assistant', content: responseText }]);
+
+      setMessages((prev) =>
+        // Replace the streamed placeholder with the canonical reply. It differs
+        // only by the "[Ask about: …]" affordance the server withholds during
+        // streaming, so this reads as the chips arriving, not as a rewrite.
+        streaming
+          ? [...prev.slice(0, -1), { role: 'assistant', content: responseText }]
+          : [...prev, { role: 'assistant', content: responseText }],
+      );
 
       analyticsService.logInteraction(text, responseText, {
         success: true,
@@ -91,7 +119,13 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
       });
     } catch {
       const errorResponse = '🤖 Connection interrupted. Please try again. 🔄';
-      setMessages((prev) => [...prev, { role: 'assistant', content: errorResponse }]);
+      // Replace a half-streamed bubble rather than appending below it — two
+      // assistant messages, one of them a truncated fragment, reads as a bug.
+      setMessages((prev) =>
+        streaming
+          ? [...prev.slice(0, -1), { role: 'assistant', content: errorResponse }]
+          : [...prev, { role: 'assistant', content: errorResponse }],
+      );
 
       analyticsService.logInteraction(text, errorResponse, {
         success: false,

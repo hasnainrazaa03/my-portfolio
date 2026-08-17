@@ -10,7 +10,7 @@ import {
 } from './_lib/llm.js';
 import { createReplyStreamer } from './_lib/streamFormat.js';
 import { recordInteraction } from './_lib/analyticsLog.js';
-import { buildTurns } from './_lib/history.js';
+import { buildTurns, unwrapUser } from './_lib/history.js';
 import { formatReply } from './_lib/replyFormat.js';
 import { captureServerError, flushSentry } from './_lib/sentry.js';
 import { randomUUID } from 'node:crypto';
@@ -190,7 +190,9 @@ async function streamResponse(
     // the client returns on that frame rather than waiting for the stream to
     // close (see readEventStream in src/services/chatService.ts).
     await recordInteraction({
-      question: turns[turns.length - 1]?.content ?? '',
+      // unwrapped: the <<USER>> delimiters are a prompt artifact, not part
+      // of what the visitor asked, and they were leaking into every row.
+      question: unwrapUser(turns[turns.length - 1]?.content ?? ''),
       response: reply,
       sessionId,
       ip,
@@ -300,7 +302,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // insert latency, but this path is now only reached by bundles cached from
     // before streaming shipped and by direct API calls — the app always streams.
     await recordInteraction({
-      question: history.turns[history.turns.length - 1]?.content ?? '',
+      question: unwrapUser(history.turns[history.turns.length - 1]?.content ?? ''),
       response: reply,
       sessionId,
       ip,

@@ -41,6 +41,22 @@ function wrapUser(content: string): string {
 }
 
 /**
+ * Inverse of `wrapUser`, for anything that stores or displays a turn rather
+ * than sending it to a model.
+ *
+ * The delimiters exist purely so the model can tell visitor text from
+ * instructions. They are an artifact of the prompt, not part of what the person
+ * asked — and they leaked into the analytics table, where every row read
+ * "<<USER>>\nWhat did you build at Deloitte?\n<<END_USER>>".
+ *
+ * Returns the content unchanged if it is not wrapped (assistant turns).
+ */
+export function unwrapUser(content: string): string {
+  const match = /^<<USER>>\n([\s\S]*)\n<<END_USER>>$/.exec(content);
+  return match ? match[1] : content;
+}
+
+/**
  * Build the provider-ready turn list from a request body.
  *
  * Accepts either the multi-turn `messages` array or the legacy single

@@ -6,7 +6,7 @@
  * assistant turns are client-supplied and therefore untrusted.
  */
 import { describe, it, expect } from 'vitest';
-import { buildTurns, MAX_TURNS } from '../../api/_lib/history';
+import { buildTurns, MAX_TURNS, unwrapUser } from '../../api/_lib/history';
 
 const user = (content) => ({ role: 'user', content });
 const bot = (content) => ({ role: 'assistant', content });
@@ -89,5 +89,46 @@ describe('buildTurns', () => {
     expect(buildTurns({ messages: [] }).ok).toBe(false);
     expect(buildTurns({ messages: [null] }).ok).toBe(false);
     expect(buildTurns({ messages: [{ role: 'user', content: 42 }] }).ok).toBe(false);
+  });
+});
+
+/**
+ * unwrapUser — the inverse of the <<USER>> wrapping.
+ *
+ * The delimiters exist so the model can distinguish visitor text from
+ * instructions. They are an artifact of the prompt, not part of the question —
+ * and they leaked into the analytics table, where every stored row read
+ * "<<USER>>\nWhat did you build at Deloitte?\n<<END_USER>>". Anything that
+ * stores or displays a turn has to strip them.
+ */
+describe('unwrapUser', () => {
+  it('strips the wrapper the model prompt needs', () => {
+    expect(unwrapUser('<<USER>>\nWhat did you build at Deloitte?\n<<END_USER>>'))
+      .toBe('What did you build at Deloitte?');
+  });
+
+  it('round-trips whatever buildTurns produced', () => {
+    const built = buildTurns({ message: 'Tell me about Project Vimaan' });
+    expect(built.ok).toBe(true);
+    expect(unwrapUser(built.turns[built.turns.length - 1].content))
+      .toBe('Tell me about Project Vimaan');
+  });
+
+  it('leaves an unwrapped assistant turn alone', () => {
+    expect(unwrapUser('I built a thing.')).toBe('I built a thing.');
+  });
+
+  it('preserves newlines inside the question', () => {
+    expect(unwrapUser('<<USER>>\nline one\nline two\n<<END_USER>>')).toBe('line one\nline two');
+  });
+
+  it('does not strip a partial or forged marker', () => {
+    // Only an exact full wrap is removed; a visitor typing the marker themselves
+    // must not cause surrounding text to be silently dropped.
+    expect(unwrapUser('<<USER>> not really wrapped')).toBe('<<USER>> not really wrapped');
+  });
+
+  it('handles an empty string', () => {
+    expect(unwrapUser('')).toBe('');
   });
 });

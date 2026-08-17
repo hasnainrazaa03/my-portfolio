@@ -216,3 +216,28 @@ describe('analytics write happens before the response completes', () => {
     expect(record).toBeLessThan(respond);
   });
 });
+
+/**
+ * Guard: recorded questions must not carry the prompt-injection delimiters.
+ *
+ * The first production rows all read "<<USER>>\n…\n<<END_USER>>" because the
+ * handler recorded the wrapped turn it sends to the model rather than the
+ * question the visitor asked. Behavioural tests here cannot see that — the
+ * write succeeds either way — so assert it at the call site.
+ */
+describe('recorded question is unwrapped', () => {
+  it('both record sites strip the <<USER>> wrapper', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    const src = readFileSync(resolve(process.cwd(), 'api/chat.ts'), 'utf8');
+
+    const questionLines = src
+      .split('\n')
+      .filter((l) => /^\s*question:/.test(l));
+
+    expect(questionLines.length).toBeGreaterThan(0);
+    for (const line of questionLines) {
+      expect(line, `raw turn content recorded: ${line.trim()}`).toMatch(/unwrapUser\(/);
+    }
+  });
+});

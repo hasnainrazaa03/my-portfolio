@@ -2,8 +2,6 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID, timingSafeEqual as nodeTimingSafeEqual } from 'node:crypto';
 import { applyCors } from './_lib/cors.js';
-import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
-import { hashIp } from './_lib/hashIp.js';
 import { captureServerError, flushSentry } from './_lib/sentry.js';
 import { usableSecret } from './_lib/secrets.js';
 
@@ -35,8 +33,6 @@ function getSupabase() {
  *    the existing table schema valid without exposing PII.
  */
 
-const writeLimiter = createDurableLimiter({ windowMs: 60_000, max: 30, prefix: 'analytics' });
-
 /** A row of the `jarvis_analytics` table, as consumed by the insights pass. */
 interface AnalyticsRow {
   question?: string | null;
@@ -61,62 +57,39 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   res.setHeader('x-request-id', requestId);
 
   applyCors(req, res, {
-    methods: 'POST, GET, OPTIONS',
-    headers: 'Content-Type, Authorization, x-analytics-token',
+    methods: 'GET, OPTIONS',
+    headers: 'Content-Type, Authorization',
   });
 
   if (req.method === 'OPTIONS') return res.status(200).end();
 
-  // ── WRITE ────────────────────────────────────────────────────────────────
+  /**
+   * ── WRITES ARE GONE ──────────────────────────────────────────────────────
+   *
+   * There used to be a POST branch here, gated by `ANALYTICS_WRITE_TOKEN` and
+   * called from the browser with the matching `VITE_ANALYTICS_WRITE_TOKEN`.
+   * That token was inlined into the shipped bundle by design and could be
+   * lifted out of it in seconds, so the gate stopped only people who could not
+   * be bothered — while the endpoint itself accepted arbitrary rows into the
+   * table the admin viewer reads.
+   *
+   * The endpoint was never needed. Every row analytics ever stored was a chat
+   * (question, response) pair, and /api/chat already holds both — it answered
+   * the question and produced the response. It now writes the row itself with
+   * the service key that never leaves the server (api/_lib/analyticsLog.ts).
+   *
+   * So the credential is not better protected, it no longer exists. A POST here
+   * is now simply not a route.
+   *
+   * Older cached bundles may still POST for a while; they get 405 and fail soft
+   * (the client warns and keeps the interaction in localStorage), and because
+   * this branch is gone there is no window where a row could be double-counted.
+   */
   if (req.method === 'POST') {
-    const expectedWriteToken = usableSecret(
-      process.env.ANALYTICS_WRITE_TOKEN,
-      'ANALYTICS_WRITE_TOKEN',
-    );
-    const writeToken = req.headers['x-analytics-token'];
-
-    if (!expectedWriteToken) {
-      console.warn(`[analytics][${requestId}] ANALYTICS_WRITE_TOKEN not set — rejecting writes`);
-      return res.status(500).json({ error: 'Server misconfigured', requestId });
-    }
-    if (!safeEq(writeToken, expectedWriteToken)) {
-      return res.status(401).json({ error: 'Unauthorized', requestId });
-    }
-
-    const clientIp = getClientIp(req);
-    const { limited } = await writeLimiter(clientIp);
-    if (limited) return res.status(429).json({ error: 'Too many requests', requestId });
-
-    try {
-      const { question, response, sessionId, timestamp } = req.body || {};
-      if (!question || !response) {
-        return res.status(400).json({ error: 'Missing required fields', requestId });
-      }
-
-      const { data, error } = await getSupabase().from('jarvis_analytics').insert([
-        {
-          id: randomUUID(),
-          question: String(question).slice(0, 1000),
-          response: String(response).slice(0, 4000),
-          session_id: typeof sessionId === 'string' ? sessionId.slice(0, 64) : null,
-          timestamp: timestamp || new Date().toISOString(),
-          user_agent: 'redacted',
-          referrer: 'redacted',
-          ip_address: hashIp(clientIp), // hashed, not raw
-        },
-      ]);
-
-      if (error) {
-        console.error(`[analytics][${requestId}] Supabase insert error:`, error.message);
-        return res.status(500).json({ error: 'Failed to record analytics', requestId });
-      }
-      return res.status(200).json({ success: true, data, requestId });
-    } catch (err) {
-      console.error(`[analytics][${requestId}] write error:`, err);
-      await captureServerError(err, { requestId, route: '/api/analytics:write' });
-      await flushSentry();
-      return res.status(500).json({ error: 'Internal error', requestId });
-    }
+    return res.status(405).json({
+      error: 'Analytics writes are recorded server-side by /api/chat',
+      requestId,
+    });
   }
 
   // ── READ ─────────────────────────────────────────────────────────────────

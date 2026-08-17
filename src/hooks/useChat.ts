@@ -76,6 +76,9 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
     try {
       const responseResult = await getChatResponse(historyForApi, {
         persona,
+        // The server writes the analytics row now; it needs this only to group
+        // a visitor's turns together.
+        sessionId: analyticsService.sessionId,
         onDelta: (piece) => {
           setMessages((prev) => {
             if (!streaming) {

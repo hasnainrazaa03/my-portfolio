@@ -9,6 +9,7 @@ import {
   type ChatTurn,
 } from './_lib/llm.js';
 import { createReplyStreamer } from './_lib/streamFormat.js';
+import { recordInteraction } from './_lib/analyticsLog.js';
 import { buildTurns } from './_lib/history.js';
 import { formatReply } from './_lib/replyFormat.js';
 import { captureServerError, flushSentry } from './_lib/sentry.js';
@@ -132,6 +133,8 @@ async function streamResponse(
   requestId: string,
   system: string,
   turns: ChatTurn[],
+  sessionId: string | null,
+  ip: string | null,
 ): Promise<void> {
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
   res.setHeader('Cache-Control', 'no-cache, no-transform');
@@ -176,8 +179,20 @@ async function streamResponse(
     // The canonical reply, byte-identical to the non-streaming body. The client
     // swaps its accumulated text for this, which attaches the "[Ask about: …]"
     // affordance the streamer deliberately withheld.
-    sse(res, 'done', { reply: streamer.finish(), provider: result.provider, requestId });
+    const reply = streamer.finish();
+    sse(res, 'done', { reply, provider: result.provider, requestId });
     res.end();
+
+    // AFTER res.end(): the reader already has every byte, so the insert costs
+    // them nothing. Awaited rather than fire-and-forget because the serverless
+    // instance can be frozen the moment the handler returns.
+    await recordInteraction({
+      question: turns[turns.length - 1]?.content ?? '',
+      response: reply,
+      sessionId,
+      ip,
+      requestId,
+    });
   } catch (err) {
     const interrupted = err instanceof StreamInterruptedError;
     console.error(`[chat:${requestId}] stream failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -242,8 +257,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // shipped still gets the JSON body it expects, so no client is stranded by
     // a deploy. The security work above — rate limit, sanitize, persona
     // allow-list — has already run either way.
+    // `sessionId` is a client-generated grouping key, not a credential — it
+    // only ties a visitor's turns together in the analytics table. Validated
+    // for shape and truncated server-side; a forged one groups rows wrongly and
+    // achieves nothing else.
+    const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId.slice(0, 64) : null;
+
     if (req.body?.stream === true) {
-      return streamResponse(req, res, requestId, effectiveSystemPrompt, history.turns);
+      return streamResponse(req, res, requestId, effectiveSystemPrompt, history.turns, sessionId, ip);
     }
 
     let result;
@@ -267,7 +288,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // spend, not obscurity about which model is behind the endpoint.
     console.log(`[chat:${requestId}] served by ${result.provider}/${result.model}`);
     res.setHeader('x-llm-provider', result.provider);
-    return res.status(200).json({ reply: formatReply(result.text), requestId });
+    const reply = formatReply(result.text);
+    res.status(200).json({ reply, requestId });
+
+    // Same ordering as the streaming path: respond first, then persist. The
+    // client is not waiting on the database.
+    await recordInteraction({
+      question: history.turns[history.turns.length - 1]?.content ?? '',
+      response: reply,
+      sessionId,
+      ip,
+      requestId,
+    });
+    return;
   } catch (error) {
     console.error(`[chat:${requestId}] Internal error:`, error);
     await captureServerError(error, { requestId, route: '/api/chat' });

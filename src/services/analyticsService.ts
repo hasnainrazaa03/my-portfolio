@@ -7,7 +7,6 @@
  *    hashed (see api/_lib/hashIp.js).
  *  - IDs use `crypto.randomUUID()` instead of `Math.random().toString(36).substr(...)`.
  */
-import { env } from '../config/env';
 
 function safeUUID(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
@@ -76,28 +75,23 @@ class AnalyticsService {
 
     this.interactions.push(interaction);
 
-    try {
-      // Public write-gate token (not a secret admin key). Set
-      // VITE_ANALYTICS_WRITE_TOKEN in .env.local. Centralized in config/env.js.
-      const writeToken = env.analyticsWriteToken;
-
-      const fetchResponse = await fetch(this.backendUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-analytics-token': writeToken,
-        },
-        body: JSON.stringify(interaction),
-      });
-
-      if (!fetchResponse.ok) {
-        console.warn('Failed to send analytics to backend');
-        this.persistToLocalStorage();
-      }
-    } catch (error) {
-      console.warn('Analytics backend error, storing locally:', error);
-      this.persistToLocalStorage();
-    }
+    /**
+     * NO BACKEND POST ANY MORE.
+     *
+     * This used to send the interaction to /api/analytics with
+     * `VITE_ANALYTICS_WRITE_TOKEN`, which shipped inside this bundle. A token
+     * the browser can read is a token anyone can read, so it gated nothing
+     * while still letting arbitrary rows into the table the admin viewer reads.
+     *
+     * /api/chat already has the question and the answer, so it records the row
+     * itself with a server-only key (api/_lib/analyticsLog.ts). Nothing here
+     * needs a credential, so there is no longer one to leak.
+     *
+     * Local persistence stays: it backs the offline/local analytics viewer, and
+     * it is the only record of interactions answered by getLocalResponse, which
+     * never reach the server at all.
+     */
+    this.persistToLocalStorage();
 
     return interaction;
   }

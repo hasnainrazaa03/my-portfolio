@@ -8,7 +8,6 @@ const FULL = {
   VITE_EMAILJS_SERVICE_ID: 'svc',
   VITE_EMAILJS_TEMPLATE_ID: 'tpl',
   VITE_EMAILJS_PUBLIC_KEY: 'pub',
-  VITE_ANALYTICS_WRITE_TOKEN: 'tok',
   VITE_ENABLE_ADMIN: 'true',
 };
 
@@ -16,7 +15,10 @@ describe('readEnv', () => {
   it('returns the expected shape when all vars are present', () => {
     const e = readEnv(FULL);
     expect(e.emailjs).toEqual({ serviceId: 'svc', templateId: 'tpl', publicKey: 'pub', isConfigured: true });
-    expect(e.analyticsWriteToken).toBe('tok');
+    // `analyticsWriteToken` is deliberately gone: the browser no longer writes
+    // analytics at all, so there is no client-side credential to read. See
+    // api/_lib/analyticsLog.ts.
+    expect(e).not.toHaveProperty('analyticsWriteToken');
     expect(e.adminEnabled).toBe(true);
   });
 

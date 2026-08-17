@@ -28,6 +28,12 @@ export interface ChatOptions {
    * can append blindly — see api/_lib/streamFormat.ts.
    */
   onDelta?: (text: string) => void;
+  /**
+   * Grouping key that ties one visitor's turns together in analytics. NOT a
+   * credential: the server records the row itself and only uses this to group
+   * rows, so a forged value groups someone's own turns wrongly and nothing else.
+   */
+  sessionId?: string;
 }
 
 /**
@@ -123,7 +129,13 @@ export const getChatResponse = async (
       headers: { 'Content-Type': 'application/json' },
       // `message` is retained for backwards compatibility with any older
       // cached bundle still hitting this deploy.
-      body: JSON.stringify({ messages: turns, message: lastUserMessage, persona, stream: wantsStream }),
+      body: JSON.stringify({
+        messages: turns,
+        message: lastUserMessage,
+        persona,
+        stream: wantsStream,
+        sessionId: options.sessionId,
+      }),
     });
 
     if (!response.ok) {

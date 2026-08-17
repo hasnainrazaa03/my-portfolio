@@ -29,8 +29,6 @@ export function readEnv(source = import.meta.env) {
 
   return {
     emailjs,
-    // Public write-gate token for analytics (not a secret admin key).
-    analyticsWriteToken: source.VITE_ANALYTICS_WRITE_TOKEN || '',
     // Build flag — include the in-chat analytics viewer in the bundle.
     adminEnabled: source.VITE_ENABLE_ADMIN === 'true',
   };

@@ -29,6 +29,7 @@
 import { randomUUID } from 'node:crypto';
 import { hashIp } from './hashIp.js';
 import { usableSecret } from './secrets.js';
+import { captureServerError } from './sentry.js';
 
 export interface InteractionRecord {
   question: string;
@@ -48,8 +49,12 @@ function restEndpoint(base: string): string {
  * Record one chat interaction.
  *
  * NEVER THROWS and never rejects: analytics is a nice-to-have, and a logging
- * failure must not turn a delivered answer into a 500. Callers await it only so
- * the serverless instance is not frozen mid-request.
+ * failure must not turn a delivered answer into a 500.
+ *
+ * MUST be awaited BEFORE the response is completed. Queuing it afterwards to
+ * save latency is the obvious-looking move and it does not work: once the
+ * response is done the platform may freeze the instance, and the insert never
+ * runs. That version shipped and produced zero rows.
  *
  * @returns true when the row was accepted, false otherwise (for tests/logging).
  */
@@ -90,23 +95,35 @@ export async function recordInteraction(record: InteractionRecord): Promise<bool
           ip_address: hashIp(record.ip ?? ''),
         },
       ]),
-      // The answer is already on the wire by the time this runs; a slow insert
-      // must not hold the invocation open.
+      // Bounded so a slow or unreachable database cannot hold the request open.
+      // On the streaming path the reader already has the full reply and has
+      // returned, so this window is invisible to them; on the JSON path it is
+      // the worst case they can wait.
       signal: AbortSignal.timeout(3000),
     });
 
     if (!res.ok) {
       const body = await res.text().catch(() => '');
-      console.warn(
-        `[analytics][${record.requestId ?? '-'}] insert failed ${res.status}: ${body.slice(0, 120)}`,
-      );
+      const detail = `analytics insert failed ${res.status}: ${body.slice(0, 200)}`;
+      console.warn(`[analytics][${record.requestId ?? '-'}] ${detail}`);
+      // Reported, not just logged. The first version of this write silently
+      // produced zero rows for a full deploy cycle and only surfaced when
+      // somebody ran a SELECT by hand — console output nobody reads is
+      // indistinguishable from success.
+      await captureServerError(new Error(detail), {
+        requestId: record.requestId,
+        route: '/api/chat:analytics',
+      });
       return false;
     }
     return true;
   } catch (err) {
-    console.warn(
-      `[analytics][${record.requestId ?? '-'}] insert error: ${err instanceof Error ? err.message : String(err)}`,
-    );
+    const detail = `analytics insert error: ${err instanceof Error ? err.message : String(err)}`;
+    console.warn(`[analytics][${record.requestId ?? '-'}] ${detail}`);
+    await captureServerError(err, {
+      requestId: record.requestId,
+      route: '/api/chat:analytics',
+    });
     return false;
   }
 }

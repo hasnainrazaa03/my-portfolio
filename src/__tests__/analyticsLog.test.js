@@ -172,3 +172,47 @@ describe('no browser-readable analytics credential', () => {
     expect(src).not.toMatch(/method:\s*['"]POST['"]/);
   });
 });
+
+/**
+ * Ordering guard.
+ *
+ * The first version of this write awaited recordInteraction AFTER res.end() /
+ * after res.json(), to avoid adding latency. It produced ZERO rows across a
+ * whole deploy: once the response is complete the platform is free to freeze
+ * the instance, so post-response work is not guaranteed to run. Nothing caught
+ * it — the write fails soft by design, so a hand-run SELECT was the only signal.
+ *
+ * No unit test here drives the handler against a real ServerResponse, so the
+ * invariant is asserted against the source instead.
+ */
+describe('analytics write happens before the response completes', () => {
+  const chatSrc = async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    return readFileSync(resolve(process.cwd(), 'api/chat.ts'), 'utf8');
+  };
+
+  it('streaming path records the row before res.end()', async () => {
+    const src = await chatSrc();
+    const stream = src.slice(
+      src.indexOf('async function streamResponse'),
+      src.indexOf('export default async function handler'),
+    );
+    const record = stream.indexOf('await recordInteraction');
+    // The res.end() that terminates the SUCCESS path is the last one in the
+    // function; the earlier ones are client-gone / error bail-outs.
+    const finalEnd = stream.lastIndexOf('res.end()');
+    expect(record).toBeGreaterThan(-1);
+    expect(record).toBeLessThan(finalEnd);
+  });
+
+  it('JSON path records the row before it responds', async () => {
+    const src = await chatSrc();
+    const handler = src.slice(src.indexOf('export default async function handler'));
+    const record = handler.indexOf('await recordInteraction');
+    const respond = handler.indexOf('res.status(200).json({ reply');
+    expect(record).toBeGreaterThan(-1);
+    expect(respond).toBeGreaterThan(-1);
+    expect(record).toBeLessThan(respond);
+  });
+});

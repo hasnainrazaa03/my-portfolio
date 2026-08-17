@@ -181,11 +181,14 @@ async function streamResponse(
     // affordance the streamer deliberately withheld.
     const reply = streamer.finish();
     sse(res, 'done', { reply, provider: result.provider, requestId });
-    res.end();
 
-    // AFTER res.end(): the reader already has every byte, so the insert costs
-    // them nothing. Awaited rather than fire-and-forget because the serverless
-    // instance can be frozen the moment the handler returns.
+    // BEFORE res.end(), deliberately. The first version awaited this *after*
+    // res.end() to avoid adding latency, and the rows never appeared: once the
+    // response is complete the platform is free to freeze the instance, so
+    // post-response work is not guaranteed to run. It costs the reader nothing
+    // here anyway — the `done` frame above already carries the full reply, and
+    // the client returns on that frame rather than waiting for the stream to
+    // close (see readEventStream in src/services/chatService.ts).
     await recordInteraction({
       question: turns[turns.length - 1]?.content ?? '',
       response: reply,
@@ -193,6 +196,8 @@ async function streamResponse(
       ip,
       requestId,
     });
+
+    res.end();
   } catch (err) {
     const interrupted = err instanceof StreamInterruptedError;
     console.error(`[chat:${requestId}] stream failed: ${err instanceof Error ? err.message : String(err)}`);
@@ -289,10 +294,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     console.log(`[chat:${requestId}] served by ${result.provider}/${result.model}`);
     res.setHeader('x-llm-provider', result.provider);
     const reply = formatReply(result.text);
-    res.status(200).json({ reply, requestId });
 
-    // Same ordering as the streaming path: respond first, then persist. The
-    // client is not waiting on the database.
+    // Before responding, for the same reason as the streaming path: work queued
+    // after the response may never run. This one does cost the caller the
+    // insert latency, but this path is now only reached by bundles cached from
+    // before streaming shipped and by direct API calls — the app always streams.
     await recordInteraction({
       question: history.turns[history.turns.length - 1]?.content ?? '',
       response: reply,
@@ -300,7 +306,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       ip,
       requestId,
     });
-    return;
+
+    return res.status(200).json({ reply, requestId });
   } catch (error) {
     console.error(`[chat:${requestId}] Internal error:`, error);
     await captureServerError(error, { requestId, route: '/api/chat' });

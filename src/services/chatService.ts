@@ -80,7 +80,14 @@ async function readEventStream(
         streamed += data.text;
         onDelta(data.text);
       } else if (event === 'done' && data.reply) {
+        // Return on this frame rather than waiting for the stream to close.
+        // The server writes the analytics row between `done` and `res.end()`
+        // (post-response work can be frozen by the platform), so waiting for
+        // the close would make the reader pay for a database insert they have
+        // no stake in. Everything needed is already in this frame.
         final = data.reply;
+        await reader.cancel().catch(() => {});
+        return final;
       } else if (event === 'error') {
         // Mid-stream failure. Anything already painted is real text from a real
         // model, so keep it rather than yanking it back for a canned answer.

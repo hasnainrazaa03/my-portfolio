@@ -7,8 +7,10 @@
  *   - Toggles the `hc` class on `<html>` so Tailwind variants
  *     (`hc:bg-black`, `hc:text-white`, …) can adapt globally.
  *
- * The toggle is exposed through `Navigation.jsx`; consumers normally just
- * call `const [hc, setHc] = useHighContrast()`.
+ * CALL THIS ONCE. It owns React state while writing to shared globals (the
+ * `hc` class on <html>, and localStorage), so two callers would hold separate
+ * copies that diverge the moment either changes. The single call site is
+ * `ThemeProvider`; every consumer reads `useTheme()` instead.
  */
 import { useCallback, useEffect, useState } from 'react';
 import type { Dispatch, SetStateAction } from 'react';

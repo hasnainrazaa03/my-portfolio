@@ -3,7 +3,7 @@ import { MotionConfig } from 'framer-motion';
 import { Analytics } from "@vercel/analytics/react";
 
 // Hooks & Config
-import { useDarkMode } from './hooks/useDarkMode';
+import { ThemeProvider } from './context/ThemeProvider';
 
 // Above-the-fold (eager) components
 import ErrorBoundary from './components/ErrorBoundary';
@@ -52,9 +52,6 @@ const SectionFallback = () => (
  * beats threading a hook through every call site, which drifts.
  */
 export default function App() {
-  const [isDark, setIsDark] = useDarkMode();
-  const toggleTheme = () => setIsDark(!isDark);
-
   // Lightweight pathname routing: no router dependency. Vercel's SPA
   // fallback rewrites unknown paths to index.html, so /privacy and /resume
   // land here and render the appropriate component.
@@ -80,6 +77,7 @@ export default function App() {
 
   return (
     <MotionConfig reducedMotion="user">
+    <ThemeProvider>
     <ErrorBoundary>
       <div className="relative min-h-screen font-sans selection:bg-primary selection:text-black overflow-hidden">
         {/* A11Y: Skip-to-content link — invisible until focused via Tab */}
@@ -87,20 +85,20 @@ export default function App() {
 
         <PageTitleUpdater />
 
-        <SpaceBackground isDark={isDark} />
+        <SpaceBackground />
         <CursorGlow />
         
         <ScrollProgress />
 
         <div className="relative z-10">
-          <Navigation isDark={isDark} toggleTheme={toggleTheme} />
+          <Navigation />
           <main id="main-content">
             <Hero />
             <About />
             <Suspense fallback={<SectionFallback />}>
               <Education />
               <Projects />
-              <GitHubSection isDark={isDark} />
+              <GitHubSection />
               <Experience />
               <Skills />
               <Achievements />
@@ -116,6 +114,7 @@ export default function App() {
         <Analytics />
       </div>
     </ErrorBoundary>
+    </ThemeProvider>
     </MotionConfig>
   );
 }

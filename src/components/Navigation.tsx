@@ -1,20 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Menu, X, Rocket, Sun, Moon, Contrast } from 'lucide-react';
-import { useHighContrast } from '../hooks/useHighContrast';
+import { useTheme } from '../context/ThemeContext';
 import { PERSONAL_INFO } from '../constants';
 import { useActiveSection } from '../hooks/useActiveSection';
 import { scrollToSection } from '../utils/scroll';
 
-interface NavigationProps {
-  isDark: boolean;
-  toggleTheme: () => void;
-}
-
-const Navigation = ({ isDark, toggleTheme }: NavigationProps) => {
+const Navigation = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [hc, , toggleHc] = useHighContrast();
+  const { isDark, toggleTheme, highContrast: hc, toggleHighContrast: toggleHc } = useTheme();
 
   const navLinks = [
     { name: "About", id: "about" },

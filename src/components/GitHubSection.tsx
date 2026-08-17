@@ -6,8 +6,10 @@ import { PERSONAL_INFO } from '../constants';
 import GitHubFeed from './GitHubFeed';
 import SectionHeading from './ui/SectionHeading';
 import { fadeInUp } from '../animations';
+import { useTheme } from '../context/ThemeContext';
 
-const GitHubSection = ({ isDark }: { isDark: boolean }) => {
+const GitHubSection = () => {
+  const { isDark } = useTheme();
   const username = PERSONAL_INFO.socials.github.split('/').pop() ?? '';
 
   const explicitTheme = {

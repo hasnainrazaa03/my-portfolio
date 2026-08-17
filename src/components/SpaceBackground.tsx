@@ -1,12 +1,10 @@
 import React, { useEffect, useRef } from 'react';
 import { Star, starCountFor } from '../utils/starfield';
 import type { StarfieldEnv } from '../utils/starfield';
+import { useTheme } from '../context/ThemeContext';
 
-interface SpaceBackgroundProps {
-  isDark: boolean;
-}
-
-const SpaceBackground = ({ isDark }: SpaceBackgroundProps) => {
+const SpaceBackground = () => {
+  const { isDark } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {

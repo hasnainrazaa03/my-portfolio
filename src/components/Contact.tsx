@@ -59,9 +59,8 @@ const Contact = () => {
 
     // Honeypot: real users never see/fill `company`. If it's filled, it's a bot.
     // Speed gate: submissions faster than MIN_FILL_MS are almost always bots.
-    // `Date.now()` is fine inside an event handler; the react-hooks v6 purity
-    // rule false-positives here because the handler lives in the component body.
-    // eslint-disable-next-line react-hooks/purity
+    // (`Date.now()` here previously needed a react-hooks/purity suppression;
+    // the rule no longer false-positives on event handlers, so it is gone.)
     const now = Date.now();
     const tooFast = mountedAtRef.current > 0 && (now - mountedAtRef.current) < MIN_FILL_MS;
     if (data.company || tooFast) {
@@ -185,7 +184,11 @@ const Contact = () => {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    onSubmit={handleSubmit(onSubmit)} 
+                    // Called at submit time, not during render. react-hook-form's
+                    // `handleSubmit` touches refs internally, so invoking it inline
+                    // in JSX reads refs during render — which the React Compiler
+                    // rejects. The extra arrow defers it to the event.
+                    onSubmit={(e) => handleSubmit(onSubmit)(e)}
                     className="space-y-6"
                     noValidate
                   >

@@ -50,19 +50,15 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }: AnalyticsViewerPro
     }
   }, []);
 
-  useEffect(() => {
-    if (isOpen) {
-      if (isOwner && authToken) {
-        loadBackendAnalytics();
-      } else {
-        loadLocalAnalytics();
-      }
-    }
-    // loadBackendAnalytics / loadLocalAnalytics are stable closures defined
-    // in this component; wrapping them in useCallback would cascade through
-    // setState calls and add no real benefit.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, isOwner, authToken]);
+  // Declared BEFORE the effect that calls them. These are `const` arrow
+  // functions, so referencing them from an effect written above would sit in
+  // their temporal dead zone. It happened to work — effects run after render,
+  // by which point the bindings are initialised — but it is a hazard the React
+  // Compiler will not reason about, and it fails lint. Ordering is the fix.
+  const loadLocalAnalytics = () => {
+    const localSummary = analyticsService.getLocalAnalytics();
+    setAggregated(localSummary as unknown as AggregatedAnalytics);
+  };
 
   const loadBackendAnalytics = async () => {
     setIsLoading(true);
@@ -81,10 +77,19 @@ const AnalyticsViewer = ({ isOpen, onClose, className = '' }: AnalyticsViewerPro
     }
   };
 
-  const loadLocalAnalytics = () => {
-    const localSummary = analyticsService.getLocalAnalytics();
-    setAggregated(localSummary as unknown as AggregatedAnalytics);
-  };
+  useEffect(() => {
+    if (isOpen) {
+      if (isOwner && authToken) {
+        loadBackendAnalytics();
+      } else {
+        loadLocalAnalytics();
+      }
+    }
+    // loadBackendAnalytics / loadLocalAnalytics are stable closures defined
+    // in this component; wrapping them in useCallback would cascade through
+    // setState calls and add no real benefit.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, isOwner, authToken]);
 
   const handleAuthenticate = async (e: React.FormEvent<HTMLFormElement>) => {
     if (e && typeof e.preventDefault === 'function') e.preventDefault();

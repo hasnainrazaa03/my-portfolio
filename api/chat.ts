@@ -166,7 +166,13 @@ async function streamResponse(
     if (clientGone) return void res.end();
 
     console.log(`[chat:${requestId}] streamed by ${result.provider}/${result.model}`);
-    res.setHeader('x-llm-provider', result.provider);
+    // NO res.setHeader here. Headers were flushed before the first token (that
+    // early flush is most of the perceived speedup), so setting one now throws
+    // ERR_HTTP_HEADERS_SENT — which the catch below then misreported as an
+    // upstream provider failure, turning every successful stream into an
+    // `error` event that dropped the "[Ask about: …]" affordance. The serving
+    // provider travels in the `done` payload instead, where it is equally
+    // visible to the client and to external verification.
     // The canonical reply, byte-identical to the non-streaming body. The client
     // swaps its accumulated text for this, which attaches the "[Ask about: …]"
     // affordance the streamer deliberately withheld.

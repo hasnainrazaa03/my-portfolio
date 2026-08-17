@@ -168,3 +168,34 @@ describe('createReplyStreamer', () => {
     expect(streamer.finish()).toContain('I was cut off mid.');
   });
 });
+
+/**
+ * Regression guard for a bug that only appeared in production: the streaming
+ * branch flushes headers before the first token, so any later res.setHeader
+ * throws ERR_HTTP_HEADERS_SENT. That threw AFTER a fully successful stream, and
+ * the catch reported it as an upstream failure — so every good answer ended in
+ * an `error` event and lost its "[Ask about: …]" chips.
+ *
+ * Unit tests could not have caught it (nothing here runs the handler against a
+ * real ServerResponse), so this asserts the invariant at the source level: the
+ * streaming path must not set headers after flushing them.
+ */
+describe('streaming handler header discipline', () => {
+  it('never calls res.setHeader after the headers are flushed', async () => {
+    const { readFileSync } = await import('node:fs');
+    const { resolve } = await import('node:path');
+    // cwd-relative, matching apiEsmImports.test.js — `import.meta.url` is not a
+    // file: URL under the vitest environment this suite runs in.
+    const src = readFileSync(resolve(process.cwd(), 'api/chat.ts'), 'utf8');
+
+    const stream = src.slice(
+      src.indexOf('async function streamResponse'),
+      src.indexOf('export default async function handler'),
+    );
+    expect(stream).toContain('flushHeaders');
+
+    const afterFlush = stream.slice(stream.indexOf('flushHeaders'));
+    const setHeaderCalls = afterFlush.match(/^\s*res\.setHeader\(/gm) || [];
+    expect(setHeaderCalls).toEqual([]);
+  });
+});

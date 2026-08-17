@@ -37,6 +37,14 @@ jobs:
       - name: Build
         run: npm run build
 
+      # Budgets the INITIAL payload — the assets index.html loads before first
+      # render — not total dist size. Most sections are lazy(), so a chunk that
+      # loads on scroll costs nothing on first paint. This caught a manualChunks
+      # entry whose chunk absorbed Vite's shared __vitePreload helper, turning a
+      # lazy 23.8 KB gz calendar into an eager one; total bytes barely moved.
+      - name: Bundle size budget
+        run: npm run check:bundle
+
   # E2E: boots the BUILT app in a real browser. The unit suite never mounts the
   # whole app, which is how a WebGL crash that blanked the entire page — and a
   # period where every serverless endpoint 500'd — both went unnoticed.
@@ -60,16 +68,33 @@ jobs:
           path: playwright-report/
           retention-days: 7
 
-  # OSV scanner: cross-references our lockfile against the OSV vulnerability
-  # DB. Runs in parallel with the main job and is non-blocking for now
-  # (continue-on-error) so we can review findings before tightening.
-  osv-scan:
+  # Dependency advisories, in two layers.
+  #
+  # The BLOCKING layer is scripts/checkDeps.js, which fails only on advisories
+  # reachable from PRODUCTION dependencies. A blanket block was considered and
+  # rejected: the lockfile carries six dev-only advisories (js-yaml, minimatch,
+  # path-to-regexp, undici, ajv, smol-toml), every one a transitive pinned by
+  # @vercel/node / lighthouse / eslint and unfixable from this repo. Failing CI
+  # on day one over those just teaches everyone to ignore a red X.
+  #
+  # The REPORTING layer is the OSV scanner action, still non-blocking, for the
+  # full picture including dev-only findings.
+  deps:
     runs-on: ubuntu-latest
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v5
-      - name: Run OSV scanner
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      # No install needed: the gate reads package-lock.json and queries OSV.
+      - name: Production dependency advisories (blocking)
+        run: node scripts/checkDeps.js
+
+      - name: Full OSV scan (reporting only)
         uses: google/osv-scanner-action/osv-scanner-action@v2.0.2
         continue-on-error: true
         with:

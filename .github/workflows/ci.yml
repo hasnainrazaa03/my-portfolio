@@ -95,7 +95,7 @@ jobs:
         run: node scripts/checkDeps.js
 
       - name: Full OSV scan (reporting only)
-        uses: google/osv-scanner-action/osv-scanner-action@v2.0.2
+        uses: google/osv-scanner-action/osv-scanner-action@v2.5.0
         continue-on-error: true
         with:
           scan-args: |-

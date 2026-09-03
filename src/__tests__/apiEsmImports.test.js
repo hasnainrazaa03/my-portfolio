@@ -23,10 +23,48 @@
  * costs nothing at authoring time.
  */
 import { describe, it, expect } from 'vitest';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
+import { join, resolve, dirname } from 'node:path';
 
 const API_DIR = resolve(process.cwd(), 'api');
+const ROOT = process.cwd();
+
+/**
+ * Walk the ACTUAL module graph the lambda loads, not just api/.
+ *
+ * The original guard scanned api/ only, and a production crash reached the
+ * lambda through the gap: api/chat.ts imports src/data/careerKnowledge.ts,
+ * which imported './careerKnowledge.generated' with no extension. Node ESM
+ * cannot resolve that; the bundler could, so every local check passed and the
+ * function failed at module load with FUNCTION_INVOCATION_FAILED.
+ *
+ * Anything reachable from a handler runs under the same resolver, so anything
+ * reachable is checked.
+ */
+function resolveSpecifier(fromFile, spec) {
+  const base = resolve(dirname(fromFile), spec.replace(/\.js$/, ''));
+  for (const cand of [`${base}.ts`, `${base}.tsx`, `${base}.js`, join(base, 'index.ts')]) {
+    if (existsSync(cand)) return cand;
+  }
+  return null;
+}
+
+/** Every file the handlers pull in, transitively. */
+function reachableFromApi() {
+  const seen = new Set();
+  const queue = tsFilesUnder(API_DIR);
+  while (queue.length) {
+    const file = queue.pop();
+    if (seen.has(file)) continue;
+    seen.add(file);
+    for (const spec of relativeSpecifiers(readFileSync(file, 'utf8'))) {
+      const target = resolveSpecifier(file, spec);
+      // .json and unresolvable specifiers are reported by the assertion itself.
+      if (target && !seen.has(target)) queue.push(target);
+    }
+  }
+  return [...seen].sort();
+}
 
 function tsFilesUnder(dir) {
   return readdirSync(dir).flatMap((entry) => {
@@ -36,13 +74,29 @@ function tsFilesUnder(dir) {
   });
 }
 
-/** Relative specifiers in `import ... from '...'`, `export ... from`, `import('...')`. */
+/**
+ * Relative specifiers in `import ... from '...'`, `export ... from`,
+ * `import('...')` — EXCLUDING type-only forms.
+ *
+ * `import type { Foo } from './bar'` is erased by TypeScript before the code
+ * ever runs, so it never reaches Node's resolver and needs no extension.
+ * Flagging it would be a false positive, and false positives on a guard like
+ * this get it disabled. A value import that merely happens to carry an inline
+ * `type` specifier (`import { run, type Turn } from './x.js'`) is NOT
+ * type-only and is still checked.
+ */
 function relativeSpecifiers(source) {
   const patterns = [
-    /(?:^|\s)(?:import|export)\b[^;]*?\sfrom\s+['"](\.[^'"]*)['"]/g,
+    /(?:^|\s)(import|export)(\s+type)?\b[^;]*?\sfrom\s+['"](\.[^'"]*)['"]/g,
     /\bimport\(\s*['"](\.[^'"]*)['"]\s*\)/g,
   ];
-  return patterns.flatMap((re) => [...source.matchAll(re)].map((m) => m[1]));
+  const out = [];
+  for (const m of source.matchAll(patterns[0])) {
+    if (m[2]) continue; // `import type` / `export type`
+    out.push(m[3]);
+  }
+  for (const m of source.matchAll(patterns[1])) out.push(m[1]);
+  return out;
 }
 
 describe('api/ ESM specifiers', () => {
@@ -65,6 +119,32 @@ describe('api/ ESM specifiers', () => {
           `Node ESM cannot resolve these at runtime on Vercel — the function will ` +
           `fail at module load with FUNCTION_INVOCATION_FAILED. Append ".js" ` +
           `(TypeScript maps it back to the .ts source).`,
+      ).toEqual([]);
+    },
+  );
+});
+
+/**
+ * The transitive half of the guard. api/chat.ts reaches into src/ for the
+ * content modules, and those run under Node's resolver too.
+ */
+describe('modules reachable from api/', () => {
+  const files = reachableFromApi().filter((f) => !f.startsWith(`${ROOT}/api/`));
+
+  it('reaches beyond api/ — otherwise this guard proves nothing', () => {
+    expect(files.length).toBeGreaterThan(0);
+  });
+
+  it.each(files.map((f) => [f.replace(`${ROOT}/`, ''), f]))(
+    '%s uses explicit .js extensions on every relative import',
+    (rel, full) => {
+      const offenders = relativeSpecifiers(readFileSync(full, 'utf8')).filter(
+        (spec) => !spec.endsWith('.js'),
+      );
+      expect(
+        offenders,
+        `${rel} is loaded by a serverless handler, so Node ESM resolves its ` +
+          `imports: ${offenders.join(', ')} need a .js extension`,
       ).toEqual([]);
     },
   );

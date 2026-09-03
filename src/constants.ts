@@ -61,7 +61,7 @@ export const EDUCATION: Education[] = [
     degree: "M.S. in Computer Science",
     school: "University of Southern California",
     period: "2025 - 2027 (Expected)",
-    gpa: "4.0 / 4.0", 
+    gpa: "3.67 / 4.0", 
     coursework: "Analysis of Algorithms (CSCI570), Computer Networks (EE450), Programming Systems Design (CSCI455), Database Systems (CSCI585)",
     image: "/USC.png",
     url: "https://www.usc.edu/" 
@@ -444,7 +444,7 @@ export const EXPERIENCE: Experience[] = [
     location: "Bengaluru, India",
     logo: "/Deloitte.png",
     description: [
-      "Designed and developed a Pega PRPC-based SaaS workflow platform automating customer creation and modification processes across 35+ countries, orchestrating downstream REST APIs and achieving a 10x throughput increase.",
+      "Designed and developed a Pega PRPC-based SaaS workflow platform automating customer creation and modification processes across 35+ countries, orchestrating downstream REST APIs across 20,000+ customer transactions over the engagement.",
       "Engineered a REST API orchestration layer integrating multiple enterprise services for validation, approval routing, and legacy system communication, improving system reliability and latency.",
       "Validated performance gains by applying a Welch two-sample t-test on processing-time datasets, confirming a statistically significant 44% latency reduction.",
       "Built 100+ ServiceNow business intelligence reports consolidated into 3 interactive dashboards for real-time KPI tracking and SLA monitoring.",

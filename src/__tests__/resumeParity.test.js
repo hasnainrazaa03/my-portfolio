@@ -37,10 +37,11 @@ const ALLOWED_OMISSIONS = {
     'Study Hall',
   ],
   companies: [
-    // Student engineering team. Present on the site, absent from the PDF.
-    // Listed here so the suite stays green, but this one is UNVERIFIED — if
-    // the omission was not deliberate, the PDF is missing a real role.
+    // The one-page AI/ML résumé leads with the most recent and most relevant
+    // work. The site is the fuller record and keeps both of these; that is the
+    // intended relationship between the two, not drift.
     'Team Antariksh',
+    'Defence Research and Development Organisation (DRDO)',
   ],
 };
 

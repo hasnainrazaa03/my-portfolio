@@ -6,11 +6,22 @@
  * This file is that, in about 40 lines, with no dependency to keep current and
  * nothing new in the advisory surface the dependency gate watches.
  *
- * WHAT IT DOES NOT DO: fonts with custom encodings (subset CMaps) would come
- * out as mojibake. `resumeParity.test.js` guards against that by asserting the
- * extraction contains a known anchor string — if the résumé is ever re-exported
- * from a tool that encodes differently, the test fails loudly rather than
- * silently comparing against garbage and passing.
+ * TWO PRODUCERS, TWO ENCODINGS. Some PDFs store text as plain `(literal)`
+ * strings, which the zlib path below reads directly. LaTeX/tectonic instead
+ * embeds subset fonts and writes `<hex>` strings whose codes mean nothing
+ * without each font's ToUnicode CMap.
+ *
+ * Merging those CMaps into one table was tried and REJECTED: this document's 11
+ * subsets disagree on 2 of 81 codes — `0x6A` is `3` in one font and `|` in
+ * another. Silently picking one corrupts digits, which is precisely where GPAs
+ * and dates live, and those are what the parity and claim-integrity tests
+ * compare. Decoding correctly needs per-font tracking through the PDF object
+ * graph, i.e. the PDF parser this file exists to avoid.
+ *
+ * So `pdftotext` (poppler) is used when available and the zlib path is the
+ * fallback. Callers must treat an empty/garbled result as "cannot verify"
+ * rather than "nothing to report" — `resumeParity.test.js` asserts an anchor
+ * string for exactly that reason.
  *
  * NOTE ON SPACING: PDF text is positioned, not flowed, so kerning splits words
  * mid-token — the real file contains "Educa tion" and "Univ ersit y". Never
@@ -18,6 +29,17 @@
  */
 import { readFileSync } from 'node:fs';
 import { inflateSync } from 'node:zlib';
+import { execFileSync } from 'node:child_process';
+
+/** True when poppler's pdftotext is on PATH. */
+export function hasPdfToText() {
+  try {
+    execFileSync('pdftotext', ['-v'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
 
 /** Inflate every Flate-encoded content stream and concatenate the results. */
 function inflateStreams(buffer) {
@@ -48,14 +70,29 @@ function decodeEscapes(s) {
 
 /** Extract the visible text of a PDF as a single (loosely spaced) string. */
 export function extractPdfText(path) {
+  if (hasPdfToText()) {
+    try {
+      // `-` writes to stdout; `-layout` keeps columns from interleaving.
+      const out = execFileSync('pdftotext', ['-layout', '-nopgbrk', path, '-'], {
+        encoding: 'utf8',
+        maxBuffer: 32 * 1024 * 1024,
+      });
+      if (out.trim()) return out.replace(/\s+/g, ' ').trim();
+    } catch {
+      /* fall through to the zlib path */
+    }
+  }
+
   const buffer = readFileSync(path);
   const content = inflateStreams(buffer);
-  const literals = content.match(/\((?:\\.|[^()\\])*\)/g) || [];
-  return literals
+
+  const literals = (content.match(/\((?:\\.|[^()\\])*\)/g) || [])
     .map((lit) => decodeEscapes(lit.slice(1, -1)))
     .join(' ')
     .replace(/\s+/g, ' ')
     .trim();
+
+  return literals;
 }
 
 /**

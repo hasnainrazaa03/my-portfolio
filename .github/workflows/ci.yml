@@ -21,6 +21,13 @@ jobs:
           node-version: '22'
           cache: 'npm'
 
+      # poppler's pdftotext is how resumeParity/claimIntegrity read the shipped
+      # résumé PDF. LaTeX embeds subset fonts whose codes are meaningless
+      # without per-font CMaps, and the tests must not "pass" by extracting
+      # nothing. Without this the extraction anchor fails loudly, by design.
+      - name: Install poppler-utils (PDF text extraction)
+        run: sudo apt-get update && sudo apt-get install -y poppler-utils
+
       # vercel.json no longer needs --legacy-peer-deps (v1.3.0); mirror that.
       - name: Install dependencies
         run: npm install

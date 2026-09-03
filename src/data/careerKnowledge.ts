@@ -20,7 +20,7 @@
  *                 absolute, because a model that omits a claim is merely less
  *                 useful, while one that crosses a boundary is a liability.
  */
-import { CAREER_CORPUS as corpus } from './careerKnowledge.generated';
+import { CAREER_CORPUS as corpus } from './careerKnowledge.generated.js';
 
 interface Narrative {
   heading: string;

@@ -93,3 +93,38 @@ describe('formatReply', () => {
     expect(formatReply(null)).toBe('');
   });
 });
+
+/**
+ * Truncated affordances.
+ *
+ * Seen in production twice: the model emits "[Ask about: my coursework,
+ * PeakRoutine." with no closing bracket, the closed-form regex misses it, the
+ * fragment is treated as prose, and a second affordance is appended after it.
+ */
+describe('formatReply — unterminated suggestion block', () => {
+  const fixed = () => 0;
+
+  it('does not stack a second affordance on a truncated one', () => {
+    const out = formatReply('I study at USC. [Ask about: my coursework, PeakRoutine.', {
+      rand: fixed,
+    });
+    expect(out.match(/\[Ask about:/g)).toHaveLength(1);
+  });
+
+  it('keeps the real answer when discarding the fragment', () => {
+    const out = formatReply('I study at USC. [Ask about: my cour', { rand: fixed });
+    expect(out).toMatch(/^I study at USC\./);
+    expect(out).not.toContain('my cour]');
+  });
+
+  it('still preserves a properly closed affordance', () => {
+    expect(formatReply('I use React. [Ask about: my stack?]', { rand: fixed })).toBe(
+      'I use React. [Ask about: my stack?]',
+    );
+  });
+
+  it('leaves an unrelated bracket alone', () => {
+    const out = formatReply('See [1] for the benchmark.', { rand: fixed });
+    expect(out).toContain('[1]');
+  });
+});

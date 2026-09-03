@@ -22,6 +22,18 @@ const SENTENCE_BOUNDARY = /(?<=[.!?])\s+(?=["'“]?[A-Z0-9])/;
 /** Trailing "[Ask about: X, Y?]" affordance the UI renders as chips. */
 const SUGGESTION_SUFFIX = /\[Ask about:[^\]]*\]\s*$/;
 
+/**
+ * An affordance the model STARTED but never closed, e.g. a reply ending
+ * "…[Ask about: my coursework, PeakRoutine." with no "]".
+ *
+ * Without this the closed-form match above fails, the fragment is treated as
+ * ordinary prose, and a second affordance is appended after it — which shipped,
+ * and reads as "[Ask about: my coursework, PeakRoutine. [Ask about: …?]".
+ * A truncated fragment carries no usable suggestions, so it is discarded and
+ * replaced rather than repaired.
+ */
+const TRUNCATED_SUGGESTION = /\[Ask about:[^\]]*$/;
+
 export const DEFAULT_SUGGESTIONS = [
   'the tech stack behind it',
   'project details or impact',
@@ -82,7 +94,13 @@ export function formatReply(raw: string, options: FormatOptions = {}): string {
 
   // Preserve an existing suggestion block rather than stacking a second one.
   const existing = text.match(SUGGESTION_SUFFIX)?.[0] ?? null;
-  if (existing) text = text.slice(0, text.length - existing.length).trim();
+  if (existing) {
+    text = text.slice(0, text.length - existing.length).trim();
+  } else {
+    // No closed affordance — but the model may have started one and been cut
+    // off. Drop the fragment so the replacement below does not stack on it.
+    text = text.replace(TRUNCATED_SUGGESTION, '').trim();
+  }
 
   if (maxSentences > 0) {
     const sentences = splitSentences(text);

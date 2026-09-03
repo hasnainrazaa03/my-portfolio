@@ -54,6 +54,47 @@ function toFrames(stack: string | undefined) {
   return frames.length ? { frames } : undefined;
 }
 
+/**
+ * Walk an error's `cause` chain into a readable summary.
+ *
+ * Node's fetch reports every connection-level failure as the same opaque
+ * `TypeError: fetch failed`. The actionable part — ENOTFOUND vs ECONNREFUSED vs
+ * a TLS error — lives in `.cause`, and without it a Sentry issue says only that
+ * something network-shaped went wrong. A real one read exactly that, and the
+ * answer (a paused database, so DNS no longer resolved) took a separate manual
+ * dig to find.
+ */
+function causeChain(error: unknown, depth = 4): string[] {
+  const chain: string[] = [];
+  let current: unknown = error;
+  for (let i = 0; i < depth; i++) {
+    const cause = (current as { cause?: unknown } | null)?.cause;
+    if (!cause) break;
+    if (cause instanceof Error) {
+      const code = (cause as NodeJS.ErrnoException).code;
+      chain.push(`${cause.name}: ${cause.message}${code ? ` (${code})` : ''}`);
+    } else {
+      chain.push(String(cause));
+    }
+    current = cause;
+  }
+  return chain;
+}
+
+/** The innermost errno-style code, which is the part worth putting in a title. */
+function rootCode(error: unknown, depth = 4): string | undefined {
+  let current: unknown = error;
+  let code: string | undefined;
+  for (let i = 0; i <= depth; i++) {
+    const c = (current as NodeJS.ErrnoException | null)?.code;
+    if (typeof c === 'string') code = c;
+    const next = (current as { cause?: unknown } | null)?.cause;
+    if (!next) break;
+    current = next;
+  }
+  return code;
+}
+
 export interface CaptureContext {
   requestId?: string;
   route?: string;
@@ -78,6 +119,12 @@ export async function captureServerError(
   const err = error instanceof Error ? error : new Error(String(error));
   const eventId = crypto.randomUUID().replace(/-/g, '');
 
+  const chain = causeChain(err);
+  const code = rootCode(err);
+  // Put the errno in the title: "fetch failed" and "fetch failed (ENOTFOUND)"
+  // are different problems, and only one of them is a paused database.
+  const value = code ? `${err.message} (${code})` : err.message;
+
   const event = {
     event_id: eventId,
     timestamp: Date.now() / 1000,
@@ -92,12 +139,15 @@ export async function captureServerError(
       ...(context.route ? { route: context.route } : {}),
     },
     // Deliberately no request body: /api/chat carries visitor messages.
-    extra: context.extra,
+    extra: {
+      ...context.extra,
+      ...(chain.length ? { cause_chain: chain } : {}),
+    },
     exception: {
       values: [
         {
           type: err.name,
-          value: err.message,
+          value,
           stacktrace: toFrames(err.stack),
         },
       ],

@@ -1,91 +1,85 @@
 {
   "qaData": [
-
+    {
+      "q": "What did you do at Sunbase Data?",
+      "a": "I was an AI Software Engineer Intern at Sunbase Data (May–Aug 2026, remote to Orlando). I fine-tuned an Ultralytics YOLO11 detector for multi-class roof damage across 4 defect types, trained on 5–7K annotated instances from about 2,000 aerial and ground-level roof images, and served it from a containerized FastAPI microservice. I lifted mAP@50 from 0.61 to 0.69 by isolating shadows, vents and solar-panel edges as the dominant false positives and mining them back as hard negatives. I also extended the team's GPT-4-class sales agent with LangChain RAG over Pinecone, adding conversation-history query rewriting and function-calling CRM tools, validated on a 120-scenario suite."
+    },
+    {
+      "q": "What is PeakRoutine?",
+      "a": "PeakRoutine is an AI health and wellness platform I work on as a Software Engineer, from March 2026. I built the LLM layer — natural-language meal logging, vision-based photo recognition, and six coaching personas grounded in each user's own data rather than generic advice. Underneath it I designed 7 acute pattern detectors and 8 chronic risk-trajectory models that score against rolling per-user baselines instead of population thresholds, flagging deviations with Z-score anomaly and CUSUM change-point detection. Feeding those is a 7-provider wearable ingestion platform with Svix HMAC-verified webhooks, event deduplication and idempotent upserts. I also owned the Android bring-up to Health Connect and Samsung Health. It reached #4 Product of the Day on Product Hunt."
+    },
+    {
+      "q": "What is your most recent work?",
+      "a": "Two things run most recently. PeakRoutine, an AI health platform where I own the LLM layer and the per-user baseline analytics, has been ongoing since March 2026 and hit #4 Product of the Day on Product Hunt. Before that I spent summer 2026 at Sunbase Data as an AI Software Engineer Intern, working on YOLO11 roof-damage detection and a LangChain RAG sales agent."
+    },
     {
       "q": "Tell me about yourself",
-      "a": "I'm Mohammad Hasnain Raza, currently pursuing my MS in Computer Science at USC with a 4.0 GPA. My background is a mix of systems engineering, AI, and aerospace. I enjoy building end-to-end systems — whether that's a financial platform with concurrency control, a medical image segmentation model, or a voice-controlled NLU pipeline integrated into a flight simulator. I care a lot about correctness, performance, and clean system design."
+      "a": "I'm Mohammad Hasnain Raza, currently pursuing my MS in Computer Science at USC with a 3.67 GPA. My background is a mix of systems engineering, AI, and aerospace. I enjoy building end-to-end systems — whether that's a financial platform with concurrency control, a medical image segmentation model, or a voice-controlled NLU pipeline integrated into a flight simulator. I care a lot about correctness, performance, and clean system design."
     },
-
     {
       "q": "What is USC Ledger?",
       "a": "USC Ledger is my full-stack AI-powered financial management platform. I built it using React, Node.js, and MongoDB. The core of the system is a sequential reconciliation engine I designed to resolve MongoDB write conflicts and maintain strict transactional consistency. I also implemented precision-first financial logic to eliminate floating-point rounding errors in multi-currency tracking. On top of that, I integrated Google Gemini to generate structured financial insights and audits. It's live and something I use personally."
     },
-
     {
       "q": "What technical challenges did you solve in USC Ledger?",
       "a": "The biggest challenge was handling write conflicts during rapid state updates. I designed a reconciliation engine that ensures operations execute sequentially without corrupting transactional integrity. Another challenge was JavaScript floating-point errors in financial calculations — I implemented epsilon-aware rounding and controlled arithmetic to preserve precision. I also optimized performance using debounced autosave and pagination to prevent race conditions and unnecessary server load."
     },
-
     {
       "q": "How does the AI integration work in USC Ledger?",
       "a": "I built a structured prompt engineering layer on top of Google Gemini. Instead of sending raw transactions, I created a financial summarization layer that condenses structured budget data before passing it to the model. This prevents context overflow and ensures the model produces actionable financial insights instead of generic responses."
     },
-
     {
       "q": "What is Project Vimaan?",
       "a": "Project Vimaan is an AI voice-command NLU system integrated with the X-Plane flight simulator. I built a data-generation pipeline in Python that produced structured, labeled voice-command datasets using schema-driven generation and AI-based paraphrasing. I fine-tuned a DistilBERT-based joint intent-and-slot model and integrated it into the simulator using thread-safe communication and text-to-speech feedback. The goal was to create a hands-free, real-time co-pilot interface."
     },
-
     {
       "q": "How did you design the data pipeline for Project Vimaan?",
       "a": "I designed a schema-driven generation framework where command structures were defined first, and variations were generated programmatically. I used transformer-based models for semantic paraphrasing to increase diversity while preserving label consistency. This allowed me to scale the dataset without manual annotation bottlenecks."
     },
-
     {
       "q": "Tell me about your Brain Tumor Segmentation project",
       "a": "This project was part of the BraTS Challenge 2021. I worked on a Vision Transformer-based 3D medical image segmentation approach for brain tumor detection. The system was designed to assist in use cases like pre-surgery planning and radiofrequency ablation. I also explored integrating physics-based refinement using FEM concepts to improve segmentation structure. The project focused on architectural experimentation rather than just benchmarking."
     },
-
     {
       "q": "What was your work at Prana.ai?",
       "a": "At Prana.ai, I built end-to-end machine learning pipelines for processing large-scale MRI and CT datasets. This included normalization, patch extraction, data balancing, and augmentation. I implemented a depthwise separable CNN for real-time 3D segmentation and also worked on SO(3)-equivariant CNN-based super-resolution techniques to improve image clarity. It was a strong blend of deep learning architecture design and production-level pipeline engineering."
     },
-
     {
       "q": "Tell me about your experience at Deloitte",
       "a": "At Deloitte, I developed a Pega PRPC-based SaaS system that automated enterprise workflows across multiple countries. I designed REST API orchestration layers integrating downstream services and improved throughput significantly. I also validated performance improvements using statistical hypothesis testing and worked on LLM prompt engineering with RLHF feedback loops to improve enterprise model alignment. It was a mix of backend engineering, analytics, and applied AI."
     },
-
     {
       "q": "How did you validate performance improvements at Deloitte?",
       "a": "Instead of relying on anecdotal improvements, I applied a Welch two-sample t-test to compare processing times before and after optimization. Since the data distributions were not guaranteed to have equal variances, Welch’s test was more appropriate than a standard t-test. This gave statistical backing to the optimization work rather than just reporting average improvements."
     },
-
     {
       "q": "Tell me about your work at DRDO",
       "a": "At DRDO, I worked on store separation dynamics from a weapons bay cavity. I coded a C-based 6-DOF solver as a user-defined function in ANSYS Fluent to simulate gravity-driven separation trajectories. I automated transient CFD simulations using PyFluent with a k-ω SST turbulence model on overset meshes. I also built MATLAB scripts to process large-scale simulation outputs and generate trajectory visualizations for validation."
     },
-
     {
       "q": "Why did you use the k-omega SST model in your CFD work?",
       "a": "The k-ω SST model provides better near-wall accuracy while still handling free-stream turbulence effectively. Since store separation involves complex transient aerodynamic interactions, it was a balanced choice for capturing both boundary-layer behavior and wake effects."
     },
-
     {
       "q": "What is Manzil Recipe Vault?",
       "a": "Manzil Recipe Vault is a full-stack MERN application I built for collaborative recipe management. I designed a scalable REST API with indexed MongoDB queries, implemented Firebase authentication with JWT verification, and integrated Cloudinary for secure image uploads. On the frontend, I optimized performance with debounced search, pagination, and modular React architecture."
     },
-
     {
       "q": "What is Team Antariksh?",
       "a": "Team Antariksh was one of the most formative leadership experiences for me. I worked on the RVSAT-1 2U CubeSat project, which was eventually launched onboard ISRO's PSLV C-60. I contributed to CAD design and simulation, and later led a large team overseeing sponsorship, outreach, and execution. It taught me systems thinking beyond software — hardware constraints, budgeting, and coordination across disciplines."
     },
-
     {
       "q": "What programming languages are you strongest in?",
       "a": "Python is my strongest language, especially for ML, data engineering, and automation. For backend systems, I use JavaScript and TypeScript extensively. I also have experience with C and C++ from simulation and systems-level work."
     },
-
     {
       "q": "What databases have you worked with?",
       "a": "I've worked primarily with MongoDB and PostgreSQL. I focus heavily on schema design, indexing strategies, and maintaining transactional integrity. In projects like USC Ledger, concurrency control and write consistency were central design considerations."
     },
-
     {
       "q": "What makes your systems engineering approach different?",
       "a": "I don't just build features — I think about edge cases, race conditions, precision errors, and failure modes early. Whether it's financial rounding errors or CFD solver stability, I prefer designing systems that remain correct under stress rather than just functional in ideal conditions."
     },
-
     {
       "q": "What are your long-term interests?",
       "a": "I'm interested in building high-performance AI systems that operate reliably in real-world conditions. That could be applied ML, distributed systems, backend architecture, or research-heavy AI applications. I enjoy bridging theoretical understanding with production systems."

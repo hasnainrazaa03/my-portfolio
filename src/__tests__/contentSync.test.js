@@ -30,6 +30,7 @@ const PROJECT_QNA_KEYWORDS = {
   6: 'brats',
   7: 'rvsat',
   8: 'resolv',
+  9: 'peakroutine',
 };
 
 describe('contentSync — jarvisQnA covers all content', () => {

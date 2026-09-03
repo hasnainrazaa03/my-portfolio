@@ -99,3 +99,53 @@ describe('captureServerError', () => {
     expect(event.exception.values[0].value).toBe('a bare string');
   });
 });
+
+/**
+ * Cause chains.
+ *
+ * Node reports every connection-level failure as the same opaque
+ * `TypeError: fetch failed`. A real production issue said exactly that and
+ * nothing else; the actionable part (ENOTFOUND — a paused database, so DNS no
+ * longer resolved) took a separate manual dig to find. The chain and the root
+ * errno now travel with the event.
+ */
+describe('cause chain', () => {
+  it('puts the root errno in the title so two failures do not look alike', async () => {
+    process.env.SENTRY_DSN = DSN;
+    const inner = Object.assign(new Error('getaddrinfo ENOTFOUND db.supabase.co'), {
+      code: 'ENOTFOUND',
+    });
+    await captureServerError(new TypeError('fetch failed', { cause: inner }));
+
+    const event = JSON.parse(fetchMock.mock.calls[0][1].body.split('\n')[2]);
+    expect(event.exception.values[0].value).toBe('fetch failed (ENOTFOUND)');
+  });
+
+  it('records the full chain as extra context', async () => {
+    process.env.SENTRY_DSN = DSN;
+    const root = Object.assign(new Error('connect ECONNREFUSED'), { code: 'ECONNREFUSED' });
+    const mid = new Error('upstream unavailable', { cause: root });
+    await captureServerError(new TypeError('fetch failed', { cause: mid }));
+
+    const event = JSON.parse(fetchMock.mock.calls[0][1].body.split('\n')[2]);
+    expect(event.extra.cause_chain).toEqual([
+      'Error: upstream unavailable',
+      'Error: connect ECONNREFUSED (ECONNREFUSED)',
+    ]);
+  });
+
+  it('leaves a plain error untouched', async () => {
+    process.env.SENTRY_DSN = DSN;
+    await captureServerError(new Error('boom'));
+    const event = JSON.parse(fetchMock.mock.calls[0][1].body.split('\n')[2]);
+    expect(event.exception.values[0].value).toBe('boom');
+    expect(event.extra?.cause_chain).toBeUndefined();
+  });
+
+  it('does not loop forever on a self-referential cause', async () => {
+    process.env.SENTRY_DSN = DSN;
+    const err = new Error('cyclic');
+    err.cause = err;
+    await expect(captureServerError(err)).resolves.toBeUndefined();
+  });
+});

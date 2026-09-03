@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" role="img" aria-label="PeakRoutine logo placeholder">
+  <title>PeakRoutine</title>
+  <!-- PLACEHOLDER. Neutral monogram tile until the real mark is added.
+       Uses a mid-tone that reads on both the light and dark backgrounds. -->
+  <rect width="128" height="128" rx="26" fill="#0f766e"/>
+  <text x="64" y="64" text-anchor="middle" dominant-baseline="central"
+        font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, sans-serif"
+        font-size="52" font-weight="700" fill="#ffffff" letter-spacing="1">PR</text>
+</svg>

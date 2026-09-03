@@ -90,6 +90,17 @@ export const EDUCATION: Education[] = [
 
 export const PROJECTS: Project[] = [
   {
+    id: 9,
+    title: "PeakRoutine - AI Health & Wellness Platform",
+    category: "AI/ML",
+    status: "In Progress",
+    description: "An AI health platform that scores sleep, movement and nutrition from wearable biometrics and coaches against each user's own baseline.",
+    longDescription: "PeakRoutine turns raw wearable biometrics into something a person can act on. I built the LLM layer — natural-language meal logging, vision-based photo recognition of meals, and six coaching personas that are grounded in the user's own history rather than generic advice. The analytics underneath are the part I care most about: 7 acute pattern detectors and 8 chronic risk-trajectory models that score against rolling per-user baselines instead of population thresholds, because a resting heart rate that is unremarkable for one person is a real signal for another. Deviations are flagged with Z-score anomaly detection and CUSUM change-point detection. Feeding all of that is a 7-provider wearable ingestion platform with Svix HMAC-verified webhooks, event deduplication and idempotent upserts, so a replayed or out-of-order webhook cannot corrupt a baseline. I also owned the Android bring-up to Health Connect and Samsung Health. It reached #4 Product of the Day on Product Hunt.",
+    images: ["/peakroutine.svg"],
+    techStack: ["Claude", "FastAPI", "Spring Boot", "Python", "Health Connect", "Svix", "Android"],
+    links: { github: null, demo: null }
+  },
+  {
     id: 1,
     title: "Project Vimaan",
     category: "AI/ML",
@@ -438,6 +449,33 @@ export const SKILLS: SkillGroup[] = [
 export const EXPERIENCE: Experience[] = [
   {
     id: 1,
+    role: "Software Engineer",
+    company: "PeakRoutine",
+    period: "Mar 2026 - Present",
+    location: "Los Angeles, CA",
+    logo: "/peakroutine.svg",
+    description: [
+      "Built the LLM layer of an AI health platform scoring sleep, movement and nutrition from wearable biometrics, shipping natural-language meal logging, vision-based photo recognition and six-persona coaching grounded in each user's own data.",
+      "Designed 7 acute pattern detectors and 8 chronic risk-trajectory models that score against rolling per-user baselines rather than population thresholds, flagging deviations with Z-score anomaly and CUSUM change-point detection.",
+      "Engineered a 7-provider wearable ingestion platform feeding those models, with Svix HMAC-verified webhooks, event deduplication and idempotent upserts, then owned the Android bring-up to Health Connect and Samsung Health.",
+      "Reached #4 Product of the Day on Product Hunt."
+    ]
+  },
+  {
+    id: 2,
+    role: "AI Software Engineer Intern",
+    company: "Sunbase Data",
+    period: "May 2026 - Aug 2026",
+    location: "Orlando, FL (Remote)",
+    logo: "/sunbase.svg",
+    description: [
+      "Fine-tuned Ultralytics YOLO11 for multi-class roof-damage detection across 4 defect types on 5-7K annotated instances drawn from ~2,000 aerial and ground-level roof images, and served it from a containerized FastAPI microservice.",
+      "Lifted the detector's mAP@50 from 0.61 to 0.69 by mining shadows, vents and solar-panel edges back as hard negatives, after isolating them as the dominant false-positive sources via per-class precision/recall and confidence-threshold analysis.",
+      "Extended the team's GPT-4-class sales agent with LangChain RAG over Pinecone, adding conversation-history query rewriting and function-calling CRM tools for lead capture; validated on a 120-scenario suite with out-of-scope cases."
+    ]
+  },
+  {
+    id: 3,
     role: "Technology Analyst",
     company: "Deloitte",
     period: "Aug 2022 - Nov 2024",
@@ -453,7 +491,7 @@ export const EXPERIENCE: Experience[] = [
     ]
   },
   {
-    id: 2,
+    id: 4,
     role: "Research Intern",
     company: "Defence Research and Development Organisation (DRDO)",
     period: "Jan 2022 - Aug 2022",
@@ -468,7 +506,7 @@ export const EXPERIENCE: Experience[] = [
     ]
   },
   {
-    id: 3,
+    id: 5,
     role: "Founding Engineer",
     company: "Prana.ai",
     period: "Sep 2019 - Dec 2021",
@@ -483,7 +521,7 @@ export const EXPERIENCE: Experience[] = [
     ]
   },
   {
-    id: 4,
+    id: 6,
     role: "Project Head and Engineer",
     company: "Team Antariksh",
     period: "Sep 2018 - Aug 2022",

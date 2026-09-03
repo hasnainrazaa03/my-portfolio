@@ -15,7 +15,9 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "check:bundle": "node scripts/checkBundleSize.js",
-    "check:deps": "node scripts/checkDeps.js"
+    "check:deps": "node scripts/checkDeps.js",
+    "knowledge:build": "node scripts/buildCareerKnowledge.js",
+    "knowledge:check": "node scripts/buildCareerKnowledge.js --check"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",

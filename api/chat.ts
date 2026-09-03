@@ -17,6 +17,7 @@ import { captureServerError, flushSentry } from './_lib/sentry.js';
 import { randomUUID } from 'node:crypto';
 import { PERSONAL_INFO, PROJECTS, EXPERIENCE, SKILLS, EDUCATION } from '../src/constants.js';
 import { buildKnowledgeBlock } from '../src/data/buildKnowledge.js';
+import { buildCareerBlock } from '../src/data/careerKnowledge.js';
 
 /**
  * LLM Provider Configuration (server-only, env-driven)
@@ -75,7 +76,16 @@ const SYSTEM_PROMPT_FOOTER = `=== RESPONSE STYLE ===
 - 1-2 sentences maximum
 - End with "[Ask about: X, Y, or Z?]" suggestion`;
 
-const SYSTEM_PROMPT = `${SYSTEM_PROMPT_HEADER}\n\n${KNOWLEDGE_BLOCK}\n\n${SYSTEM_PROMPT_FOOTER}`;
+/**
+ * Vetted career detail derived from the private master documents. Placed
+ * BEFORE the footer and AFTER the headline facts so the whole prompt stays
+ * byte-identical between requests — it is the cached prefix, and at this size
+ * it finally clears the minimum cacheable length that the smaller prompt sat
+ * below.
+ */
+const CAREER_BLOCK = buildCareerBlock();
+
+const SYSTEM_PROMPT = `${SYSTEM_PROMPT_HEADER}\n\n${KNOWLEDGE_BLOCK}\n\n${CAREER_BLOCK}\n\n${SYSTEM_PROMPT_FOOTER}`;
 
 /**
  * Server-controlled persona overlays. The client may request a persona by

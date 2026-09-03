@@ -2,6 +2,20 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Zap, ArrowUp, ArrowDown, CornerDownLeft } from 'lucide-react';
 import jarvisQnA from '../data/jarvisQnA.json';
+import { QNA_BANK } from '../data/qnaBank.generated';
+
+/**
+ * The searchable corpus: the hand-curated pairs plus the bank derived from the
+ * master documents (scripts/buildQnaBank.js). Hand-curated entries come first
+ * so that where both cover a topic, the deliberately-written answer wins ties.
+ *
+ * This whole module now loads with the chat panel rather than on first paint —
+ * see the lazy import in App.tsx — which is what makes room for the bank.
+ */
+const CORPUS: QnAItem[] = [
+  ...(jarvisQnA.qaData || []),
+  ...QNA_BANK.map(({ q, a }) => ({ q, a })),
+];
 
 interface QnAItem { q: string; a: string; }
 interface QnAResult extends QnAItem { score: number; }
@@ -79,7 +93,7 @@ function termsOf(str: string): string[] {
 let _index: TfIdfIndex | null = null;
 function getIndex(): TfIdfIndex {
   if (_index) return _index;
-  const docs = (jarvisQnA.qaData || []).map((item) =>
+  const docs = CORPUS.map((item) =>
     termsOf(`${item.q} ${item.q} ${item.a}`) // weight question 2x
   );
   const df = new Map<string, number>();
@@ -142,7 +156,7 @@ export function tfidfScore(query: string, idx: number): number {
 export function searchQnA(query: string, topN = 5): QnAResult[] {
   if (!query || query.trim().length < 2) return [];
 
-  const scored = jarvisQnA.qaData.map((item, idx) => {
+  const scored = CORPUS.map((item, idx) => {
     const fuzzyQ = fuzzyScore(query, item.q);
     const fuzzyA = fuzzyScore(query, item.a) * 0.6;
     const semantic = tfidfScore(query, idx);

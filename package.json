@@ -17,7 +17,8 @@
     "check:bundle": "node scripts/checkBundleSize.js",
     "check:deps": "node scripts/checkDeps.js",
     "knowledge:build": "node scripts/buildCareerKnowledge.js",
-    "knowledge:check": "node scripts/buildCareerKnowledge.js --check"
+    "knowledge:check": "node scripts/buildCareerKnowledge.js --check",
+    "qna:build": "node scripts/buildQnaBank.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",

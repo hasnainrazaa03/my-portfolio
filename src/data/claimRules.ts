@@ -58,3 +58,29 @@ export const PROHIBITED_CLAIMS: readonly ClaimRule[] = [
     instead: '"served from a containerized FastAPI microservice" (staging)',
   },
 ];
+
+/**
+ * Find a prohibited phrasing that is actually being ASSERTED.
+ *
+ * A denial is not an overclaim. The strongest answer in the bank reads "One of
+ * four founding engineers … Not the sole engineer and not the company founder"
+ * — the phrase appears precisely so it can be ruled out, and flagging that
+ * would push the writing toward vagueness instead of precision.
+ *
+ * So a match is ignored when a negation immediately precedes it.
+ *
+ * @returns the offending text, or null when the content is clean.
+ */
+export function findAssertedClaim(text: string, rule: ClaimRule): string | null {
+  const haystack = String(text ?? '');
+  // `g` so every occurrence is considered, not just the first.
+  const re = new RegExp(rule.pattern.source, `${rule.pattern.flags.replace(/g/g, '')}g`);
+  for (const m of haystack.matchAll(re)) {
+    const before = haystack.slice(Math.max(0, m.index - 24), m.index).toLowerCase();
+    if (/\b(not|never|no|n[o']t|without|rather than|instead of)\s*(the|a|an)?\s*$/.test(before)) {
+      continue;
+    }
+    return m[0];
+  }
+  return null;
+}

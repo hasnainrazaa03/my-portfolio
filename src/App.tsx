@@ -13,7 +13,7 @@ import Navigation from './components/Navigation';
 import Hero from './components/Hero';
 import About from './components/About';
 import ScrollProgress from './components/ScrollProgress';
-import Chatbot from './components/Chatbot';
+
 import BackToTop from './components/BackToTop';
 import CursorGlow from './components/CursorGlow';
 import Footer from './components/Footer';
@@ -24,6 +24,13 @@ import KonamiEasterEgg from './components/KonamiEasterEgg';
 const Education = lazy(() => import('./components/Education'));
 const Projects = lazy(() => import('./components/Projects'));
 const GitHubSection = lazy(() => import('./components/GitHubSection'));
+/**
+ * The chat panel is an overlay nobody sees until they click the launcher, and
+ * it drags in the whole local Q&A corpus for offline/instant answers. Keeping
+ * it eager put that corpus on the critical path, where it competed with first
+ * paint and capped how far the answer bank could grow.
+ */
+const Chatbot = lazy(() => import('./components/Chatbot'));
 const Experience = lazy(() => import('./components/Experience'));
 const Skills = lazy(() => import('./components/Skills'));
 const Achievements = lazy(() => import('./components/Achievements'));

@@ -41,7 +41,15 @@ jobs:
       - name: Test (with coverage)
         run: npm run test:coverage
 
+      # A placeholder DSN so the build matches PRODUCTION's shape. Without one
+      # `import.meta.env.VITE_SENTRY_DSN` is undefined, Rollup tree-shakes
+      # @sentry/react out entirely, and the bundle budget measures ~28 KB gz
+      # less than visitors actually download — which is exactly what happened:
+      # the gate read 137 KB while production served 166 KB.
+      # Never used to send anything; CI does not run the app.
       - name: Build
+        env:
+          VITE_SENTRY_DSN: https://ci0000000000000000000000000000@o0.ingest.us.sentry.io/0
         run: npm run build
 
       # Budgets the INITIAL payload — the assets index.html loads before first

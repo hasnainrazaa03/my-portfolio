@@ -18,6 +18,14 @@
  *
  * Sizes are gzip, because that is what the CDN serves.
  *
+ * MEASURE A PRODUCTION-SHAPED BUILD. Several dependencies are gated on env
+ * vars: with no `VITE_SENTRY_DSN`, `import.meta.env.VITE_SENTRY_DSN` is
+ * undefined and Rollup drops @sentry/react entirely. A budget run against that
+ * build understated the real payload by ~28 KB gz — it read 137 KB while
+ * production served 166 KB. CI now builds with a placeholder DSN so the
+ * numbers describe what visitors download; do the same locally before
+ * trusting a figure from this script.
+ *
  * Usage:  node scripts/checkBundleSize.js [--json] [--update]
  */
 import { readFileSync, writeFileSync, readdirSync, existsSync } from 'node:fs';

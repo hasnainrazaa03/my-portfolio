@@ -1,9 +1,9 @@
 {
   "_comment": "gzip bytes for the INITIAL payload (index.html + its modulepreloads + CSS). Regenerate with `node scripts/checkBundleSize.js --update` when a change is intended.",
-  "totalInitialGzip": 175104,
+  "totalInitialGzip": 187392,
   "assets": {
     "index.css": 12288,
-    "index.js": 47104,
+    "index.js": 59392,
     "motion.js": 50176,
     "react.js": 66560
   }

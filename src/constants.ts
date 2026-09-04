@@ -99,7 +99,7 @@ export const PROJECTS: Project[] = [
     longDescription: "PeakRoutine turns raw wearable biometrics into something a person can act on. I built the LLM layer — natural-language meal logging, vision-based photo recognition of meals, and six coaching personas that are grounded in the user's own history rather than generic advice. The analytics underneath are the part I care most about: 7 acute pattern detectors and 8 chronic risk-trajectory models that score against rolling per-user baselines instead of population thresholds, because a resting heart rate that is unremarkable for one person is a real signal for another. Deviations are flagged with Z-score anomaly detection and CUSUM change-point detection. Feeding all of that is a 7-provider wearable ingestion platform with Svix HMAC-verified webhooks, event deduplication and idempotent upserts, so a replayed or out-of-order webhook cannot corrupt a baseline. I also owned the Android bring-up to Health Connect and Samsung Health. It reached #4 Product of the Day on Product Hunt.",
     images: ["/peakroutine-card.svg"],
     techStack: ["Claude", "FastAPI", "Spring Boot", "Python", "Health Connect", "Svix", "Android"],
-    links: { github: null, demo: null }
+    links: { github: null, demo: "https://www.peakroutinehealth.com/" }
   },
   {
     id: 1,
@@ -454,7 +454,7 @@ export const EXPERIENCE: Experience[] = [
     company: "PeakRoutine",
     period: "Mar 2026 - Present",
     location: "Los Angeles, CA",
-    logo: "/peakroutine.svg",
+    logo: "/peakroutine.png",
     description: [
       "Built the LLM layer of an AI health platform scoring sleep, movement and nutrition from wearable biometrics, shipping natural-language meal logging, vision-based photo recognition and six-persona coaching grounded in each user's own data.",
       "Designed 7 acute pattern detectors and 8 chronic risk-trajectory models that score against rolling per-user baselines rather than population thresholds, flagging deviations with Z-score anomaly and CUSUM change-point detection.",
@@ -468,7 +468,7 @@ export const EXPERIENCE: Experience[] = [
     company: "Sunbase Data",
     period: "May 2026 - Aug 2026",
     location: "Orlando, FL (Remote)",
-    logo: "/sunbase.svg",
+    logo: "/sunbase.png",
     description: [
       "Fine-tuned Ultralytics YOLO11 for multi-class roof-damage detection across 4 defect types on 5-7K annotated instances drawn from ~2,000 aerial and ground-level roof images, and served it from a containerized FastAPI microservice.",
       "Lifted the detector's mAP@50 from 0.61 to 0.69 by mining shadows, vents and solar-panel edges back as hard negatives, after isolating them as the dominant false-positive sources via per-class precision/recall and confidence-threshold analysis.",

@@ -40,8 +40,26 @@ describe('vercel.json', () => {
   it('does cover the client routes that need it', () => {
     const spa = config.rewrites.find((r) => r.destination === '/index.html');
     const re = new RegExp(`^${spa.source}$`);
-    for (const path of ['/resume', '/privacy', '/projects/project-vimaan']) {
+    for (const path of ['/', '/resume', '/privacy', '/projects/project-vimaan']) {
       expect(re.test(path), `${path} needs the fallback`).toBe(true);
+    }
+  });
+
+  it('does NOT swallow missing FILES — that would be a soft 404', () => {
+    // A catch-all made every deleted or mistyped asset return the SPA shell
+    // with HTTP 200: /peakroutine.svg, removed in the same session, answered
+    // 200 with HTML. Broken links then look fine to crawlers and to us, and an
+    // <img> fails with no status to explain why.
+    const spa = config.rewrites.find((r) => r.destination === '/index.html');
+    const re = new RegExp(`^${spa.source}$`);
+    for (const path of [
+      '/peakroutine.svg',
+      '/assets/index-abc12345.js',
+      '/resume.pdf',
+      '/sitemap.xml',
+      '/robots.txt',
+    ]) {
+      expect(re.test(path), `${path} must 404 when absent, not rewrite`).toBe(false);
     }
   });
 });

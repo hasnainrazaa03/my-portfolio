@@ -55,11 +55,20 @@ const Education = () => (
                 {edu.school}
               </h4>
 
-              {edu.gpa && (
-                <div className="mb-6">
-                  <span className="text-xs font-bold text-slate-700 dark:text-white bg-slate-200 dark:bg-white/10 px-3 py-1 rounded-full border border-slate-300 dark:border-white/10">
-                    GPA: {edu.gpa}
-                  </span>
+              {(edu.gpa || edu.honors) && (
+                <div className="mb-6 flex flex-wrap gap-2">
+                  {edu.gpa && (
+                    <span className="text-xs font-bold text-slate-700 dark:text-white bg-slate-200 dark:bg-white/10 px-3 py-1 rounded-full border border-slate-300 dark:border-white/10">
+                      GPA: {edu.gpa}
+                    </span>
+                  )}
+                  {/* Distinctions are rare, so they get the accent treatment
+                      rather than blending into the neutral GPA chip. */}
+                  {edu.honors && (
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/30">
+                      {edu.honors}
+                    </span>
+                  )}
                 </div>
               )}
 

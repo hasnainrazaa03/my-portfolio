@@ -93,6 +93,9 @@ export const EducationSchema = z.object({
   school: z.string().min(1),
   period: z.string().min(1),
   gpa: z.string().min(1),
+  // Optional distinction ("Silver Medalist"). Most entries have none, so an
+  // empty string would be a lie rather than a default — absent means absent.
+  honors: z.string().min(1).optional(),
   coursework: z.string().min(1),
   image: assetRef,
   url: z.url(),

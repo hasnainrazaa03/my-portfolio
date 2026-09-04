@@ -50,6 +50,8 @@ export interface Education {
   school: string;
   period: string;
   gpa: string;
+  /** Optional distinction, e.g. "Silver Medalist". Absent for most entries. */
+  honors?: string;
   coursework: string;
   image: string;
   url: string;

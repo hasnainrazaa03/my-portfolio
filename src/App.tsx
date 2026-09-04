@@ -61,9 +61,13 @@ const SectionFallback = () => (
  * beats threading a hook through every call site, which drifts.
  */
 export default function App() {
-  // Lightweight pathname routing: no router dependency. Vercel's SPA
-  // fallback rewrites unknown paths to index.html, so /privacy and /resume
-  // land here and render the appropriate component.
+  // Lightweight pathname routing: no router dependency.
+  //
+  // This REQUIRES the SPA rewrite in vercel.json. Nothing exists on disk at
+  // /resume, /privacy or /projects/<slug>, so without it a direct visit or a
+  // shared link 404s before any of this runs — which is exactly what production
+  // did until 2026-09-04, while `vite preview` (which has its own fallback)
+  // made every local check pass. spaRouting.test.js guards it.
   const path = typeof window !== 'undefined' ? window.location.pathname : '/';
   if (path === '/privacy' || path === '/privacy/') {
     return (

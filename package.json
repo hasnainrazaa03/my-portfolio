@@ -18,7 +18,9 @@
     "check:deps": "node scripts/checkDeps.js",
     "knowledge:build": "node scripts/buildCareerKnowledge.js",
     "knowledge:check": "node scripts/buildCareerKnowledge.js --check",
-    "qna:build": "node scripts/buildQnaBank.js"
+    "qna:build": "node scripts/buildQnaBank.js",
+    "sitemap:build": "node scripts/buildSitemap.js",
+    "sitemap:check": "node scripts/buildSitemap.js --check"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",

@@ -8,6 +8,7 @@ import {
 import { useFocusTrap } from '../hooks/useFocusTrap';
 import type { LucideIcon } from 'lucide-react';
 import type { Project } from '../types/content';
+import { projectPath } from '../utils/slug';
 
 
 const getTechIcon = (tech: string): LucideIcon => {
@@ -175,9 +176,20 @@ const ProjectModal = ({ project, onClose }: ProjectModalProps) => {
             {project.title}
           </h2>
           
-          <p className="text-slate-700 dark:text-white leading-relaxed mb-8 text-base sm:text-lg font-medium opacity-90">
+          <p className="text-slate-700 dark:text-white leading-relaxed mb-4 text-base sm:text-lg font-medium opacity-90">
             {project.longDescription || project.description}
           </p>
+
+          {/* The modal has no URL, so this is the only way out of it that a
+              visitor can share or a search engine can index. */}
+          <a
+            href={projectPath(project.title)}
+            className="inline-flex items-center gap-1.5 mb-8 text-sm font-medium text-primary hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          >
+            Open the full case study
+            <span aria-hidden="true">&rarr;</span>
+            <span className="sr-only"> for {project.title}</span>
+          </a>
 
 
           <div className="mb-8">

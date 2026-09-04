@@ -79,3 +79,44 @@ test.describe('page boot', () => {
     expect(requested.filter((u) => u.endsWith('.webp')).length).toBeGreaterThan(0);
   });
 });
+
+/**
+ * Project case studies.
+ *
+ * These are the shareable form of a project: the modal has no URL, so a
+ * recruiter forwarding "look at this one" had nothing to send and a crawler had
+ * nothing to index. What matters is that the URL resolves in a real browser —
+ * it depends on the SPA fallback rewriting an unknown path to index.html, which
+ * no unit test exercises.
+ */
+test.describe('project case studies', () => {
+  test('a project URL resolves and renders that project', async ({ page }) => {
+    await page.goto('/projects/project-vimaan');
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/Vimaan/i);
+    await expect(page).toHaveTitle(/Vimaan/i);
+    await expect(page.getByRole('link', { name: /back to all projects/i })).toBeVisible();
+  });
+
+  test('a stale project URL explains itself rather than rendering blank', async ({ page }) => {
+    await page.goto('/projects/this-was-renamed-long-ago');
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/doesn.t exist/i);
+    await expect(page.getByRole('link', { name: /see all projects/i })).toBeVisible();
+    await expect(page.getByText('Something went wrong.')).toHaveCount(0);
+  });
+
+  test('the modal links to the case study', async ({ page }) => {
+    await page.goto('/');
+    await page.locator('#projects').scrollIntoViewIfNeeded();
+
+    // Cards are real buttons (WCAG 2.5.3 work), so the keyboard path opens them.
+    await page.getByRole('button', { name: /view mission details/i }).first().click();
+
+    const link = page.getByRole('link', { name: /open the full case study/i });
+    await expect(link).toBeVisible();
+    await link.click();
+    await expect(page).toHaveURL(/\/projects\/[a-z0-9-]+$/);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
+});

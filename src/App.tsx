@@ -4,6 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 
 // Hooks & Config
 import { ThemeProvider } from './context/ThemeProvider';
+import { parseProjectPath } from './utils/slug';
 
 // Above-the-fold (eager) components
 import ErrorBoundary from './components/ErrorBoundary';
@@ -31,6 +32,7 @@ const GitHubSection = lazy(() => import('./components/GitHubSection'));
  * paint and capped how far the answer bank could grow.
  */
 const Chatbot = lazy(() => import('./components/Chatbot'));
+const ProjectDetailPage = lazy(() => import('./components/ProjectDetailPage'));
 const Experience = lazy(() => import('./components/Experience'));
 const Skills = lazy(() => import('./components/Skills'));
 const Achievements = lazy(() => import('./components/Achievements'));
@@ -68,6 +70,16 @@ export default function App() {
       <ErrorBoundary>
         <Suspense fallback={<div className="min-h-screen" />}>
           <PrivacyPage />
+        </Suspense>
+      </ErrorBoundary>
+    );
+  }
+  const projectSlug = parseProjectPath(path);
+  if (projectSlug) {
+    return (
+      <ErrorBoundary>
+        <Suspense fallback={<div className="min-h-screen" />}>
+          <ProjectDetailPage slug={projectSlug} />
         </Suspense>
       </ErrorBoundary>
     );

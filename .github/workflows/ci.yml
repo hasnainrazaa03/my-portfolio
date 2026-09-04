@@ -38,6 +38,11 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # Project case studies are routable, so a hand-kept sitemap drifts the
+      # moment a project is added — silently, because nothing renders it.
+      - name: Sitemap matches the routes
+        run: npm run sitemap:check
+
       - name: Test (with coverage)
         run: npm run test:coverage
 

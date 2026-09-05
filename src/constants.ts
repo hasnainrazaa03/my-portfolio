@@ -97,7 +97,7 @@ export const PROJECTS: Project[] = [
     status: "In Progress",
     description: "An AI health platform that scores sleep, movement and nutrition from wearable biometrics and coaches against each user's own baseline.",
     longDescription: "PeakRoutine turns raw wearable biometrics into something a person can act on. I built the LLM layer — natural-language meal logging, vision-based photo recognition of meals, and six coaching personas that are grounded in the user's own history rather than generic advice. The analytics underneath are the part I care most about: 7 acute pattern detectors and 8 chronic risk-trajectory models that score against rolling per-user baselines instead of population thresholds, because a resting heart rate that is unremarkable for one person is a real signal for another. Deviations are flagged with Z-score anomaly detection and CUSUM change-point detection. Feeding all of that is a 7-provider wearable ingestion platform with Svix HMAC-verified webhooks, event deduplication and idempotent upserts, so a replayed or out-of-order webhook cannot corrupt a baseline. I also owned the Android bring-up to Health Connect and Samsung Health. It reached #4 Product of the Day on Product Hunt.",
-    images: ["/peakroutine-card.svg"],
+    images: ["/peakroutine-hero.png"],
     techStack: ["Claude", "FastAPI", "Spring Boot", "Python", "Health Connect", "Svix", "Android"],
     links: { github: null, demo: "https://www.peakroutinehealth.com/" }
   },

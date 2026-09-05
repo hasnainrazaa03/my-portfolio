@@ -5,10 +5,12 @@
  * as a thumbnail gets cropped to a 2.5:1 strip with its lettering sliced, which
  * reads as a broken image rather than a deliberate placeholder — that is what
  * shipped when PeakRoutine was added, and why this generator exists.
+ *
+ * No project currently uses a generated card: PeakRoutine now has real product
+ * artwork. The generator is kept for the next project added without any, and
+ * its behaviour is pinned here so it still works when that happens.
  */
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { renderCard, wrapTitle } from '../../scripts/makePlaceholderCard.js';
 
 describe('wrapTitle', () => {
@@ -56,19 +58,5 @@ describe('renderCard', () => {
 
   it('omits the subtitle line when there is none', () => {
     expect(renderCard({ title: 'X' }).match(/<text/g)).toHaveLength(1);
-  });
-});
-
-describe('the committed card', () => {
-  it('is valid, self-contained SVG', () => {
-    const svg = readFileSync(resolve(process.cwd(), 'public/peakroutine-card.svg'), 'utf8');
-    expect(svg.startsWith('<svg')).toBe(true);
-    expect(svg).toContain('PeakRoutine');
-    // No external RESOURCE references: img-src is 'self', so a remote image,
-    // font or stylesheet would silently fail to paint. The xmlns URI is a
-    // namespace identifier, not a fetch, so it does not count.
-    expect(svg).not.toMatch(/(?:href|src)\s*=\s*["']https?:/i);
-    expect(svg).not.toMatch(/url\(\s*["']?https?:/i);
-    expect(svg).not.toContain('<image');
   });
 });

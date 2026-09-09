@@ -1,8 +1,8 @@
 /**
  * spaNotFound.test.js — the build must emit a 404.html the host will serve.
  *
- * The rewrite in vercel.json names the client routes and nothing else
- * (spaRouting.test.js). That only becomes a real not-found page — instead of
+ * Every real route is a file in the build (spaRouting.test.js); anything
+ * else misses. That only becomes a real not-found page — instead of
  * Vercel's bare default — if dist/404.html exists, and it only stays in step
  * with the app if it IS the app: a copy of the built index.html, hashed asset
  * names and CSP-pinned inline scripts included.

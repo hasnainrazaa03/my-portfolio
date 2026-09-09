@@ -1,9 +1,9 @@
 /**
  * spaNotFound.js — emit dist/404.html so an unknown path gets a real 404.
  *
- * The rewrite in vercel.json names the client routes and nothing else, so any
- * other path falls through to the filesystem and misses. Vercel then serves
- * `404.html` from the output directory — with a 404 status — if one exists.
+ * Every real route is a file in the build (scripts/routeHeads.js), so any
+ * other path misses the filesystem. Vercel then serves `404.html` from the
+ * output directory — with a 404 status — if one exists.
  *
  * Making that file a byte-for-byte copy of the built index.html means the app
  * boots on it, sees the unknown pathname and renders its own not-found page:
@@ -12,8 +12,9 @@
  * the bundle is written, because only then does index.html carry the hashed
  * asset names.
  *
- * Before this the rewrite was a catch-all: every unknown path answered 200
- * with the home page under the wrong URL, which crawlers record as a soft 404.
+ * Before this a catch-all rewrite sent every unknown path to the shell with a
+ * 200 — the home page under the wrong URL, which crawlers record as a soft
+ * 404.
  */
 import { copyFileSync, existsSync } from 'node:fs';
 import { resolve } from 'node:path';

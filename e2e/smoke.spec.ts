@@ -86,8 +86,8 @@ test.describe('page boot', () => {
  * These are the shareable form of a project: the modal has no URL, so a
  * recruiter forwarding "look at this one" had nothing to send and a crawler had
  * nothing to index. What matters is that the URL resolves in a real browser —
- * it depends on vercel.json rewriting the project route to index.html, which
- * no unit test exercises.
+ * it depends on the build emitting projects/<slug>.html and the host serving
+ * it extensionless, which no unit test exercises.
  */
 test.describe('project case studies', () => {
   test('a project URL resolves and renders that project', async ({ page }) => {
@@ -125,9 +125,10 @@ test.describe('project case studies', () => {
  * Unknown paths.
  *
  * Every path used to be rewritten to the shell, so a mistyped or stale URL
- * rendered the home page — with a 200 — under the wrong address. Now the
- * rewrite names the real routes, Vercel serves dist/404.html (a copy of
- * index.html) with a 404 status, and the app renders its not-found page.
+ * rendered the home page — with a 200 — under the wrong address. Now every
+ * real route is a file in the build, Vercel serves dist/404.html (a copy of
+ * index.html) for anything else with a 404 status, and the app renders its
+ * not-found page.
  */
 test.describe('unknown paths', () => {
   test('render the not-found page, not the home page', async ({ page }) => {

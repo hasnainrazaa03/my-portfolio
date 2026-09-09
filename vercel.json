@@ -45,11 +45,5 @@
         }
       ]
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/((?:resume|privacy|projects/[^/.]+)/?)",
-      "destination": "/index.html"
-    }
   ]
 }

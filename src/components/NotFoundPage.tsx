@@ -6,12 +6,13 @@ import { PERSONAL_INFO } from '../constants';
  * Not-found page: rendered by App for any pathname it does not recognise, and
  * by ProjectDetailPage for a slug that matches no project.
  *
- * WHY THE APP RENDERS IT AT ALL: vercel.json rewrites only the real routes.
- * Anything else is served from dist/404.html — a build-time copy of
- * index.html (scripts/spaNotFound.js) — with a genuine 404 status, and this
- * app boots on it. So a mistyped or stale URL gets the right status AND a page
- * in the site's own shell, instead of the home page under the wrong address
- * (what a catch-all rewrite produced) or Vercel's bare default.
+ * WHY THE APP RENDERS IT AT ALL: every real route is a file in the build
+ * (scripts/routeHeads.js). Anything else is served from dist/404.html — a
+ * build-time copy of index.html (scripts/spaNotFound.js) — with a genuine
+ * 404 status, and this app boots on it. So a mistyped or stale URL gets the
+ * right status AND a page in the site's own shell, instead of the home page
+ * under the wrong address (what a catch-all rewrite once produced) or
+ * Vercel's bare default.
  */
 interface NotFoundPageProps {
   /** Tab title; the site name is appended. */
@@ -25,10 +26,9 @@ interface NotFoundPageProps {
 /**
  * Title the tab and keep the page out of the index while it is mounted.
  *
- * The status code already tells crawlers for the paths the host answers 404
- * to. The meta covers the ones that still answer 200: an unknown project
- * slug, which the /projects/<slug> rewrite cannot tell from a real one, and
- * any host with a blanket SPA fallback (vite preview).
+ * In production the 404 status already tells crawlers. The meta covers a
+ * host with a blanket SPA fallback (vite preview), which answers 200 with
+ * the shell for any path at all.
  */
 function useNotFoundMeta(documentTitle: string) {
   useEffect(() => {

@@ -1,85 +1,71 @@
 /**
- * spaRouting.test.js — client routes need a server-side fallback, and
- * nothing else should get one.
+ * spaRouting.test.js — every client route must exist as a file in the build.
  *
  * `/resume`, `/privacy` and every `/projects/<slug>` are resolved in the
- * browser by App's pathname routing. Nothing exists on disk at those paths, so
- * a direct visit or a shared link depends entirely on the host rewriting them
- * to index.html.
+ * browser by App's pathname routing, so a direct visit or a shared link only
+ * works if the host has something to serve at that path. It did not: all
+ * three families returned 404 in production until 2026-09-04, while
+ * `vite preview` (which has its own SPA fallback) made every local check
+ * pass — the divergence only existed in production.
  *
- * A comment in App.tsx asserted Vercel did this by default. It did not: all
- * three route families returned 404 in production, and the sitemap had been
- * advertising two of them to crawlers. Nothing caught it because every local
- * check uses `vite preview`, which HAS an SPA fallback — the divergence only
- * existed in production.
+ * The first fix was a catch-all rewrite to index.html, which over-corrected:
+ * every unknown path answered 200 with the home page under the wrong URL, a
+ * soft 404 to crawlers. Then a rewrite naming just the routes. Now there is
+ * no rewrite at all: scripts/routeHeads.js writes one HTML file per route,
+ * Vercel serves it extensionless (cleanUrls), and anything else falls to
+ * dist/404.html with a real 404 — a stale project slug included.
  *
- * The first fix was a catch-all, which over-corrected: every unknown path — a
- * mistyped URL, a deleted asset — answered 200 with the home page under the
- * wrong address, a soft 404 to crawlers. The rewrite now names the routes and
- * nothing else; everything unknown falls through to dist/404.html
- * (scripts/spaNotFound.js) with a real 404 status.
+ * So the contract is: the set of paths App routes on equals the set of files
+ * the build emits. This holds the two together.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { routeHeads } from '../utils/routeMeta';
+import { projectPath } from '../utils/slug';
+import { PROJECTS } from '../constants';
 
-const config = JSON.parse(readFileSync(resolve(process.cwd(), 'vercel.json'), 'utf8'));
-const spa = config.rewrites?.find((r) => r.destination === '/index.html');
-// Vercel compiles `source` with path-to-regexp; for a single regex group this
-// anchored RegExp is the same test.
-const matches = (path) => new RegExp(`^${spa.source}$`).test(path);
+const root = process.cwd();
+const config = JSON.parse(readFileSync(resolve(root, 'vercel.json'), 'utf8'));
+const app = readFileSync(resolve(root, 'src/App.tsx'), 'utf8');
+const emitted = new Set(routeHeads().map((r) => r.path));
 
 describe('vercel.json', () => {
-  it('declares an SPA fallback that targets index.html', () => {
-    expect(config.rewrites, 'client routes 404 without a rewrite').toBeDefined();
-    expect(spa, 'no rewrite targets index.html').toBeTruthy();
+  it('serves the per-route files at their extensionless paths', () => {
+    expect(config.cleanUrls, 'dist/resume.html is only reachable at /resume with cleanUrls').toBe(true);
+    expect(config.trailingSlash, 'one URL per page').toBe(false);
   });
 
-  it('covers every client route, with or without a trailing slash', () => {
-    for (const path of [
-      '/resume',
-      '/resume/',
-      '/privacy',
-      '/privacy/',
-      '/projects/project-vimaan',
-      '/projects/project-vimaan/',
-      '/projects/brain-tumor-segmentation-brats-2021-vision-transformer',
-    ]) {
-      expect(matches(path), `${path} needs the fallback`).toBe(true);
+  it('has no rewrite to the shell', () => {
+    // Under cleanUrls a destination of /index.html does not resolve, so such a
+    // rewrite would be dead config that READS as if unknown slugs got the
+    // shell with a 200. They get 404.html with a 404, which is the intent.
+    const toShell = (config.rewrites ?? []).filter((r) => /index\.html$|^\/$/.test(r.destination));
+    expect(toShell).toEqual([]);
+  });
+});
+
+describe('App routes and built files agree', () => {
+  it('every literal path App routes on is emitted as a file', () => {
+    const literals = [...app.matchAll(/path === '([^']+)'/g)].map((m) => m[1]);
+    expect(literals.length, 'App no longer routes on path literals?').toBeGreaterThan(0);
+    for (const literal of literals) {
+      const path = literal.replace(/\/$/, '') || '/';
+      if (path === '/' || path === '/index.html') continue; // the shell itself
+      expect(emitted.has(path), `App routes on '${literal}' but the build emits no ${path}.html`).toBe(true);
     }
   });
 
-  it('leaves the home page to the filesystem', () => {
-    // `/` IS index.html; it never needed a rewrite and must not depend on
-    // one — it is the path Vercel serves with no configuration at all.
-    expect(matches('/')).toBe(false);
-  });
-
-  it('does NOT swallow the API routes', () => {
-    expect(matches('/api/chat'), '/api/chat must not rewrite to index.html').toBe(false);
-    expect(matches('/api/analytics')).toBe(false);
-  });
-
-  it('does NOT swallow missing FILES — that would be a soft 404', () => {
-    // A catch-all made every deleted or mistyped asset return the SPA shell
-    // with HTTP 200: /peakroutine.svg, removed in the same session, answered
-    // 200 with HTML. Broken links then look fine to crawlers and to us, and an
-    // <img> fails with no status to explain why.
-    for (const path of [
-      '/peakroutine.svg',
-      '/assets/index-abc12345.js',
-      '/resume.pdf',
-      '/sitemap.xml',
-      '/robots.txt',
-      '/projects/cover.png',
-    ]) {
-      expect(matches(path), `${path} must 404 when absent, not rewrite`).toBe(false);
+  it('every project App can render is emitted as a file', () => {
+    for (const p of PROJECTS) {
+      expect(emitted.has(projectPath(p.title)), p.title).toBe(true);
     }
   });
 
-  it('does NOT swallow unknown paths — they get the real 404 page', () => {
-    for (const path of ['/nope', '/admin', '/resume/extra', '/projects', '/projects/', '/projects/a/b']) {
-      expect(matches(path), `${path} must reach 404.html, not the shell`).toBe(false);
+  it('emits nothing App would not render', () => {
+    const known = new Set(['/resume', '/privacy', ...PROJECTS.map((p) => projectPath(p.title))]);
+    for (const path of emitted) {
+      expect(known.has(path), `${path} is emitted but App has no route for it`).toBe(true);
     }
   });
 });

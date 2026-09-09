@@ -146,17 +146,18 @@ export default function App() {
   useScrollToHashWhenReady();
   // Lightweight pathname routing: no router dependency.
   //
-  // This REQUIRES the rewrite in vercel.json. Nothing exists on disk at
-  // /resume, /privacy or /projects/<slug>, so without it a direct visit or a
-  // shared link 404s before any of this runs — which is exactly what production
-  // did until 2026-09-04, while `vite preview` (which has its own fallback)
-  // made every local check pass. spaRouting.test.js guards it.
+  // Every route here is also a FILE in the build: scripts/routeHeads.js writes
+  // dist/resume.html, dist/privacy.html and dist/projects/<slug>.html from
+  // src/utils/routeMeta.ts, and Vercel serves them extensionless (cleanUrls).
+  // That is the only reason a direct visit or a shared link works — production
+  // 404'd on all three families until 2026-09-04, while `vite preview` (which
+  // has its own fallback) made every local check pass. spaRouting.test.js
+  // holds this routing and that file list together.
   //
-  // The rewrite names those routes and nothing else. Any other path is served
-  // by Vercel from dist/404.html — a build-time copy of index.html
-  // (scripts/spaNotFound.js) — with a real 404 status, and this function then
-  // renders the not-found page for it. A catch-all rewrite had every unknown
-  // path rendering the home page under the wrong URL with a 200.
+  // Anything else — a mistyped path, a stale project slug — is served by
+  // Vercel from dist/404.html, a build-time copy of index.html
+  // (scripts/spaNotFound.js), with a real 404 status; this function then
+  // renders the not-found page for it.
   const path = typeof window !== 'undefined' ? window.location.pathname : '/';
   if (path === '/privacy' || path === '/privacy/') {
     return <StandalonePage><PrivacyPage /></StandalonePage>;

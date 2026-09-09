@@ -188,7 +188,7 @@ describe('vercel.json serves the per-route files', () => {
 
   it('maps /projects/<slug> to projects/<slug>.html with cleanUrls', () => {
     // Without this the flat files are only reachable at their .html URLs and
-    // the extensionless route falls through to the rewrite — the old shell.
+    // the extensionless route — the one people share — is a 404.
     expect(config.cleanUrls).toBe(true);
   });
 

@@ -1,21 +1,28 @@
 /**
  * Client-side Sentry — loaded AFTER first paint, never before.
  *
- * WHY DEFERRED
- * ------------
- * `@sentry/react` is ~28 KB gzipped, and it used to sit in the entry chunk
- * because `initSentry()` ran synchronously before `createRoot`. On a
- * client-rendered app nothing can paint until the entry chunk has downloaded
- * and executed, so that was 28 KB of bytes and parse time between a mobile
- * visitor and the first pixel — for a library whose job is to report the rare
- * error, not to render anything.
+ * WHY IT LOADS ONLY WHEN AN ERROR HAPPENS
+ * ---------------------------------------
+ * `initSentry()` used to run synchronously before `createRoot`, putting the SDK
+ * in the entry chunk. On a client-rendered app nothing paints until that chunk
+ * has downloaded and executed, so every visitor paid for it before the first
+ * pixel — for a library whose job is to report the rare error.
  *
- * The SDK is now imported on idle. The earlier design's reason for running
- * before render still holds — this site once blanked entirely from an error
- * thrown during the first mount, and that class of failure must be captured —
- * so a tiny listener buffers anything that happens before the SDK arrives and
- * flushes it the moment `init` completes. Nothing is lost; it is just reported
- * a second or two later.
+ * Deferring the import to idle fixed the paint but made the TOTAL worse, and
+ * the measurement is worth recording: statically imported, Rollup tree-shakes
+ * `@sentry/react` down to ~28 KB gzip in the entry chunk. Imported dynamically
+ * as a namespace, every export is potentially reachable and it lands as a
+ * 159 KB gzip chunk. Idle-loading traded 28 KB eager for 159 KB deferred.
+ *
+ * So it is not loaded on a timer at all: it loads the first time there is
+ * something to send. A session with no errors — the overwhelming majority —
+ * downloads nothing, and one that hits an error pays 159 KB at a moment when
+ * the visitor already has a problem and nothing is competing for paint.
+ *
+ * The earlier design's reason for initialising before render still holds: this
+ * site once blanked entirely from an error thrown during the first mount, and
+ * that class of failure must be captured. Lightweight listeners are registered
+ * immediately and buffer anything raised before the SDK arrives.
  *
  * Gated on `VITE_SENTRY_DSN`: with no DSN this is a no-op, so local dev and
  * anyone who clones the repo never ship telemetry anywhere. The DSN is a public
@@ -37,12 +44,32 @@ interface Pending {
 let sdk: SentryModule | null = null;
 let loading: Promise<void> | null = null;
 const pending: Pending[] = [];
+/** Set by `initSentry`; a no-op until then, so a stray error cannot fetch the
+ *  SDK on a page that never configured a DSN. */
+let loadSdk: () => Promise<void> | undefined = () => undefined;
+
+/**
+ * Registered once. Kept at module scope so a second `initSentry()` cannot
+ * double-register them (React StrictMode calls effects twice in dev, and a
+ * duplicate listener means every uncaught error is reported twice).
+ */
+let onError: ((e: ErrorEvent) => void) | null = null;
+let onRejection: ((e: PromiseRejectionEvent) => void) | null = null;
+
+function unbindListeners(): void {
+  if (onError) window.removeEventListener('error', onError);
+  if (onRejection) window.removeEventListener('unhandledrejection', onRejection);
+  onError = null;
+  onRejection = null;
+}
 
 /** Bounded so a tight error loop before init cannot grow the buffer forever. */
 const MAX_PENDING = 20;
 
 function enqueue(error: unknown, context?: Record<string, unknown>): void {
   if (pending.length < MAX_PENDING) pending.push({ error, context });
+  // First report is what pulls the SDK down; see the header.
+  void loadSdk();
 }
 
 function send(s: SentryModule, { error, context }: Pending): void {
@@ -50,20 +77,21 @@ function send(s: SentryModule, { error, context }: Pending): void {
 }
 
 /**
- * Schedule the SDK load for when the browser is idle. Errors raised in the
- * meantime are buffered by the listeners below and reported once it is up.
+ * Register the error buffer. The SDK itself is fetched on the first report —
+ * see the header. Safe to call more than once.
  */
 export function initSentry(): void {
   const dsn = import.meta.env.VITE_SENTRY_DSN;
   if (!dsn || typeof window === 'undefined') return;
+  if (onError) return; // already initialised
 
-  const onError = (e: ErrorEvent) => enqueue(e.error ?? e.message, { source: 'window.onerror' });
-  const onRejection = (e: PromiseRejectionEvent) =>
+  onError = (e: ErrorEvent) => enqueue(e.error ?? e.message, { source: 'window.onerror' });
+  onRejection = (e: PromiseRejectionEvent) =>
     enqueue(e.reason, { source: 'unhandledrejection' });
   window.addEventListener('error', onError);
   window.addEventListener('unhandledrejection', onRejection);
 
-  const load = () => {
+  loadSdk = () => {
     loading ??= import('@sentry/react').then((Sentry) => {
       Sentry.init({
         dsn,
@@ -89,22 +117,15 @@ export function initSentry(): void {
       });
       sdk = Sentry;
       // The SDK installs its own global handlers now; ours would double-report.
-      window.removeEventListener('error', onError);
-      window.removeEventListener('unhandledrejection', onRejection);
+      unbindListeners();
       for (const item of pending.splice(0)) send(Sentry, item);
     });
     return loading;
   };
 
-  const w = window as Window & {
-    requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
-  };
-  if (typeof w.requestIdleCallback === 'function') {
-    w.requestIdleCallback(() => void load(), { timeout: 4000 });
-  } else {
-    // Safari: no idle callback. Wait for load + a beat so we never race paint.
-    window.setTimeout(() => void load(), 1500);
-  }
+  // Anything already buffered (an error thrown between module evaluation and
+  // this call) starts the load now.
+  if (pending.length) void loadSdk();
 }
 
 /**
@@ -127,4 +148,6 @@ export function resetSentryForTests(): void {
   sdk = null;
   loading = null;
   pending.length = 0;
+  loadSdk = () => undefined;
+  unbindListeners();
 }

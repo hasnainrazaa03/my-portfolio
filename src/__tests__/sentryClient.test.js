@@ -1,12 +1,15 @@
 /**
  * sentryClient.test.js — the deferred client-side Sentry loader.
  *
- * The SDK is ~28 KB gzipped and used to sit in the entry chunk because init ran
- * synchronously before createRoot — on a client-rendered app that is 28 KB
- * between a mobile visitor and the first pixel. It now loads on idle, after
- * paint. The property that must survive the deferral: an error raised BEFORE
- * the SDK arrives — the first-mount crash that once blanked this site — is
- * still reported, just later.
+ * The SDK used to sit in the entry chunk because init ran synchronously before
+ * createRoot. Deferring it to idle fixed the paint but made the total worse:
+ * tree-shaken into the entry it is ~28 KB gzip, but as a dynamic namespace
+ * import it lands as a 159 KB chunk. So it now loads on the FIRST REPORT — a
+ * clean session downloads nothing at all.
+ *
+ * The property that must survive: an error raised before the SDK arrives — the
+ * first-mount crash that once blanked this site — is still reported, just
+ * later.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
@@ -14,24 +17,31 @@ const sentryMock = { init: vi.fn(), captureException: vi.fn() };
 vi.mock('@sentry/react', () => sentryMock);
 
 const DSN = 'https://k@o1.ingest.us.sentry.io/1';
-let idleCb;
+
+// ONE module instance for the whole file. `vi.resetModules()` would hand each
+// test a fresh module while leaving the previous one's `window` error listener
+// attached — both would then report the same event, and `init` ran twice.
+import * as sentry from '../config/sentry';
+
+/** Dispatch a synthetic error event without vitest flagging it as unhandled. */
+function dispatchError(error) {
+  const swallow = (e) => e.preventDefault();
+  window.addEventListener('error', swallow);
+  window.dispatchEvent(new ErrorEvent('error', { error, cancelable: true }));
+  window.removeEventListener('error', swallow);
+}
 
 beforeEach(() => {
-  vi.resetModules();
+  sentry.resetSentryForTests();
   sentryMock.init.mockClear();
   sentryMock.captureException.mockClear();
-  idleCb = null;
-  window.requestIdleCallback = vi.fn((cb) => { idleCb = cb; return 1; });
-  window.cancelIdleCallback = vi.fn();
 });
 afterEach(() => {
+  sentry.resetSentryForTests();
   vi.unstubAllEnvs();
-  vi.useRealTimers();
-  delete window.requestIdleCallback;
-  delete window.cancelIdleCallback;
 });
 
-const load = () => import('../config/sentry');
+const load = async () => sentry;
 
 describe('deferred Sentry', () => {
   it('is a complete no-op without a DSN', async () => {
@@ -39,19 +49,18 @@ describe('deferred Sentry', () => {
     const m = await load();
     m.initSentry();
     m.reportError(new Error('x'));
-    expect(window.requestIdleCallback).not.toHaveBeenCalled();
     await m.whenSentryReady();
     expect(sentryMock.init).not.toHaveBeenCalled();
     expect(sentryMock.captureException).not.toHaveBeenCalled();
   });
 
-  it('does NOT load the SDK before the browser is idle', async () => {
+  it('downloads NOTHING on a session with no errors', async () => {
     vi.stubEnv('VITE_SENTRY_DSN', DSN);
     const m = await load();
     m.initSentry();
-    // The whole point: nothing heavy runs in the critical window.
+    // The whole point: a clean session never pulls the SDK at all.
+    await m.whenSentryReady();
     expect(sentryMock.init).not.toHaveBeenCalled();
-    expect(window.requestIdleCallback).toHaveBeenCalledTimes(1);
   });
 
   it('buffers errors raised before the SDK loads and flushes them after', async () => {
@@ -60,10 +69,9 @@ describe('deferred Sentry', () => {
     m.initSentry();
 
     m.reportError(new Error('from a boundary'), { componentStack: 'x' });
-    window.dispatchEvent(new ErrorEvent('error', { error: new Error('uncaught') }));
-    expect(sentryMock.captureException).not.toHaveBeenCalled();
+    dispatchError(new Error('uncaught'));
 
-    idleCb();
+    // The first report is what triggers the load.
     await m.whenSentryReady();
 
     expect(sentryMock.init).toHaveBeenCalledTimes(1);
@@ -77,7 +85,7 @@ describe('deferred Sentry', () => {
     vi.stubEnv('VITE_SENTRY_DSN', DSN);
     const m = await load();
     m.initSentry();
-    idleCb();
+    m.reportError(new Error('first'));
     await m.whenSentryReady();
     sentryMock.captureException.mockClear();
 
@@ -90,7 +98,6 @@ describe('deferred Sentry', () => {
     const m = await load();
     m.initSentry();
     for (let i = 0; i < 60; i++) m.reportError(new Error(`e${i}`));
-    idleCb();
     await m.whenSentryReady();
     expect(sentryMock.captureException.mock.calls.length).toBeLessThanOrEqual(20);
   });
@@ -99,23 +106,32 @@ describe('deferred Sentry', () => {
     vi.stubEnv('VITE_SENTRY_DSN', DSN);
     const m = await load();
     m.initSentry();
-    idleCb();
+    m.reportError(new Error('trigger the load'));
     await m.whenSentryReady();
     sentryMock.captureException.mockClear();
     // Our pre-init listener must be gone; the SDK installs its own.
-    window.dispatchEvent(new ErrorEvent('error', { error: new Error('after') }));
+    dispatchError(new Error('after'));
     expect(sentryMock.captureException).not.toHaveBeenCalled();
   });
 
-  it('falls back to a timer where requestIdleCallback does not exist (Safari)', async () => {
-    delete window.requestIdleCallback;
-    vi.useFakeTimers();
+  it('an uncaught error alone is enough to pull the SDK', async () => {
     vi.stubEnv('VITE_SENTRY_DSN', DSN);
     const m = await load();
     m.initSentry();
-    expect(sentryMock.init).not.toHaveBeenCalled();
-    await vi.advanceTimersByTimeAsync(1500);
+    dispatchError(new Error('boom'));
     await m.whenSentryReady();
     expect(sentryMock.init).toHaveBeenCalledTimes(1);
+    expect(sentryMock.captureException).toHaveBeenCalledTimes(1);
+  });
+
+  it('an unhandled rejection does too', async () => {
+    vi.stubEnv('VITE_SENTRY_DSN', DSN);
+    const m = await load();
+    m.initSentry();
+    const ev = new Event('unhandledrejection');
+    ev.reason = new Error('rejected');
+    window.dispatchEvent(ev);
+    await m.whenSentryReady();
+    expect(sentryMock.captureException).toHaveBeenCalledTimes(1);
   });
 });

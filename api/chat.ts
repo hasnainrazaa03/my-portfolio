@@ -39,8 +39,14 @@ import { buildCareerBlock } from '../src/data/careerKnowledge.js';
  *    configured (see _lib/rateLimit.ts).
  */
 
-const RATE_LIMIT_MAX = Number.parseInt(process.env.CHAT_RATE_LIMIT_MAX || '10', 10);
-const RATE_LIMIT_WINDOW_MS = Number.parseInt(process.env.CHAT_RATE_LIMIT_WINDOW_MS || '60000', 10);
+/** Guarded like llm.ts's timeout: `CHAT_RATE_LIMIT_MAX=abc` parsed to NaN,
+ *  `count > NaN` is always false, and the limiter silently switched off. */
+function positiveInt(raw: string | undefined, fallback: number): number {
+  const n = Number.parseInt(raw || '', 10);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+const RATE_LIMIT_MAX = positiveInt(process.env.CHAT_RATE_LIMIT_MAX, 10);
+const RATE_LIMIT_WINDOW_MS = positiveInt(process.env.CHAT_RATE_LIMIT_WINDOW_MS, 60_000);
 const chatLimiter = createDurableLimiter({ windowMs: RATE_LIMIT_WINDOW_MS, max: RATE_LIMIT_MAX, prefix: 'chat' });
 
 // Static directive header — security/persona rules. NEVER derived from client
@@ -155,17 +161,18 @@ async function streamResponse(
   res.flushHeaders?.();
 
   const streamer = createReplyStreamer();
-  let clientGone = false;
-  req.on('close', () => {
-    clientGone = true;
-  });
+  // No client-disconnect detection, deliberately. Vercel does not notify a
+  // function of a dropped connection unless `supportsCancellation` is opted
+  // into, and `req` has already been drained by the platform's body helper
+  // before the handler runs, so a `req.on('close')` here could never fire.
+  // The previous version registered one and believed it aborted upstream on
+  // disconnect; it did not, and pretending otherwise is worse than not trying.
 
   try {
     const result = await runChainStream(
       system,
       turns,
       (delta) => {
-        if (clientGone) return true;
         const { emit, complete } = streamer.push(delta);
         if (emit) sse(res, 'delta', { text: emit });
         // Returning true aborts upstream: the visible answer is already
@@ -176,8 +183,6 @@ async function streamResponse(
         console.warn(`[chat:${requestId}] provider ${provider} failed: ${error}`);
       },
     );
-
-    if (clientGone) return void res.end();
 
     console.log(`[chat:${requestId}] streamed by ${result.provider}/${result.model}`);
     // NO res.setHeader here. Headers were flushed before the first token (that
@@ -227,7 +232,6 @@ async function streamResponse(
       await captureServerError(err, { requestId, route: '/api/chat:stream' });
       await flushSentry();
     }
-    if (clientGone) return void res.end();
 
     // Mid-stream failure: hand back whatever is coherent rather than nothing.
     // The client keeps partial text if it has any, and falls back locally if not.
@@ -256,16 +260,27 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(429).json({ error: 'Too many requests. Please slow down and try again shortly.', requestId });
   }
 
+  // `req.body` is a lazy getter that THROWS on malformed JSON. Inside the main
+  // try that surfaced as a 500 plus a Sentry event — an event anyone could
+  // raise for free at the rate limit, on the one route whose events are
+  // treated as "worth waking up for". Read it once here and answer 400.
+  let body: Record<string, unknown> | undefined;
+  try {
+    body = req.body as Record<string, unknown> | undefined;
+  } catch {
+    return res.status(400).json({ error: 'Invalid message', requestId });
+  }
+
   try {
     // SECURITY: explicitly destructure ONLY what we use.
     // Client-supplied `context`, `provider` and `model` are discarded.
     // `persona` IS read but is validated against an allow-list (resolvePersona).
-    const personaKey = resolvePersona(req.body?.persona);
+    const personaKey = resolvePersona(body?.persona);
     const effectiveSystemPrompt = SYSTEM_PROMPT + PERSONA_OVERLAYS[personaKey];
 
     // Accepts the multi-turn `messages` array (or the legacy `message`
     // string). Every turn is sanitized; assistant turns are untrusted too.
-    const history = buildTurns(req.body);
+    const history = buildTurns(body);
 
     if (!history.ok) {
       if (history.reason === 'invalid_input' || history.reason === 'too_many_turns') {
@@ -288,9 +303,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // only ties a visitor's turns together in the analytics table. Validated
     // for shape and truncated server-side; a forged one groups rows wrongly and
     // achieves nothing else.
-    const sessionId = typeof req.body?.sessionId === 'string' ? req.body.sessionId.slice(0, 64) : null;
+    const sessionId = typeof body?.sessionId === 'string' ? body.sessionId.slice(0, 64) : null;
 
-    if (req.body?.stream === true) {
+    if (body?.stream === true) {
       return streamResponse(req, res, requestId, effectiveSystemPrompt, history.turns, sessionId, ip);
     }
 

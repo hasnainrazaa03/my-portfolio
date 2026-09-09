@@ -110,10 +110,26 @@ export function createDurableLimiter({ windowMs, max, prefix = 'rl' }: DurableRa
       });
       if (!res.ok) return memory(key);
 
-      const data = (await res.json()) as Array<{ result?: number }>;
+      const data = (await res.json()) as Array<{ result?: number; error?: string }>;
+      // A pipeline answers 200 even when individual commands fail. If PEXPIRE
+      // errored the counter has no TTL: PTTL reports -1, and trusting the
+      // count would block that IP permanently once it crossed `max`.
+      if (!Array.isArray(data) || data.some((d) => d && typeof d.error === 'string')) {
+        return memory(key);
+      }
       const count = Number(data?.[0]?.result ?? 0);
       const ttl = Number(data?.[2]?.result ?? windowMs);
       if (!Number.isFinite(count) || count <= 0) return memory(key);
+      if (ttl === -1) {
+        // Repair the window best-effort so the key cannot live forever, and
+        // fall back for this request rather than trust a count with no reset.
+        void fetch(`${creds.url}/pipeline`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${creds.token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify([['PEXPIRE', redisKey, String(windowMs)]]),
+        }).catch(() => {});
+        return memory(key);
+      }
 
       return {
         limited: count > max,

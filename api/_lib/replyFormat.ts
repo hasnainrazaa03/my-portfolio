@@ -20,7 +20,7 @@
 const SENTENCE_BOUNDARY = /(?<=[.!?])\s+(?=["'“]?[A-Z0-9])/;
 
 /** Trailing "[Ask about: X, Y?]" affordance the UI renders as chips. */
-const SUGGESTION_SUFFIX = /\[Ask about:[^\]]*\]\s*$/;
+const SUGGESTION_SUFFIX = /\[Ask about:[^\]]*\]\s*$/i;
 
 /**
  * An affordance the model STARTED but never closed, e.g. a reply ending
@@ -32,7 +32,7 @@ const SUGGESTION_SUFFIX = /\[Ask about:[^\]]*\]\s*$/;
  * A truncated fragment carries no usable suggestions, so it is discarded and
  * replaced rather than repaired.
  */
-const TRUNCATED_SUGGESTION = /\[Ask about:[^\]]*$/;
+const TRUNCATED_SUGGESTION = /\[Ask about:[^\]]*$/i;
 
 export const DEFAULT_SUGGESTIONS = [
   'the tech stack behind it',

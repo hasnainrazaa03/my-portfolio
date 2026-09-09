@@ -97,3 +97,49 @@ describe('getClientIp', () => {
     expect(getClientIp({ headers: {}, socket: {} })).toBe('unknown');
   });
 });
+
+/**
+ * Upstash's /pipeline answers 200 even when individual commands fail. If
+ * PEXPIRE errors, the counter has no TTL: PTTL reports -1 and trusting the
+ * count blocks that IP permanently once it crosses `max`. Both shapes must fall
+ * back to the in-memory limiter rather than trust a count that never resets.
+ */
+describe('createDurableLimiter (Upstash pipeline anomalies)', () => {
+  const withUpstash = async (pipelineReply) => {
+    process.env.UPSTASH_REDIS_REST_URL = 'https://x.upstash.io';
+    process.env.UPSTASH_REDIS_REST_TOKEN = 'tok_' + 'a'.repeat(30);
+    const fetchMock = vi.fn().mockResolvedValue({ ok: true, json: async () => pipelineReply });
+    vi.stubGlobal('fetch', fetchMock);
+    return { fetchMock, check: createDurableLimiter({ windowMs: 60_000, max: 100, prefix: 'p' }) };
+  };
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    delete process.env.UPSTASH_REDIS_REST_URL;
+    delete process.env.UPSTASH_REDIS_REST_TOKEN;
+  });
+
+  it('falls back when a command in the pipeline reports an error', async () => {
+    const { check } = await withUpstash([{ result: 500 }, { error: 'ERR' }, { result: -1 }]);
+    // Redis said 500 hits (> max) but the window is broken; memory says 1st hit.
+    const r = await check('1.1.1.1');
+    expect(r.limited).toBe(false);
+    expect(r.remaining).toBe(99);
+  });
+
+  it('falls back when the key has no expiry, and repairs it', async () => {
+    const { check, fetchMock } = await withUpstash([{ result: 500 }, { result: 0 }, { result: -1 }]);
+    const r = await check('2.2.2.2');
+    expect(r.limited).toBe(false);
+    // A second pipeline call issues an unconditional PEXPIRE.
+    await new Promise((res) => setTimeout(res, 0));
+    const bodies = fetchMock.mock.calls.map((c) => JSON.parse(c[1].body));
+    expect(bodies.some((b) => b.some((cmd) => cmd[0] === 'PEXPIRE' && cmd.length === 3))).toBe(true);
+  });
+
+  it('still trusts a healthy pipeline reply', async () => {
+    const { check } = await withUpstash([{ result: 101 }, { result: 1 }, { result: 30_000 }]);
+    const r = await check('3.3.3.3');
+    expect(r.limited).toBe(true);
+    expect(r.remaining).toBe(0);
+  });
+});

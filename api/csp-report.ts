@@ -3,7 +3,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
  * CSP violation report endpoint.
  *
  * Receives reports from browsers when content-security-policy directives
- * are violated. The policy in vercel.json is `Content-Security-Policy-Report-Only`
+ * are violated. The policy in vercel.json is `Content-Security-Policy-enforcing`
  * with `report-uri /api/csp-report`. We log the offending directive at warn
  * level (server-only) — no PII is collected and nothing is echoed to clients.
  *
@@ -38,6 +38,26 @@ interface CspReportBody {
   lineNumber?: unknown;
 }
 
+/**
+ * Browsers POST violations as `application/csp-report` (legacy) or
+ * `application/reports+json` (Reporting API). Vercel's body helper parses only
+ * json / urlencoded / text / octet-stream, so for BOTH of those content types
+ * `req.body` is undefined — and this handler logged every real violation as
+ * five `undefined`s. The helper replays the raw bytes on `data`/`end`, so they
+ * can still be read here. Capped: a report is a few hundred bytes.
+ */
+function readRawBody(req: VercelRequest, limit = 64 * 1024): Promise<string> {
+  return new Promise((resolve) => {
+    let data = '';
+    req.setEncoding('utf8');
+    req.on('data', (chunk: string) => {
+      if (data.length < limit) data += chunk;
+    });
+    req.on('end', () => resolve(data));
+    req.on('error', () => resolve(''));
+  });
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   applyCors(req, res, { methods: 'POST, OPTIONS', headers: 'Content-Type' });
 
@@ -49,7 +69,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (limited) return res.status(204).end();
 
   try {
-    const body = (req.body || {}) as Record<string, unknown> | unknown[];
+    let parsed: unknown = req.body;
+    if (parsed === undefined || parsed === null) {
+      const raw = await readRawBody(req);
+      parsed = raw ? JSON.parse(raw) : {};
+    }
+    const body = (parsed || {}) as Record<string, unknown> | unknown[];
     // Both shapes have nested objects — normalise to a small subset.
     const report = (Array.isArray(body)
       ? (body[0] as { body?: CspReportBody } | undefined)?.body

@@ -57,8 +57,14 @@ export function isAllowedOrigin(origin: string | null | undefined): boolean {
       );
     }
 
-    // Local dev
-    if (host === 'localhost' || host === '127.0.0.1') return true;
+    // Local dev only. In production any page served from a visitor's own
+    // localhost could otherwise drive this project's LLM spend from a browser.
+    if (
+      (host === 'localhost' || host === '127.0.0.1') &&
+      process.env.VERCEL_ENV !== 'production'
+    ) {
+      return true;
+    }
   } catch {
     return false;
   }

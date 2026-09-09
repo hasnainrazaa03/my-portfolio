@@ -128,3 +128,23 @@ describe('formatReply — unterminated suggestion block', () => {
     expect(out).toContain('[1]');
   });
 });
+
+/**
+ * The model sometimes writes "[ask about: …]". Case-sensitive detection missed
+ * it, treated it as prose, and appended a second affordance after it.
+ */
+describe('formatReply — case-insensitive affordance', () => {
+  const fixed = () => 0;
+
+  it('preserves a lower-case affordance instead of stacking a second', () => {
+    const out = formatReply('I use React. [ask about: my stack?]', { rand: fixed });
+    expect(out.match(/\[ask about:/gi)).toHaveLength(1);
+    expect(out).toBe('I use React. [ask about: my stack?]');
+  });
+
+  it('discards a lower-case truncated fragment', () => {
+    const out = formatReply('I use React. [ask about: my sta', { rand: fixed });
+    expect(out.match(/\[ask about:/gi)).toHaveLength(1);
+    expect(out).toMatch(/^I use React\. \[Ask about: /);
+  });
+});

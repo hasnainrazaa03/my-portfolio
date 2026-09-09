@@ -98,7 +98,10 @@ async function fetchEventsFromGitHub(username: string): Promise<StrippedEvent[]>
 
   const res = await fetch(
     `https://api.github.com/users/${encodeURIComponent(username)}/events/public?per_page=30`,
-    { headers }
+    // Bounded like every other outbound call here. Without it a stalled
+    // upstream held the request to the platform's max duration and the
+    // stale-cache fallback below was never reached.
+    { headers, signal: AbortSignal.timeout(8000) }
   );
 
   if (!res.ok) {

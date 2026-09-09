@@ -37,8 +37,9 @@ const SUFFIX_START = '[Ask about:';
  */
 export function withheldTailLength(text: string): number {
   const max = Math.min(text.length, SUFFIX_START.length - 1);
+  const lower = SUFFIX_START.toLowerCase();
   for (let n = max; n > 0; n--) {
-    if (SUFFIX_START.startsWith(text.slice(-n))) return n;
+    if (lower.startsWith(text.slice(-n).toLowerCase())) return n;
   }
   return 0;
 }
@@ -51,7 +52,9 @@ export function withheldTailLength(text: string): number {
  * is the signal to stop reading the upstream stream.
  */
 export function visiblePrefix(raw: string, maxSentences: number): { text: string; capped: boolean } {
-  const suffixAt = raw.indexOf(SUFFIX_START);
+  // Case-insensitive: the model sometimes writes "[ask about:", and a
+  // case-sensitive match streamed that verbatim and then appended a second one.
+  const suffixAt = raw.toLowerCase().indexOf(SUFFIX_START.toLowerCase());
   let body = suffixAt === -1 ? raw : raw.slice(0, suffixAt);
 
   // Only guard against a partial suffix while the real one has not appeared.

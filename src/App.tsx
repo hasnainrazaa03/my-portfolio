@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect, useState } from 'react';
 import { MotionConfig } from 'framer-motion';
 import { Analytics } from "@vercel/analytics/react";
 
@@ -32,6 +32,36 @@ const GitHubSection = lazy(() => import('./components/GitHubSection'));
  * paint and capped how far the answer bank could grow.
  */
 const Chatbot = lazy(() => import('./components/Chatbot'));
+
+/**
+ * Mount the chat widget once the browser is idle, not at hydration.
+ *
+ * `lazy()` only splits the bundle; the fetch still fires the moment the
+ * component renders. On the Lighthouse mobile trace the 30 KB Chatbot chunk
+ * left at 541 ms — immediately after hydration, in the same window the hero is
+ * trying to paint — for a panel nobody has opened. Deferring it to idle takes
+ * it out of that contention entirely. Chat widgets from Intercom onward do
+ * exactly this; the launcher arriving a beat later is the expected trade.
+ *
+ * The timeout is the safety net: `requestIdleCallback` can starve on a busy
+ * page, and Safari has no such API at all.
+ */
+function useIdleMount(timeoutMs = 3000): boolean {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    const w = window as Window & {
+      requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number;
+      cancelIdleCallback?: (id: number) => void;
+    };
+    if (typeof w.requestIdleCallback === 'function') {
+      const id = w.requestIdleCallback(() => setReady(true), { timeout: timeoutMs });
+      return () => w.cancelIdleCallback?.(id);
+    }
+    const id = window.setTimeout(() => setReady(true), Math.min(timeoutMs, 1500));
+    return () => window.clearTimeout(id);
+  }, [timeoutMs]);
+  return ready;
+}
 const ProjectDetailPage = lazy(() => import('./components/ProjectDetailPage'));
 const Experience = lazy(() => import('./components/Experience'));
 const Skills = lazy(() => import('./components/Skills'));
@@ -61,6 +91,7 @@ const SectionFallback = () => (
  * beats threading a hook through every call site, which drifts.
  */
 export default function App() {
+  const chatReady = useIdleMount();
   // Lightweight pathname routing: no router dependency.
   //
   // This REQUIRES the SPA rewrite in vercel.json. Nothing exists on disk at
@@ -131,7 +162,16 @@ export default function App() {
           <Footer />
         </div>
 
-        <Chatbot />
+        {/* Suspense is REQUIRED around a lazy() component. An earlier change
+            intended to add it and silently did not; the widget only rendered
+            because React tolerates an unbounded suspension on initial render.
+            No fallback: the launcher is a fixed overlay, so there is nothing to
+            reserve and nothing shifts when it arrives. */}
+        {chatReady && (
+          <Suspense fallback={null}>
+            <Chatbot />
+          </Suspense>
+        )}
         <BackToTop />
         <KonamiEasterEgg />
         <Analytics />

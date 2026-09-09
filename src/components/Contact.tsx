@@ -94,11 +94,21 @@ const Contact = () => {
     }
   };
 
-  const handleCopyEmail = () => {
-    navigator.clipboard.writeText(PERSONAL_INFO.email).then(() => {
+  const handleCopyEmail = async () => {
+    // `navigator.clipboard` is undefined on insecure origins and some
+    // WebViews, and writeText rejects without a user gesture. Unguarded, that
+    // was a TypeError in a click handler with no feedback at all.
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable');
+      await navigator.clipboard.writeText(PERSONAL_INFO.email);
       setIsCopied(true);
-      setTimeout(() => setIsCopied(false), 2000); 
-    });
+      setTimeout(() => setIsCopied(false), 2000);
+    } catch {
+      // Fall back to selecting the address so it can still be copied by hand.
+      window.getSelection()?.selectAllChildren(
+        document.getElementById('contact-email-text') ?? document.body,
+      );
+    }
   };
 
   return (
@@ -125,7 +135,7 @@ const Contact = () => {
                 <div className="p-2 rounded-lg bg-primary/10 text-primary">
                   <Mail size={20} />
                 </div>
-                <span className="text-slate-800 dark:text-white font-mono text-sm sm:text-base mr-2 font-bold">
+                <span id="contact-email-text" className="text-slate-800 dark:text-white font-mono text-sm sm:text-base mr-2 font-bold">
                   {PERSONAL_INFO.email}
                 </span>
                 <div className="relative">

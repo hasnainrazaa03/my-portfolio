@@ -6,12 +6,8 @@ import { PERSONAL_INFO } from '../constants';
 import { useActiveSection } from '../hooks/useActiveSection';
 import { scrollToSection } from '../utils/scroll';
 
-const Navigation = () => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const { isDark, toggleTheme, highContrast: hc, toggleHighContrast: toggleHc } = useTheme();
-
-  const navLinks = [
+/** Module scope: a fresh array per render re-ran useActiveSection's effect on every render. */
+const navLinks = [
     { name: "About", id: "about" },
     { name: "Education", id: "education" },
     { name: "Projects", id: "projects" },
@@ -21,8 +17,14 @@ const Navigation = () => {
     { name: "Awards", id: "achievements" },
     { name: "Contact", id: "contact" }
   ];
+const NAV_IDS = navLinks.map((link) => link.id);
 
-  const activeSection = useActiveSection(navLinks.map(link => link.id));
+const Navigation = () => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const { isDark, toggleTheme, highContrast: hc, toggleHighContrast: toggleHc } = useTheme();
+
+  const activeSection = useActiveSection(NAV_IDS);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 50);
@@ -66,9 +68,10 @@ const Navigation = () => {
           <button 
             onClick={toggleTheme}
             className="ml-4 p-2 rounded-full bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-yellow-400 hover:bg-slate-200 dark:hover:bg-white/10 transition-colors"
-            aria-label="Toggle Dark Mode"
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-pressed={isDark}
           >
-            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+            {isDark ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
           </button>
           <button 
             onClick={toggleHc}
@@ -93,10 +96,11 @@ const Navigation = () => {
           <button
             type="button"
             onClick={toggleTheme}
-            aria-label="Toggle Dark Mode"
+            aria-label={isDark ? 'Switch to light mode' : 'Switch to dark mode'}
+            aria-pressed={isDark}
             className="p-2 rounded-full bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-yellow-400"
           >
-            {isDark ? <Sun size={20} /> : <Moon size={20} />}
+            {isDark ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
           </button>
           
           <button onClick={() => setIsOpen(!isOpen)} className="text-slate-900 dark:text-white focus:outline-none" aria-expanded={isOpen} aria-label="Toggle navigation menu">

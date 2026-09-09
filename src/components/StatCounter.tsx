@@ -27,7 +27,9 @@ const StatCounter = ({ stat, index }: StatCounterProps) => {
   }, [isInView, stat.target, motionValue]);
 
   useEffect(() => {
-    springValue.on("change", (latest) => {
+    // `.on` returns the unsubscribe; discarding it left a listener writing
+    // into a detached node after unmount.
+    return springValue.on("change", (latest) => {
       if (ref.current) {
         ref.current.textContent = latest.toFixed(0);
       }

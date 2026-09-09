@@ -78,7 +78,10 @@ test.describe('theme toggle', () => {
     const html = page.locator('html');
     const startedDark = await html.evaluate((el) => el.classList.contains('dark'));
 
-    await page.getByRole('button', { name: /toggle (dark|light)|theme/i }).first().click();
+    // The toggle now announces its ACTION and state ("Switch to dark mode",
+    // aria-pressed) rather than a generic "Toggle Dark Mode", so a
+    // screen-reader user knows which way it will flip.
+    await page.getByRole('button', { name: /switch to (dark|light) mode/i }).first().click();
     await expect
       .poll(() => html.evaluate((el) => el.classList.contains('dark')))
       .toBe(!startedDark);

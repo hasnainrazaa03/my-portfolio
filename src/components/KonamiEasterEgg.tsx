@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { useFocusTrap } from '../hooks/useFocusTrap';
 
 const KONAMI = [
   'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
@@ -12,6 +13,10 @@ const KONAMI = [
  */
 const KonamiEasterEgg = () => {
   const [active, setActive] = useState(false);
+  // aria-modal was declared with no trap, so Tab walked the page controls
+  // hidden behind the overlay. Same trap the project modal and chat use.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, { active, onEscape: () => setActive(false) });
 
   useEffect(() => {
     let buf: string[] = [];
@@ -48,6 +53,7 @@ const KonamiEasterEgg = () => {
   // sufficient and fully keyboard-accessible.
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="konami-title"

@@ -81,7 +81,11 @@ const Projects = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 items-stretch min-h-0">
-            <AnimatePresence mode='wait'>
+            {/* No `mode="wait"`: that mode renders ONLY the exiting children
+                until they finish, so cards that were present in both the old
+                and the new filter vanished and re-entered on every filter
+                change. Default (sync) lets entering and exiting overlap. */}
+            <AnimatePresence>
               {visibleProjects.map((project) => (
                 <motion.div
                   key={project.id}

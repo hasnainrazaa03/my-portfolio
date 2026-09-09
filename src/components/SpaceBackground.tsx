@@ -69,6 +69,7 @@ const SpaceBackground = () => {
         star.draw();
       });
 
+      if (document.hidden) return; // paused; handleVisibilityChange resumes
       animationFrameId = requestAnimationFrame(animate);
     };
 
@@ -87,6 +88,12 @@ const SpaceBackground = () => {
       if (document.hidden) {
         cancelAnimationFrame(animationFrameId);
       } else {
+        // Cancel before restarting. Browsers only PAUSE rAF in a hidden tab;
+        // a page opened in the background still has its first frame queued,
+        // and starting a second loop on the first `visible` left two loops
+        // running with only the newer id tracked — the older one leaked past
+        // cleanup and kept painting with a stale theme.
+        cancelAnimationFrame(animationFrameId);
         animate();
       }
     };

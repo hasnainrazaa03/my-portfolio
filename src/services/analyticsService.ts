@@ -50,6 +50,29 @@ class AnalyticsService {
     this.sessionStart = new Date();
     this.sessionId = this.generateSessionId();
     this.backendUrl = '/api/analytics';
+    this.pruneStaleSessions();
+  }
+
+  /**
+   * One `jarvis_analytics_<uuid>` key is written per page load and nothing
+   * ever removed them, so a regular visitor accumulated an unbounded pile of
+   * dead session blobs. Keep only the most recent few.
+   */
+  pruneStaleSessions(keep = 5): void {
+    try {
+      const keys: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith('jarvis_analytics_')) keys.push(k);
+      }
+      // Session ids are uuids, not sortable by time; fall back to dropping the
+      // surplus oldest-by-insertion, which localStorage.key() approximates.
+      for (const k of keys.slice(0, Math.max(0, keys.length - keep))) {
+        localStorage.removeItem(k);
+      }
+    } catch {
+      /* storage unavailable — nothing to prune */
+    }
   }
 
   generateSessionId(): string {
@@ -210,7 +233,11 @@ class AnalyticsService {
 
   clearAnalytics(): void {
     this.interactions = [];
-    localStorage.removeItem(`jarvis_analytics_${this.sessionId}`);
+    try {
+      localStorage.removeItem(`jarvis_analytics_${this.sessionId}`);
+    } catch {
+      /* storage unavailable in private mode — ignore */
+    }
   }
 
   exportAsJSON() {

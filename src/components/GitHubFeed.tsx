@@ -129,8 +129,20 @@ const GitHubFeed = () => {
   const [error, setError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const isVisibleRef = useRef(false);
+  // The IntersectionObserver callback below closes over the FIRST render's
+  // `activities` ([]), so "fetch on first sight" fired on every re-entry into
+  // view — burning the unauthenticated 60/h GitHub quota in dev. Track it in
+  // a ref instead. `seq` drops a slow earlier response that lands after a
+  // newer one; `hasData` keeps the list when a refetch fails.
+  const fetchedOnceRef = useRef(false);
+  const seqRef = useRef(0);
+  const hasDataRef = useRef(false);
+  useEffect(() => {
+    hasDataRef.current = activities.length > 0;
+  }, [activities]);
 
   const fetchGitHubActivity = async () => {
+    const seq = ++seqRef.current;
     try {
       setLoading(true);
       // Prefer the server proxy: cached + token-authenticated + privacy-safe.
@@ -151,11 +163,14 @@ const GitHubFeed = () => {
           .slice(0, 10);
       }
 
+      if (seq !== seqRef.current) return; // a newer request already applied
       setActivities(events);
       setError(false);
     } catch (err) {
       console.error("GitHub API Error:", err);
-      setError(true);
+      if (seq !== seqRef.current) return;
+      // A failed REFRESH must not replace a list the visitor is reading.
+      if (!hasDataRef.current) setError(true);
     } finally {
       setLoading(false);
     }
@@ -167,7 +182,8 @@ const GitHubFeed = () => {
       ([entry]) => {
         isVisibleRef.current = entry.isIntersecting;
         // Fetch immediately when entering viewport for the first time.
-        if (entry.isIntersecting && activities.length === 0) {
+        if (entry.isIntersecting && !fetchedOnceRef.current) {
+          fetchedOnceRef.current = true;
           fetchGitHubActivity();
         }
       },
@@ -184,11 +200,9 @@ const GitHubFeed = () => {
       observer.disconnect();
       clearInterval(interval);
     };
-    // Intentionally mount-only: `activities.length` is read inside an
-    // IntersectionObserver callback that closes over the initial value, and
-    // re-running the effect would tear down the observer + interval. The
-    // first-fetch guard only matters on the very first intersection.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Mount-only by design: the callback reads refs, not state, so there is
+    // nothing stale to re-subscribe for, and re-running would tear down the
+    // observer and the poll interval.
   }, []);
 
   return (

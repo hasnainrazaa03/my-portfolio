@@ -76,6 +76,10 @@ const Hero3D = () => {
       event.preventDefault();
       console.warn('[Hero3D] WebGL context lost — rendering the static fallback.');
       setUnsupported(true);
+      // The fallback replaces the VIEW, but this effect (deps []) would keep
+      // its rAF loop, observer, listeners, renderer and geometries alive until
+      // the page unloads. Tear down now; the unmount cleanup then no-ops.
+      teardown();
     };
     renderer.domElement.addEventListener('webglcontextlost', handleContextLost);
 
@@ -243,7 +247,10 @@ const Hero3D = () => {
     // DOM element this effect attached to (React may null out the ref by
     // the time cleanup fires).
     const mountEl = mount;
-    return () => {
+    let tornDown = false;
+    const teardown = () => {
+      if (tornDown) return;
+      tornDown = true;
       if (rafId) cancelAnimationFrame(rafId);
       if (observer) observer.disconnect();
       window.removeEventListener('resize', handleResize);
@@ -261,6 +268,7 @@ const Hero3D = () => {
       materialCore.dispose(); materialRing1.dispose(); materialRing2.dispose(); particlesMaterial.dispose();
       renderer.dispose();
     };
+    return teardown;
   }, []);
 
   if (unsupported) return <Hero3DFallback />;

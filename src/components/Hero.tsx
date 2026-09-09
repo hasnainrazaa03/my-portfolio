@@ -7,6 +7,7 @@ import SocialLinks from './SocialLinks';
 import ErrorBoundary from './ErrorBoundary';
 import Hero3DFallback from './Hero3DFallback';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { useDataSaver } from '../hooks/useDataSaver';
 
 const Hero3D = React.lazy(() => import('./Hero3D'));
 
@@ -37,7 +38,10 @@ const Hero = () => {
   // PERF: the wrapper is `hidden md:block`, but CSS only hides — React still
   // mounts, so every mobile visitor was downloading the three.js chunk
   // (~127 KB gzip) for a canvas they could never see. Gate the mount itself.
-  const showHero3D = useMediaQuery(MD_BREAKPOINT);
+  // Data Saver / slow link: the 3D core is decoration with a CSS stand-in
+  // already built for the no-WebGL case, so keep the chunk off the wire.
+  const dataSaver = useDataSaver();
+  const showHero3D = useMediaQuery(MD_BREAKPOINT) && !dataSaver;
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
   
   const [isDownloaded, setIsDownloaded] = useState(false);
@@ -161,6 +165,9 @@ const Hero = () => {
                  </Suspense>
                </ErrorBoundary>
              )}
+             {/* Data saver at desktop width: the column is visible, so fill
+                 it with the CSS orbital rather than leave it empty. */}
+             {!showHero3D && dataSaver && <Hero3DFallback />}
           </motion.div>
         </div>
       </div>

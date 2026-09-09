@@ -1,9 +1,14 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { getChatResponse } from '../services/chatService';
 import { analyticsService } from '../services/analyticsService';
 import { INITIAL_MESSAGE } from '../components/chat/chatConstants';
 import type { ChatMessage, SourceLink } from '../components/chat/types';
+import demoMessagesJson from '../data/chatDemo.json';
+
+const DEMO_MESSAGES = demoMessagesJson as ChatMessage[];
+/** Delay before each canned turn lands — longer for replies, so they read as typed. */
+const DEMO_DELAY_MS: Record<ChatMessage['role'], number> = { user: 600, assistant: 1200 };
 
 /** Message identity. crypto.randomUUID is universal in the browsers this site supports. */
 const newId = (): string =>
@@ -33,6 +38,22 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
   const [isBusy, setIsBusy] = useState(false);
   const [flaggedWarning, setFlaggedWarning] = useState<string | null>(null);
   const [demoMode, setDemoMode] = useState(false);
+  /**
+   * Demo playback — the cursor and its timer — lives HERE, not in ChatDemo.
+   *
+   * ChatDemo sits inside the panel, and the panel unmounts on close while this
+   * hook (owned by Chatbot) persists. When the component held the cursor,
+   * closing mid-demo and reopening mounted a fresh cursor at 0, which auto-
+   * played the whole script again into a transcript that already held the
+   * first half. Now the cursor outlives the panel: playback carries on while
+   * it is closed (the launcher's unread badge counts what lands) and a reopen
+   * shows the conversation exactly where it got to.
+   */
+  const [demoIdx, setDemoIdx] = useState(0);
+  const [demoPlaying, setDemoPlaying] = useState(false);
+  // Read inside the timer rather than listed as an effect dependency, so
+  // opening or closing the panel does not restart the pending delay.
+  const isOpenRef = useRef(isOpen);
   const [unreadCount, setUnreadCount] = useState(0);
   const [persona, setPersona] = useState('default');
 
@@ -176,26 +197,45 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
     setFlaggedWarning(null);
   };
 
-  // ── Demo mode handlers ──────────────────────────────────────────────────
+  // ── Demo mode ───────────────────────────────────────────────────────────
   const handleDemoToggle = () => {
     const next = !demoMode;
     setDemoMode(next);
+    setDemoIdx(0);
+    setDemoPlaying(next);
     if (next) {
       setMessages([INITIAL_MESSAGE]);
       setFlaggedWarning(null);
     }
   };
 
-  const handleDemoMessage = useCallback((msg: ChatMessage) => {
-    setMessages((prev) => [...prev, msg]);
-    if (!isOpen) setUnreadCount((prev) => prev + 1);
-  }, [isOpen]);
-
-  const handleDemoComplete = useCallback(() => {}, []);
-
+  /** Replay: back to the greeting, then the script from the top. */
   const handleDemoReset = useCallback(() => {
     setMessages([INITIAL_MESSAGE]);
+    setDemoIdx(0);
+    setDemoPlaying(true);
   }, []);
+
+  // Land the next canned turn after its typing delay. One timer per turn; the
+  // dependency on `demoIdx` re-arms it once the previous turn has committed.
+  useEffect(() => {
+    if (!demoMode || !demoPlaying) return;
+    if (demoIdx >= DEMO_MESSAGES.length) {
+      setDemoPlaying(false);
+      return;
+    }
+    const turn = DEMO_MESSAGES[demoIdx];
+    const timer = setTimeout(() => {
+      // Fresh identity per playback: a replay must not reuse the ids of the
+      // turns it replaced — voice replies key on them.
+      setMessages((prev) => [...prev, { ...turn, id: newId() }]);
+      if (!isOpenRef.current) setUnreadCount((n) => n + 1);
+      setDemoIdx((i) => i + 1);
+    }, DEMO_DELAY_MS[turn.role]);
+    return () => clearTimeout(timer);
+  }, [demoMode, demoPlaying, demoIdx]);
+
+  const demoComplete = demoMode && !demoPlaying && demoIdx >= DEMO_MESSAGES.length;
 
   // ── QnA handlers ────────────────────────────────────────────────────────
   const handleUseLocalAnswer = useCallback((question: string, answer: string) => {
@@ -213,8 +253,9 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
     processMessage(question);
   }, [processMessage]);
 
-  // Reset unread when opened.
+  // Reset unread when opened; keep the ref the demo timer reads current.
   useEffect(() => {
+    isOpenRef.current = isOpen;
     if (isOpen) setUnreadCount(0);
   }, [isOpen]);
 
@@ -226,6 +267,8 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
     isBusy,
     flaggedWarning,
     demoMode,
+    demoPlaying,
+    demoComplete,
     unreadCount,
     persona,
     setPersona,
@@ -233,8 +276,6 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
     handleFormSubmit,
     clearHistory,
     handleDemoToggle,
-    handleDemoMessage,
-    handleDemoComplete,
     handleDemoReset,
     handleUseLocalAnswer,
     handleAskLive,

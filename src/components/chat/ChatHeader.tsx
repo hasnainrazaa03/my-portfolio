@@ -4,7 +4,7 @@ import { Sparkles, Trash2, BarChart3, Play, Volume2, VolumeX, X } from 'lucide-r
 import Avatar from './Avatar';
 import ChatDemo from '../ChatDemo';
 import { AVATAR_SRC, PERSONAS } from './chatConstants';
-import type { ChatMessage, ChatStats } from './types';
+import type { ChatStats } from './types';
 
 interface ChatHeaderProps {
   demoMode: boolean;
@@ -26,9 +26,10 @@ interface ChatHeaderProps {
   persona: string;
   onPersonaChange: (persona: string) => void;
   isTyping: boolean;
-  onDemoMessage: (msg: ChatMessage) => void;
-  onDemoComplete: () => void;
-  onDemoReset: () => void;
+  /** Demo playback state — owned by useChat, so it survives the panel closing. */
+  demoPlaying: boolean;
+  demoComplete: boolean;
+  onDemoReplay: () => void;
 }
 
 /**
@@ -52,9 +53,9 @@ const ChatHeader = ({
   persona,
   onPersonaChange,
   isTyping,
-  onDemoMessage,
-  onDemoComplete,
-  onDemoReset,
+  demoPlaying,
+  demoComplete,
+  onDemoReplay,
 }: ChatHeaderProps) => (
   <div className="p-4 bg-slate-100/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-white/10">
     <div className="flex items-center justify-between mb-2">
@@ -168,9 +169,9 @@ const ChatHeader = ({
     {/* Demo mode controls */}
     <ChatDemo
       isActive={demoMode}
-      onMessage={onDemoMessage}
-      onComplete={onDemoComplete}
-      onReset={onDemoReset}
+      isPlaying={demoPlaying}
+      isComplete={demoComplete}
+      onReplay={onDemoReplay}
     />
   </div>
 );

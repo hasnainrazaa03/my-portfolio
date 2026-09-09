@@ -1,77 +1,36 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Play, RotateCcw } from 'lucide-react';
-import demoMessagesJson from '../data/chatDemo.json';
-import type { ChatMessage } from './chat/types';
-
-const demoMessages = demoMessagesJson as ChatMessage[];
+import React from 'react';
+import { motion } from 'framer-motion';
+import { RotateCcw } from 'lucide-react';
 
 interface ChatDemoProps {
+  /** Demo mode is on — the controls render at all. */
   isActive: boolean;
-  onMessage?: (msg: ChatMessage) => void;
-  onComplete?: () => void;
-  onReset?: () => void;
+  /** A canned turn is queued to land. */
+  isPlaying: boolean;
+  /** Every canned turn has landed; offer a replay. */
+  isComplete: boolean;
+  onReplay: () => void;
 }
 
 /**
- * ChatDemo — plays a canned conversation with typing animation.
+ * ChatDemo — status line and replay control for the canned conversation.
+ *
+ * Deliberately stateless. Playback (the cursor, the timers) lives in useChat,
+ * because this component sits inside the panel and unmounts every time the
+ * panel closes. When it owned the cursor, closing mid-demo and reopening
+ * replayed the script from the top into a transcript that already held the
+ * first half — every turn twice. See the demo section of useChat.
  */
-const ChatDemo = ({ isActive, onMessage, onComplete, onReset }: ChatDemoProps) => {
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const play = useCallback(() => {
-    if (!isActive) return;
-    setIsPlaying(true);
-    setCurrentIdx(0);
-  }, [isActive]);
-
-  // Auto-start on first activation
-  useEffect(() => {
-    if (isActive && !isPlaying && currentIdx === 0) {
-      play();
-    }
-  }, [isActive, isPlaying, currentIdx, play]);
-
-  // Feed messages one-by-one with delays
-  useEffect(() => {
-    if (!isPlaying || !isActive) return;
-
-    if (currentIdx >= demoMessages.length) {
-      setIsPlaying(false);
-      onComplete?.();
-      return;
-    }
-
-    const msg = demoMessages[currentIdx];
-    // Simulate typing delay — longer for assistant messages
-    const delay = msg.role === 'assistant' ? 1200 : 600;
-
-    timerRef.current = setTimeout(() => {
-      onMessage?.(msg);
-      setCurrentIdx(prev => prev + 1);
-    }, delay);
-
-    return () => clearTimeout(timerRef.current ?? undefined);
-  }, [isPlaying, isActive, currentIdx, onMessage, onComplete]);
-
-  // Cleanup on unmount
-  useEffect(() => () => clearTimeout(timerRef.current ?? undefined), []);
-
+const ChatDemo = ({ isActive, isPlaying, isComplete, onReplay }: ChatDemoProps) => {
   if (!isActive) return null;
 
   return (
     <div className="flex items-center gap-2 px-1">
-      {!isPlaying && currentIdx >= demoMessages.length && (
+      {isComplete && (
         <motion.button
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
-          onClick={() => {
-            onReset?.();
-            setCurrentIdx(0);
-            setIsPlaying(true);
-          }}
+          onClick={onReplay}
           className="flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors font-medium"
           aria-label="Replay demo conversation"
         >

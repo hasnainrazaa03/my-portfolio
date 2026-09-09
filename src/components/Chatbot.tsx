@@ -108,9 +108,9 @@ const Chatbot = () => {
               persona={chat.persona}
               onPersonaChange={chat.setPersona}
               isTyping={chat.isTyping}
-              onDemoMessage={chat.handleDemoMessage}
-              onDemoComplete={chat.handleDemoComplete}
-              onDemoReset={chat.handleDemoReset}
+              demoPlaying={chat.demoPlaying}
+              demoComplete={chat.demoComplete}
+              onDemoReplay={chat.handleDemoReset}
             />
 
             <ChatMessages

@@ -40,6 +40,11 @@ const ALLOWED_OMISSIONS = {
     // The one-page AI/ML résumé leads with the most recent and most relevant
     // work. The site is the fuller record and keeps both of these; that is the
     // intended relationship between the two, not drift.
+    //
+    // Team Antariksh: confirmed deliberate, not an oversight. The master record
+    // (Resumes/masters/ANTARIKSH_MASTER.md) states it is "deliberately not on
+    // any resume variant" — undergraduate extracurricular work that would
+    // compete for space with professional experience on a one-pager.
     'Team Antariksh',
     'Defence Research and Development Organisation (DRDO)',
   ],
@@ -80,6 +85,20 @@ describe('education matches the site', () => {
     for (const year of String(entry.period).match(/\b(19|20)\d{2}\b/g) || []) {
       expect(containsFact(pdfText, year), `${entry.school}: year ${year}`).toBe(true);
     }
+  });
+
+  it.each(checked.map((e) => [e.school, e]))('agrees on the GPA for %s', (_school, entry) => {
+    // The site may print a native scale beside the 4.0 one — "9.10 / 10.0
+    // (3.86 / 4.0)" — but the figure the PDF prints must be among them. This
+    // caught RVCE showing only 9.10 while the PDF said 3.86: both true, and
+    // two different numbers to anyone comparing the documents.
+    const pdfGpas = [...pdfText.matchAll(/GPA:?\s*(\d\.\d{1,2})/gi)].map((m) => m[1]);
+    expect(pdfGpas.length, 'no "GPA: x.xx" found in the PDF').toBeGreaterThan(0);
+    const siteGpas = String(entry.gpa ?? '').match(/\d\.\d{1,2}/g) || [];
+    expect(
+      siteGpas.some((g) => pdfGpas.includes(g)),
+      `${entry.school}: site shows ${siteGpas.join(', ')}; the PDF prints ${pdfGpas.join(', ')}`,
+    ).toBe(true);
   });
 });
 

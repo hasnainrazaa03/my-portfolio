@@ -71,7 +71,10 @@ export const EDUCATION: Education[] = [
     degree: "B.E. in Aerospace Engg.",
     school: "RV College of Engineering",
     period: "2018 - 2022",
-    gpa: "9.10 / 10.0",
+    // Native 10-point CGPA, then the 4.0-scale figure the résumé PDF prints.
+    // A recruiter sees both documents; with only the first number here they
+    // read as different results. resumeParity.test.js holds them in agreement.
+    gpa: "9.10 / 10.0 (3.86 / 4.0)",
     honors: "Silver Medalist",
     coursework: "Engineering Mathematics I-IV, Scientific Computing using MATLAB, Computational Advanced Numerical Methods, Programming in C, Mobile Application Development, Computational Fluid Dynamics, Finite Element Methods",
     image: "/RVCE.png",
@@ -346,7 +349,7 @@ export const ACHIEVEMENTS: Achievement[] = [
   {
     category: "Academic",
     year: "2022",
-    title: "B.E. in Aerospace — 9.10 / 10.0 CGPA",
+    title: "B.E. in Aerospace — 9.10 / 10.0 CGPA (3.86 / 4.0)",
     issuer: "RV College of Engineering",
     detail: "Graduated with distinction; thesis on CFD-driven nozzle optimisation.",
     url: null,

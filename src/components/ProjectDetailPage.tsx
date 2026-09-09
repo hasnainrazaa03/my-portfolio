@@ -3,6 +3,7 @@ import { ExternalLink, Github, ArrowLeft } from 'lucide-react';
 import { PROJECTS, PERSONAL_INFO } from '../constants';
 import { toSlug } from '../utils/slug';
 import LazyImage from './ui/LazyImage';
+import NotFoundPage from './NotFoundPage';
 import type { Project } from '../types/content';
 
 /**
@@ -24,10 +25,8 @@ interface ProjectDetailPageProps {
 /** Set the document title and description for the life of this page. */
 function useProjectMeta(project: Project | undefined) {
   useEffect(() => {
-    if (!project) {
-      document.title = 'Project not found | Hasnain Raza';
-      return;
-    }
+    // Unknown slug: NotFoundPage owns the title and the noindex meta.
+    if (!project) return;
     const previous = document.title;
     document.title = `${project.title} | ${PERSONAL_INFO.name}`;
 
@@ -50,19 +49,12 @@ const ProjectDetailPage = ({ slug }: ProjectDetailPageProps) => {
 
   if (!project) {
     return (
-      <main className="min-h-screen bg-white dark:bg-[#030014] text-slate-800 dark:text-slate-200">
-        <div className="max-w-3xl mx-auto px-6 py-24 text-center">
-          <h1 className="text-2xl font-bold mb-4 text-slate-900 dark:text-white">
-            That project doesn&rsquo;t exist
-          </h1>
-          <p className="mb-8 text-slate-600 dark:text-slate-400">
-            The link may be out of date. All projects are listed on the main page.
-          </p>
-          <a href="/#projects" className="text-primary hover:underline">
-            See all projects
-          </a>
-        </div>
-      </main>
+      <NotFoundPage
+        documentTitle="Project not found"
+        title="That project doesn’t exist"
+        message="The link may be out of date. All projects are listed on the main page."
+        action={{ href: '/#projects', label: 'See all projects' }}
+      />
     );
   }
 

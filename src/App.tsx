@@ -72,6 +72,7 @@ const Contact = lazy(() => import('./components/Contact'));
 // Stand-alone routes (no router dep — selected by pathname in `App`).
 const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
 const ResumePage = lazy(() => import('./components/ResumePage'));
+const NotFoundPage = lazy(() => import('./components/NotFoundPage'));
 
 /**
  * Shared shell for the stand-alone routes.
@@ -145,11 +146,17 @@ export default function App() {
   useScrollToHashWhenReady();
   // Lightweight pathname routing: no router dependency.
   //
-  // This REQUIRES the SPA rewrite in vercel.json. Nothing exists on disk at
+  // This REQUIRES the rewrite in vercel.json. Nothing exists on disk at
   // /resume, /privacy or /projects/<slug>, so without it a direct visit or a
   // shared link 404s before any of this runs — which is exactly what production
   // did until 2026-09-04, while `vite preview` (which has its own fallback)
   // made every local check pass. spaRouting.test.js guards it.
+  //
+  // The rewrite names those routes and nothing else. Any other path is served
+  // by Vercel from dist/404.html — a build-time copy of index.html
+  // (scripts/spaNotFound.js) — with a real 404 status, and this function then
+  // renders the not-found page for it. A catch-all rewrite had every unknown
+  // path rendering the home page under the wrong URL with a 200.
   const path = typeof window !== 'undefined' ? window.location.pathname : '/';
   if (path === '/privacy' || path === '/privacy/') {
     return <StandalonePage><PrivacyPage /></StandalonePage>;
@@ -160,6 +167,9 @@ export default function App() {
   }
   if (path === '/resume' || path === '/resume/') {
     return <StandalonePage><ResumePage /></StandalonePage>;
+  }
+  if (path !== '/' && path !== '/index.html') {
+    return <StandalonePage><NotFoundPage /></StandalonePage>;
   }
 
   return (

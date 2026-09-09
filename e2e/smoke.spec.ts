@@ -86,7 +86,7 @@ test.describe('page boot', () => {
  * These are the shareable form of a project: the modal has no URL, so a
  * recruiter forwarding "look at this one" had nothing to send and a crawler had
  * nothing to index. What matters is that the URL resolves in a real browser —
- * it depends on the SPA fallback rewriting an unknown path to index.html, which
+ * it depends on vercel.json rewriting the project route to index.html, which
  * no unit test exercises.
  */
 test.describe('project case studies', () => {
@@ -118,5 +118,27 @@ test.describe('project case studies', () => {
     await link.click();
     await expect(page).toHaveURL(/\/projects\/[a-z0-9-]+$/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  });
+});
+
+/**
+ * Unknown paths.
+ *
+ * Every path used to be rewritten to the shell, so a mistyped or stale URL
+ * rendered the home page — with a 200 — under the wrong address. Now the
+ * rewrite names the real routes, Vercel serves dist/404.html (a copy of
+ * index.html) with a 404 status, and the app renders its not-found page.
+ */
+test.describe('unknown paths', () => {
+  test('render the not-found page, not the home page', async ({ page }) => {
+    const response = await page.goto('/this-page-does-not-exist');
+
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/doesn.t exist/i);
+    await expect(page.getByRole('link', { name: /home page/i })).toBeVisible();
+    await expect(page).toHaveTitle(/not found/i);
+
+    // `vite preview` has a blanket SPA fallback and answers 200; only a real
+    // host serves the 404.html copy with the status to match.
+    if (process.env.E2E_BASE_URL) expect(response?.status()).toBe(404);
   });
 });

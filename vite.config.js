@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { validateClientEnv } from './scripts/validateClientEnv.js'
+import { spaNotFoundPage } from './scripts/spaNotFound.js'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -12,6 +13,9 @@ export default defineConfig({
     // `loadEnv` merges .env files with prefix-matching process.env, so this
     // covers local builds and Vercel's injected vars alike.
     validateClientEnv((mode) => loadEnv(mode, process.cwd(), 'VITE_')),
+    // Emits dist/404.html (a copy of index.html) so an unknown path gets a real
+    // 404 from Vercel and still boots the app, which renders its not-found page.
+    spaNotFoundPage(),
   ],
   build: {
     // PERF: split heavyweight vendor libs into their own chunks so they can

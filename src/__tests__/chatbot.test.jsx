@@ -9,7 +9,7 @@
  * and analytics are mocked so no network is touched.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
 
 vi.mock('../services/chatService', () => ({
   getChatResponse: vi.fn(),
@@ -56,7 +56,9 @@ describe('Chatbot (characterization)', () => {
 
     await waitFor(() => expect(getChatResponse).toHaveBeenCalledTimes(1));
     const [history, opts] = getChatResponse.mock.calls[0];
-    expect(history[history.length - 1]).toEqual({ role: 'user', content: 'tell me about projects' });
+    // Messages created in a live exchange now carry an `id` (streaming targets
+    // it by identity), so match on shape rather than the exact object.
+    expect(history[history.length - 1]).toMatchObject({ role: 'user', content: 'tell me about projects' });
     // `onDelta` is supplied on every request now — passing it is what opts the
     // call into streaming. Assert on persona rather than the whole object so
     // this does not re-break each time an option is added.
@@ -120,5 +122,52 @@ describe('Chatbot (characterization)', () => {
     const [history] = getChatResponse.mock.calls[0];
     // Prefix "🚀 " (3 chars) stripped before sending.
     expect(history[history.length - 1].content).toBe('Tell me about your projects');
+  });
+
+  it('sends the ⚡ chip intact (its prefix is 2 UTF-16 units, not 3)', async () => {
+    getChatResponse.mockResolvedValue('stack reply');
+    render(<Chatbot />);
+    openChat();
+    fireEvent.click(screen.getByRole('button', { name: /What's your tech stack/i }));
+
+    await waitFor(() => expect(getChatResponse).toHaveBeenCalledTimes(1));
+    const [history] = getChatResponse.mock.calls[0];
+    // Previously arrived as "hat's your tech stack?" — slice(3) on a 2-unit prefix.
+    expect(history[history.length - 1].content).toBe("What's your tech stack?");
+  });
+
+  it('locks the composer until the reply is FINAL, not just until the first delta', async () => {
+    // A reply that streams one word and then stays pending until we release it.
+    let release;
+    getChatResponse.mockImplementation(async (_history, opts) => {
+      opts.onDelta('Hel');
+      await new Promise((r) => { release = r; });
+      return 'Hello there, final.';
+    });
+    render(<Chatbot />);
+    openChat();
+    sendText('first question');
+    await screen.findByText('Hel');
+
+    // Mid-stream: a second send must be refused, and "clear" must be disabled.
+    sendText('second question');
+    expect(getChatResponse).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText('second question')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /clear conversation/i })).toBeDisabled();
+
+    release();
+    expect(await screen.findByText('Hello there, final.')).toBeInTheDocument();
+    // The streamed fragment was REPLACED, not left behind as a stray bubble.
+    expect(screen.queryByText('Hel')).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /clear conversation/i })).toBeEnabled();
+  });
+
+  it('can be closed from inside the panel, not only via Escape', async () => {
+    render(<Chatbot />);
+    openChat();
+    // The launcher outside the panel is also "Close chat" once open; the point
+    // of this test is the control INSIDE the trapped dialog.
+    fireEvent.click(within(screen.getByRole('dialog')).getByRole('button', { name: /close chat/i }));
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   });
 });

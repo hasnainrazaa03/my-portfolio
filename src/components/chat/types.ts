@@ -1,6 +1,15 @@
 // Shared types for the chat UI.
 
 export interface ChatMessage {
+  /**
+   * Stable identity for messages created during a live exchange. Streaming
+   * updates and the final replace target THIS, never "the last message":
+   * anything else that touches the transcript mid-stream (a second send, a
+   * clear, a local answer) would otherwise have its bubble overwritten by a
+   * reply that belongs to an earlier turn. Optional because the greeting and
+   * demo messages are static.
+   */
+  id?: string;
   role: 'user' | 'assistant';
   content: string;
   /**

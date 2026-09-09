@@ -5,6 +5,8 @@ import type { ChatMessage } from '../components/chat/types';
 
 interface UseChatVoiceOptions {
   messages: ChatMessage[];
+  /** A reply is still streaming in; do not read a fragment aloud. */
+  isBusy?: boolean;
   isOpen: boolean;
   processMessage: (text: string) => void;
   setInput: (value: string) => void;
@@ -14,7 +16,7 @@ interface UseChatVoiceOptions {
  * useChatVoice — speech-to-text input + opt-in text-to-speech replies for the
  * chatbot, extracted from the monolith (Phase 3 / T3.1). Behavior preserved.
  */
-export function useChatVoice({ messages, isOpen, processMessage, setInput }: UseChatVoiceOptions) {
+export function useChatVoice({ messages, isBusy = false, isOpen, processMessage, setInput }: UseChatVoiceOptions) {
   // ── Voice input (speech-to-text) ───────────────────────────────────────
   // On result we submit immediately rather than just populating the input,
   // because users expect "push to talk → answer" UX. Errors are silently
@@ -37,19 +39,23 @@ export function useChatVoice({ messages, isOpen, processMessage, setInput }: Use
   const { supported: ttsSupported, speaking: ttsSpeaking, speak: ttsSpeak, cancel: ttsCancel } =
     useSpeechSynthesis();
 
-  // Speak each new *assistant* reply when TTS is enabled. Skip the initial
+  // Speak each new *assistant* reply when TTS is enabled — once it is FINAL.
+  // Keyed on message identity, not array index: with streaming, the reply's
+  // index is fixed on the first delta while its content keeps changing, so an
+  // index key spoke the first word or two and then went silent. Skip the
   // greeting (length === 1) so toggling on doesn't suddenly read it aloud.
-  const lastSpokenIndexRef = useRef(0);
+  const lastSpokenRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!ttsEnabled || !ttsSupported) return;
-    const lastIdx = messages.length - 1;
-    if (lastIdx <= 0 || lastIdx === lastSpokenIndexRef.current) return;
-    const last = messages[lastIdx];
-    if (last?.role === 'assistant' && typeof last.content === 'string') {
-      lastSpokenIndexRef.current = lastIdx;
-      ttsSpeak(last.content);
-    }
-  }, [messages, ttsEnabled, ttsSupported, ttsSpeak]);
+    if (!ttsEnabled || !ttsSupported || isBusy) return;
+    if (messages.length <= 1) return;
+    const last = messages[messages.length - 1];
+    if (last?.role !== 'assistant' || typeof last.content !== 'string') return;
+    // Static messages (demo, local answers) have no id; fall back to content.
+    const key = last.id ?? `${messages.length}:${last.content}`;
+    if (key === lastSpokenRef.current) return;
+    lastSpokenRef.current = key;
+    ttsSpeak(last.content);
+  }, [messages, isBusy, ttsEnabled, ttsSupported, ttsSpeak]);
 
   const toggleTts = () => {
     setTtsEnabled((prev) => {

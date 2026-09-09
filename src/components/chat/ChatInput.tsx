@@ -44,9 +44,11 @@ const ChatInput = ({
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
-              const text = CHIP_PREFIXES.find((prefix) => chip.startsWith(prefix))
-                ? chip.slice(3)
-                : chip;
+              // Strip the prefix by its real length. `slice(3)` assumed every
+              // prefix was three UTF-16 units; '⚡ ' is two, so that chip sent
+              // "hat's your tech stack?" to the model and into the transcript.
+              const prefix = CHIP_PREFIXES.find((p) => chip.startsWith(p));
+              const text = prefix ? chip.slice(prefix.length) : chip;
               onSendText(text);
             }}
             disabled={isTyping}

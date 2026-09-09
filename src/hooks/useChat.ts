@@ -5,6 +5,12 @@ import { analyticsService } from '../services/analyticsService';
 import { INITIAL_MESSAGE } from '../components/chat/chatConstants';
 import type { ChatMessage, SourceLink } from '../components/chat/types';
 
+/** Message identity. crypto.randomUUID is universal in the browsers this site supports. */
+const newId = (): string =>
+  typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+    ? crypto.randomUUID()
+    : `m-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+
 /**
  * useChat — owns the chat conversation state and message lifecycle, extracted
  * from the Chatbot monolith (Phase 3 / T3.1). Behavior is preserved verbatim.
@@ -16,6 +22,15 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
   const [messages, setMessages] = useState<ChatMessage[]>([INITIAL_MESSAGE]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  /**
+   * True from send until the reply is FINAL. Distinct from `isTyping`, which
+   * is only the indicator and rightly goes quiet once words start arriving.
+   * Everything that can mutate the transcript — the composer, the chips, the
+   * local Q&A, "clear" — locks on this, not on the indicator. Unlocking on the
+   * first delta let a second send land while the first reply was still
+   * streaming into the transcript.
+   */
+  const [isBusy, setIsBusy] = useState(false);
   const [flaggedWarning, setFlaggedWarning] = useState<string | null>(null);
   const [demoMode, setDemoMode] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -52,12 +67,13 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
   };
 
   const processMessage = useCallback(async (text: string) => {
-    if (!text.trim() || demoMode) return;
+    if (!text.trim() || demoMode || isBusy) return;
 
-    const userMessage: ChatMessage = { role: 'user', content: text };
+    const userMessage: ChatMessage = { id: newId(), role: 'user', content: text };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
     setIsTyping(true);
+    setIsBusy(true);
 
     // Inline prepareHistoryForAPI so processMessage doesn't depend on a
     // non-memoised sibling that would invalidate this callback every render.
@@ -67,12 +83,22 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
       ? fullHistory
       : [fullHistory[0], ...fullHistory.slice(-(maxHistoryLength - 1))];
 
-    // The streaming placeholder is only appended on the FIRST delta, never up
-    // front. A flagged message and a failed request both remove the user's
-    // turn or replace it, and an empty assistant bubble appearing before we
-    // know which of those happened would flicker on screen.
-    let streaming = false;
+    // The streaming bubble is created on the FIRST delta, never up front — a
+    // flagged message and a failed request both need the user's turn handled
+    // first, and an empty assistant bubble before we know which would flicker.
+    // It is addressed by this id from then on; see ChatMessage.id.
+    const replyId = newId();
     let sources: SourceLink[] | undefined;
+
+    /** Replace the streamed bubble; if it is gone (transcript cleared), the reply is moot. */
+    const finalise = (content: string, extra: Partial<ChatMessage> = {}) =>
+      setMessages((prev) =>
+        prev.some((m) => m.id === replyId)
+          ? prev.map((m) => (m.id === replyId ? { ...m, content, ...extra } : m))
+          : prev.some((m) => m.id === userMessage.id)
+            ? [...prev, { id: replyId, role: 'assistant', content, ...extra }]
+            : prev,
+      );
 
     try {
       const responseResult = await getChatResponse(historyForApi, {
@@ -86,15 +112,15 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
           sources = s;
         },
         onDelta: (piece) => {
-          setMessages((prev) => {
-            if (!streaming) {
-              streaming = true;
-              return [...prev, { role: 'assistant', content: piece }];
-            }
-            const last = prev[prev.length - 1];
-            return [...prev.slice(0, -1), { ...last, content: last.content + piece }];
-          });
-          // Typing indicator is redundant once words are appearing.
+          // Pure updater: whether the bubble exists is read from `prev`, so a
+          // StrictMode double-invoke cannot glue a delta onto the wrong turn.
+          setMessages((prev) =>
+            prev.some((m) => m.id === replyId)
+              ? prev.map((m) => (m.id === replyId ? { ...m, content: m.content + piece } : m))
+              : [...prev, { id: replyId, role: 'assistant', content: piece }],
+          );
+          // Typing indicator is redundant once words are appearing. The busy
+          // lock stays until the reply is final.
           setIsTyping(false);
         },
       });
@@ -104,8 +130,8 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
         setFlaggedWarning(responseResult.text);
         // Auto-dismiss after 6s
         setTimeout(() => setFlaggedWarning(null), 6000);
-        // Remove the user message that was flagged
-        setMessages((prev) => prev.slice(0, -1));
+        // Remove the flagged turn by identity, not by position.
+        setMessages((prev) => prev.filter((m) => m.id !== userMessage.id && m.id !== replyId));
         return;
       }
 
@@ -113,14 +139,10 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
         ? responseResult
         : responseResult?.text || 'Unable to generate response';
 
-      setMessages((prev) =>
-        // Replace the streamed placeholder with the canonical reply. It differs
-        // only by the "[Ask about: …]" affordance the server withholds during
-        // streaming, so this reads as the chips arriving, not as a rewrite.
-        streaming
-          ? [...prev.slice(0, -1), { role: 'assistant', content: responseText, sources }]
-          : [...prev, { role: 'assistant', content: responseText, sources }],
-      );
+      // The canonical reply differs from the streamed text only by the
+      // "[Ask about: …]" affordance the server withholds during streaming, so
+      // this reads as the chips arriving, not as a rewrite.
+      finalise(responseText, { sources });
 
       analyticsService.logInteraction(text, responseText, {
         success: true,
@@ -130,11 +152,7 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
       const errorResponse = '🤖 Connection interrupted. Please try again. 🔄';
       // Replace a half-streamed bubble rather than appending below it — two
       // assistant messages, one of them a truncated fragment, reads as a bug.
-      setMessages((prev) =>
-        streaming
-          ? [...prev.slice(0, -1), { role: 'assistant', content: errorResponse }]
-          : [...prev, { role: 'assistant', content: errorResponse }],
-      );
+      finalise(errorResponse);
 
       analyticsService.logInteraction(text, errorResponse, {
         success: false,
@@ -142,8 +160,9 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
       });
     } finally {
       setIsTyping(false);
+      setIsBusy(false);
     }
-  }, [demoMode, messages, persona]);
+  }, [demoMode, isBusy, messages, persona]);
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -151,6 +170,8 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
   };
 
   const clearHistory = () => {
+    // Refused mid-stream rather than racing the reply that is still landing.
+    if (isBusy) return;
     setMessages([INITIAL_MESSAGE]);
     setFlaggedWarning(null);
   };
@@ -178,12 +199,13 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
 
   // ── QnA handlers ────────────────────────────────────────────────────────
   const handleUseLocalAnswer = useCallback((question: string, answer: string) => {
+    if (isBusy) return;
     setMessages((prev) => [
       ...prev,
       { role: 'user', content: question },
       { role: 'assistant', content: answer },
     ]);
-  }, []);
+  }, [isBusy]);
 
   const handleAskLive = useCallback((question: string) => {
     // SECURITY: do not pass a provider hint from the client — the server
@@ -201,6 +223,7 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
     input,
     setInput,
     isTyping,
+    isBusy,
     flaggedWarning,
     demoMode,
     unreadCount,

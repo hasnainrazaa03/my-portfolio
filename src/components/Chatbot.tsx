@@ -25,6 +25,7 @@ const Chatbot = () => {
   const chat = useChat({ isOpen });
   const voice = useChatVoice({
     messages: chat.messages,
+    isBusy: chat.isBusy,
     isOpen,
     processMessage: chat.processMessage,
     setInput: chat.setInput,
@@ -100,6 +101,8 @@ const Chatbot = () => {
               adminEnabled={ADMIN_ENABLED}
               onToggleAnalytics={() => setShowAnalyticsVault((v) => !v)}
               onClearHistory={chat.clearHistory}
+              onClose={() => setIsOpen(false)}
+              isBusy={chat.isBusy}
               stats={chat.stats}
               messagesLength={chat.messages.length}
               persona={chat.persona}
@@ -122,7 +125,7 @@ const Chatbot = () => {
                 <QnASearch
                   onUseAnswer={chat.handleUseLocalAnswer}
                   onAskLive={chat.handleAskLive}
-                  disabled={chat.isTyping || chat.demoMode}
+                  disabled={chat.isBusy || chat.demoMode}
                 />
               </div>
             )}
@@ -131,7 +134,7 @@ const Chatbot = () => {
               input={chat.input}
               onInputChange={chat.setInput}
               onSubmit={chat.handleFormSubmit}
-              isTyping={chat.isTyping}
+              isTyping={chat.isBusy}
               demoMode={chat.demoMode}
               flaggedWarning={chat.flaggedWarning}
               voiceSupported={voice.voiceSupported}

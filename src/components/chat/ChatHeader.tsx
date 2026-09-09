@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Sparkles, Trash2, BarChart3, Play, Volume2, VolumeX } from 'lucide-react';
+import { Sparkles, Trash2, BarChart3, Play, Volume2, VolumeX, X } from 'lucide-react';
 import Avatar from './Avatar';
 import ChatDemo from '../ChatDemo';
 import { AVATAR_SRC, PERSONAS } from './chatConstants';
@@ -16,6 +16,11 @@ interface ChatHeaderProps {
   adminEnabled: boolean;
   onToggleAnalytics: () => void;
   onClearHistory: () => void;
+  /** Close the panel from INSIDE it. The launcher sits outside the focus trap,
+   *  so without this a keyboard or screen-reader user's only exit is Escape. */
+  onClose: () => void;
+  /** A reply is still landing; anything that mutates the transcript is locked. */
+  isBusy: boolean;
   stats: ChatStats;
   messagesLength: number;
   persona: string;
@@ -40,6 +45,8 @@ const ChatHeader = ({
   adminEnabled,
   onToggleAnalytics,
   onClearHistory,
+  onClose,
+  isBusy,
   stats,
   messagesLength,
   persona,
@@ -106,10 +113,20 @@ const ChatHeader = ({
         )}
         <button
           onClick={onClearHistory}
-          className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-red-500 transition-colors"
-          title="Clear conversation"
+          disabled={isBusy}
+          className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:text-slate-400"
+          title={isBusy ? 'Wait for the reply to finish' : 'Clear conversation'}
+          aria-label="Clear conversation"
         >
-          <Trash2 size={16} />
+          <Trash2 size={16} aria-hidden="true" />
+        </button>
+        <button
+          onClick={onClose}
+          className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          title="Close chat"
+          aria-label="Close chat"
+        >
+          <X size={16} aria-hidden="true" />
         </button>
       </div>
     </div>

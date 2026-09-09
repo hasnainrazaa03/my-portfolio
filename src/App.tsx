@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/react";
 // Hooks & Config
 import { ThemeProvider } from './context/ThemeProvider';
 import { parseProjectPath } from './utils/slug';
+import { scrollToSection } from './utils/scroll';
 
 // Above-the-fold (eager) components
 import ErrorBoundary from './components/ErrorBoundary';
@@ -72,6 +73,55 @@ const Contact = lazy(() => import('./components/Contact'));
 const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
 const ResumePage = lazy(() => import('./components/ResumePage'));
 
+/**
+ * Shared shell for the stand-alone routes.
+ *
+ * They used to return bare <ErrorBoundary><Suspense> trees, OUTSIDE the
+ * ThemeProvider — and the `dark` / `hc` classes are only ever applied by that
+ * provider's effects. Every `dark:` style on /privacy and /projects/<slug> was
+ * dead: a dark-mode visitor clicking "Open the full case study" got a white
+ * page with their saved preference ignored. They also skipped <Analytics />,
+ * so those routes never registered a page view.
+ */
+function StandalonePage({ children }: { children: React.ReactNode }) {
+  return (
+    <MotionConfig reducedMotion="user">
+      <ThemeProvider>
+        <ErrorBoundary>
+          <Suspense fallback={<div className="min-h-screen" />}>{children}</Suspense>
+          <Analytics />
+        </ErrorBoundary>
+      </ThemeProvider>
+    </MotionConfig>
+  );
+}
+
+/**
+ * Resolve `/#projects`-style links once the target has mounted.
+ *
+ * The sections are lazy chunks. A browser makes its last native fragment
+ * scroll attempt at `load`, which on a cold cache is before the chunk has
+ * committed, so "Back to all projects" from a case study landed at the top of
+ * the page. Poll briefly for the element and scroll when it exists.
+ */
+function useScrollToHashWhenReady(): void {
+  useEffect(() => {
+    const id = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
+    if (!id) return;
+    const deadline = Date.now() + 4000;
+    let raf = 0;
+    const tick = () => {
+      if (document.getElementById(id)) {
+        scrollToSection(id);
+        return;
+      }
+      if (Date.now() < deadline) raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+}
+
 // Lightweight placeholder for lazy sections — keeps layout stable without flashing.
 const SectionFallback = () => (
   <div aria-hidden="true" className="min-h-[40vh]" />
@@ -92,6 +142,7 @@ const SectionFallback = () => (
  */
 export default function App() {
   const chatReady = useIdleMount();
+  useScrollToHashWhenReady();
   // Lightweight pathname routing: no router dependency.
   //
   // This REQUIRES the SPA rewrite in vercel.json. Nothing exists on disk at
@@ -101,32 +152,14 @@ export default function App() {
   // made every local check pass. spaRouting.test.js guards it.
   const path = typeof window !== 'undefined' ? window.location.pathname : '/';
   if (path === '/privacy' || path === '/privacy/') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<div className="min-h-screen" />}>
-          <PrivacyPage />
-        </Suspense>
-      </ErrorBoundary>
-    );
+    return <StandalonePage><PrivacyPage /></StandalonePage>;
   }
   const projectSlug = parseProjectPath(path);
   if (projectSlug) {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<div className="min-h-screen" />}>
-          <ProjectDetailPage slug={projectSlug} />
-        </Suspense>
-      </ErrorBoundary>
-    );
+    return <StandalonePage><ProjectDetailPage slug={projectSlug} /></StandalonePage>;
   }
   if (path === '/resume' || path === '/resume/') {
-    return (
-      <ErrorBoundary>
-        <Suspense fallback={<div className="min-h-screen" />}>
-          <ResumePage />
-        </Suspense>
-      </ErrorBoundary>
-    );
+    return <StandalonePage><ResumePage /></StandalonePage>;
   }
 
   return (

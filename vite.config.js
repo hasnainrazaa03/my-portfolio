@@ -2,6 +2,8 @@ import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import { validateClientEnv } from './scripts/validateClientEnv.js'
 import { spaNotFoundPage } from './scripts/spaNotFound.js'
+import { routeHeadsPlugin } from './scripts/routeHeads.js'
+import { routeHeads, SITE_ORIGIN } from './src/utils/routeMeta'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -16,6 +18,10 @@ export default defineConfig({
     // Emits dist/404.html (a copy of index.html) so an unknown path gets a real
     // 404 from Vercel and still boots the app, which renders its not-found page.
     spaNotFoundPage(),
+    // One dist/<route>.html per stand-alone route, each with its own title,
+    // description, social tags and canonical — the single index.html gave every
+    // case study the home page's head (and a canonical pointing at "/").
+    routeHeadsPlugin({ routes: routeHeads(), origin: SITE_ORIGIN }),
   ],
   build: {
     // PERF: split heavyweight vendor libs into their own chunks so they can

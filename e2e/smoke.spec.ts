@@ -142,3 +142,41 @@ test.describe('unknown paths', () => {
     if (process.env.E2E_BASE_URL) expect(response?.status()).toBe(404);
   });
 });
+
+/**
+ * Route heads.
+ *
+ * The one index.html gave every route the home page's <title>, description,
+ * social tags and canonical link — so a shared case study previewed as the
+ * portfolio, and to a crawler every /projects/<slug> declared itself a
+ * duplicate of "/". The build now writes dist/<route>.html per route. This
+ * reads the RAW response, because the point is what a scraper sees before
+ * any script runs.
+ */
+test.describe('route heads', () => {
+  test('a case study ships its own title, description and canonical', async ({ request }) => {
+    const res = await request.get('/projects/project-vimaan');
+    expect(res.status()).toBe(200);
+    const html = await res.text();
+    expect(html).toMatch(/<title>Project Vimaan \| Hasnain Raza<\/title>/);
+    expect(html).toContain('<link rel="canonical" href="https://hasnainrazaa.vercel.app/projects/project-vimaan" />');
+    expect(html).toMatch(/<meta property="og:title" content="Project Vimaan \| Hasnain Raza" \/>/);
+    expect(html).toMatch(/<meta property="og:type" content="article" \/>/);
+  });
+
+  test('the résumé and privacy pages carry their own heads too', async ({ request }) => {
+    const resume = await (await request.get('/resume')).text();
+    expect(resume).toMatch(/<title>Hasnain Raza — Resume<\/title>/);
+    expect(resume).toContain('<link rel="canonical" href="https://hasnainrazaa.vercel.app/resume" />');
+
+    const privacy = await (await request.get('/privacy')).text();
+    expect(privacy).toMatch(/<title>Privacy Notice \| Hasnain Raza<\/title>/);
+    expect(privacy).toContain('<link rel="canonical" href="https://hasnainrazaa.vercel.app/privacy" />');
+  });
+
+  test('the home page keeps the home head', async ({ request }) => {
+    const html = await (await request.get('/')).text();
+    expect(html).toMatch(/<title>Hasnain Raza \| Portfolio<\/title>/);
+    expect(html).toContain('<link rel="canonical" href="https://hasnainrazaa.vercel.app/" />');
+  });
+});

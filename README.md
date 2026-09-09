@@ -148,6 +148,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 - **Konami Easter Egg** — ↑↑↓↓←→←→BA unlocks a cockpit overlay
 - **Now Snapshot** — Live status block on the About section sourced from `constants.NOW`
 - **Print-to-PDF Resume** — Standalone `/resume` route, print-optimised
+- **Per-route heads** — the build writes one `dist/<route>.html` per stand-alone route (`scripts/routeHeads.js`, from `src/utils/routeMeta.ts`) so `/resume`, `/privacy` and every `/projects/<slug>` ship their own title, description, social tags and canonical link; Vercel serves them extensionless via `cleanUrls`
 - **Real 404s** — `vercel.json` rewrites only the real routes (`/resume`, `/privacy`, `/projects/<slug>`). Anything else is served from `dist/404.html` — a build-time copy of `index.html` — with a 404 status, and the app renders its own not-found page in the same shell
 - **Theme Engine** — Persisted Dark / Light + High-Contrast variant:
   - *Deep Space* 🌑

@@ -4,9 +4,10 @@ import './index.css'
 import App from './App'
 import { initSentry } from './config/sentry'
 
-// Before render, so an error thrown during the first mount is still captured —
-// which is exactly the class of failure that blanked this site once (a WebGL
-// context throwing inside an effect and escalating to the app error boundary).
+// Registers a lightweight error buffer now and loads the SDK itself on idle,
+// after first paint. An error thrown during the first mount — the class of
+// failure that once blanked this site — is still captured; it is reported a
+// moment later instead of costing every visitor 28 KB before the first pixel.
 initSentry()
 
 // DEV-ONLY: validate all site content against its schema so a malformed edit

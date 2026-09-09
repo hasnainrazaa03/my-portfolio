@@ -1,8 +1,7 @@
 import React, { useState, Suspense } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion';
+import { motion, useScroll, useTransform, AnimatePresence, type Variants } from 'framer-motion';
 import { Download, Check, ArrowRight, Loader2 } from 'lucide-react';
 import { PERSONAL_INFO } from '../constants';
-import { fadeInUp } from '../animations';
 import { scrollToSection } from '../utils/scroll';
 import SocialLinks from './SocialLinks';
 import ErrorBoundary from './ErrorBoundary';
@@ -10,6 +9,25 @@ import Hero3DFallback from './Hero3DFallback';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
 const Hero3D = React.lazy(() => import('./Hero3D'));
+
+/**
+ * Entrance for the hero text — TRANSFORM ONLY, deliberately.
+ *
+ * The <h1> in this block is the page's Largest Contentful Paint element. The
+ * shared `fadeInUp` variant starts at opacity 0, and an element at opacity 0
+ * does not count as painted: LCP cannot fire until the fade has run. Measured
+ * on a real device that put LCP ~600 ms after first paint; under Lighthouse's
+ * mobile throttling it compounded into a 4.0 s LCP for a page that had every
+ * byte downloaded by 0.5 s.
+ *
+ * Sliding from a small offset keeps the motion and paints the text on the
+ * first frame, so LCP lands at first render. `fadeInUp` is still right for the
+ * below-the-fold reveals, which are never the LCP candidate.
+ */
+const heroEntrance: Variants = {
+  hidden: { y: 24 },
+  visible: { y: 0, transition: { duration: 0.6, ease: 'easeOut' } },
+};
 
 /** Tailwind's `md` breakpoint — must stay in step with the `md:block` below. */
 const MD_BREAKPOINT = '(min-width: 768px)';
@@ -45,7 +63,7 @@ const Hero = () => {
         <div className="grid md:grid-cols-2 gap-12 items-center">
           
           <motion.div 
-            variants={fadeInUp}
+            variants={heroEntrance}
             initial="hidden"
             animate="visible"
             className="space-y-6 relative z-20"

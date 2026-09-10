@@ -17,7 +17,7 @@ export default defineConfig({
     validateClientEnv((mode) => loadEnv(mode, process.cwd(), 'VITE_')),
     // Emits dist/404.html (a copy of index.html) so an unknown path gets a real
     // 404 from Vercel and still boots the app, which renders its not-found page.
-    spaNotFoundPage(),
+    spaNotFoundPage({ origin: SITE_ORIGIN }),
     // One dist/<route>.html per stand-alone route, each with its own title,
     // description, social tags and canonical — the single index.html gave every
     // case study the home page's head (and a canonical pointing at "/").

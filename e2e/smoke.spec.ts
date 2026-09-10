@@ -210,3 +210,47 @@ test.describe('social cards', () => {
     expect((await request.get(new URL(url!).pathname)).status()).toBe(200);
   });
 });
+
+/**
+ * URL spellings that are not canonical.
+ *
+ * Only the lowercase, unescaped slug exists as a file, so any other spelling
+ * is served by the 404 shell. Two opposite failures came out of that:
+ * /projects/USC-Ledger rendered the full case study while the host answered
+ * 404 — a page that looks perfect to a reader and dead to every crawler,
+ * unfurl and link checker — and /projects/usc%2Dledger was answered 200 with
+ * the right head and then told the reader the project did not exist.
+ */
+test.describe('non-canonical project URLs', () => {
+  test('a wrong-case URL lands on the real one', async ({ page }) => {
+    await page.goto('/projects/USC-Ledger');
+    await expect(page).toHaveURL(/\/projects\/usc-ledger$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/USC Ledger/i);
+  });
+
+  test('a percent-escaped URL resolves to the project, not to not-found', async ({ page }) => {
+    await page.goto('/projects/usc%2Dledger');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/USC Ledger/i);
+  });
+});
+
+/**
+ * The 404 shell must not claim to be the home page. A byte-for-byte copy of
+ * index.html gave every dead URL `<link rel="canonical" href="/">` — each one
+ * telling crawlers it WAS the home page, and previewing as the portfolio.
+ */
+test.describe('the 404 response head', () => {
+  // Only a real host serves dist/404.html. `vite preview` has a blanket SPA
+  // fallback and answers every unknown path with index.html, so locally this
+  // would assert against the wrong file entirely — the same divergence that
+  // hid /resume and /privacy 404ing in production for months. The file's
+  // content is covered locally by spaNotFound.test.js instead.
+  test.skip(!process.env.E2E_BASE_URL, 'vite preview never serves 404.html');
+
+  test('claims no canonical URL and asks not to be indexed', async ({ request }) => {
+    const html = await (await request.get('/this-does-not-exist')).text();
+    expect(html).not.toContain('rel="canonical"');
+    expect(html).toContain('name="robots" content="noindex"');
+    expect(html).toMatch(/<title>Page not found \| Hasnain Raza<\/title>/);
+  });
+});

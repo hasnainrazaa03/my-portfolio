@@ -49,17 +49,27 @@ export const CARD_FORMAT = { ext: 'jpg', type: 'jpeg', quality: 90 };
 /** Shown in the card footer. Mirrors SITE_ORIGIN in src/utils/routeMeta.ts. */
 export const SITE_HOST = 'hasnainrazaa.vercel.app';
 
+/** Tech chips drawn on a card. Anything past this is invisible, so it is not an input. */
+export const TECH_SHOWN = 5;
+
 export const CARD_WIDTH = 1200;
 export const CARD_HEIGHT = 630;
 
 /**
- * Everything the rendered card depends on. `--check` compares this, which is
- * why it needs no browser: a renamed project or a reordered stack changes the
- * hash and CI fails with an actionable message.
+ * Everything the rendered card depends on, and nothing else. `--check`
+ * compares this, which is why it needs no browser.
+ *
+ * Both halves matter. Missing an input means CI stays green while the cards
+ * are wrong — the author's name is rendered into every footer, so a change to
+ * PERSONAL_INFO.name would otherwise leave three cards showing the old one.
+ * Including a non-input means CI fails and demands a regeneration that
+ * produces byte-identical images — only the first five tech entries are drawn,
+ * and Project Vimaan lists eighteen.
  */
 export function fingerprint(card) {
+  const { tech = [], ...rest } = card;
   return createHash('sha256')
-    .update(JSON.stringify({ v: TEMPLATE_VERSION, ...card }))
+    .update(JSON.stringify({ v: TEMPLATE_VERSION, site: SITE_HOST, ...rest, tech: tech.slice(0, TECH_SHOWN) }))
     .digest('hex')
     .slice(0, 16);
 }
@@ -73,7 +83,7 @@ const escapeHtml = (s) =>
  */
 export function cardHtml({ title, category, tech, name, site, fontDataUri }) {
   const chips = tech
-    .slice(0, 5)
+    .slice(0, TECH_SHOWN)
     .map((t) => `<li>${escapeHtml(t)}</li>`)
     .join('');
   return `<!doctype html><html><head><meta charset="utf-8"><style>
@@ -117,15 +127,27 @@ function readManifest() {
   }
 }
 
-export function staleness(cards, manifest) {
+export function staleness(cards, manifest, outDir = OUT_DIR) {
   const expected = Object.fromEntries(cards.map((c) => [c.slug, fingerprint(c)]));
   const missing = [];
   const changed = [];
   for (const [slug, fp] of Object.entries(expected)) {
-    if (!existsSync(join(OUT_DIR, `${slug}.${CARD_FORMAT.ext}`))) missing.push(slug);
+    if (!existsSync(join(outDir, `${slug}.${CARD_FORMAT.ext}`))) missing.push(slug);
     else if (manifest.cards?.[slug] !== fp) changed.push(slug);
   }
-  const orphaned = Object.keys(manifest.cards ?? {}).filter((slug) => !(slug in expected));
+  // Look at the DIRECTORY as well as the manifest. Reading only the manifest
+  // meant a card file that had fallen out of it was invisible to --check and
+  // shipped forever, while `og:build`'s own sweep (which does scan the
+  // directory) would have deleted it — the two disagreeing about what an
+  // orphan is.
+  const onDisk = existsSync(outDir)
+    ? readdirSync(outDir)
+        .filter((f) => f.endsWith(`.${CARD_FORMAT.ext}`))
+        .map((f) => f.slice(0, -(CARD_FORMAT.ext.length + 1)))
+    : [];
+  const orphaned = [...new Set([...Object.keys(manifest.cards ?? {}), ...onDisk])]
+    .filter((slug) => !(slug in expected))
+    .sort();
   return { missing, changed, orphaned, expected };
 }
 
@@ -135,6 +157,10 @@ export function staleness(cards, manifest) {
  * generator uses to pick between them, so the two cannot disagree.
  */
 export function cardsToGenerate(publicDir = join(ROOT, 'public')) {
+  // `name` is rendered into every footer, so it belongs to the card and
+  // therefore to the fingerprint — otherwise a change to PERSONAL_INFO.name
+  // leaves three cards showing the old one with CI reporting them current.
+  const name = readPersonalName();
   return readProjects()
     .filter((p) => !imageWorksAsCard(publicDir, p.image))
     .map((p) => ({
@@ -142,12 +168,12 @@ export function cardsToGenerate(publicDir = join(ROOT, 'public')) {
       title: p.title,
       category: p.category,
       tech: p.techStack,
+      name,
     }));
 }
 
 async function main() {
   const check = process.argv.includes('--check');
-  const name = readPersonalName();
   const cards = cardsToGenerate();
   const manifest = readManifest();
   const { missing, changed, orphaned, expected } = staleness(cards, manifest);
@@ -177,7 +203,7 @@ async function main() {
   // deviceScaleFactor 1: the card IS 1200x630, the size scrapers expect.
   const page = await browser.newPage({ viewport: { width: CARD_WIDTH, height: CARD_HEIGHT } });
   for (const card of cards) {
-    await page.setContent(cardHtml({ ...card, name, site: SITE_HOST, fontDataUri }), { waitUntil: 'load' });
+    await page.setContent(cardHtml({ ...card, site: SITE_HOST, fontDataUri }), { waitUntil: 'load' });
     await page.evaluate(() => document.fonts.ready);
     await page.screenshot({
       path: join(OUT_DIR, `${card.slug}.${CARD_FORMAT.ext}`),

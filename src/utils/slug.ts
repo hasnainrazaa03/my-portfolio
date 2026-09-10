@@ -35,8 +35,41 @@ export function projectPath(title: string): string {
 /**
  * Parse a pathname into a project slug, or null when it is not a project URL.
  * Tolerates a trailing slash, as the rest of this app's routing does.
+ *
+ * Decodes and lowercases, so a link that survived a mail client or a wiki
+ * still resolves: `window.location.pathname` keeps percent-escapes that the
+ * host has already normalised away, which meant `/projects/usc%2Dledger` was
+ * answered 200 with the right page's <head> by the server and then rendered
+ * "that project doesn't exist" by the app.
+ *
+ * `canonicalProjectPath` exists because the reverse also happened: a
+ * case-mismatched URL rendered the case study while the host answered 404.
  */
 export function parseProjectPath(pathname: string): string | null {
   const m = /^\/projects\/([^/]+)\/?$/.exec(String(pathname ?? ''));
-  return m ? m[1].toLowerCase() : null;
+  if (!m) return null;
+  let raw = m[1];
+  try {
+    raw = decodeURIComponent(raw);
+  } catch {
+    // A malformed escape ("%zz") is not a slug; keep the raw text and let the
+    // lookup miss, rather than throwing during render.
+  }
+  return raw.toLowerCase();
+}
+
+/**
+ * The canonical URL for a pathname that resolved to `slug`, or null when the
+ * pathname already IS canonical.
+ *
+ * Only lowercase, unescaped paths exist as files, so anything else is served
+ * by the 404 shell — the visitor sees a complete case study at a URL that
+ * every crawler, link checker and unfurl records as dead. Sending the browser
+ * to the real URL fixes both halves.
+ */
+export function canonicalProjectPath(pathname: string): string | null {
+  const slug = parseProjectPath(pathname);
+  if (!slug) return null;
+  const canonical = `/projects/${slug}`;
+  return pathname === canonical ? null : canonical;
 }

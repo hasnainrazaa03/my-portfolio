@@ -64,10 +64,24 @@ export function usableAsCard(size) {
   return size.width >= 1000 && aspect >= 1.4 && aspect <= 2.6;
 }
 
+/**
+ * Replace with a FUNCTION, never a template string.
+ *
+ * `String.replace` expands `$1`, `$&`, `` $` `` and `$'` inside the
+ * REPLACEMENT — including inside interpolated content. A description reading
+ * "Cut cloud spend from $10k to $1k" made `$1` expand to capture group 1, i.e.
+ * the `<meta … content="` prefix, producing nested tags and an attribute
+ * terminated by the injected quote. Escaping `&"<>` does not help; `$` is
+ * interpreted after escaping. The function form takes the string literally.
+ */
+function replaceLiteral(html, re, before, content, after) {
+  return html.replace(re, () => `${before}${content}${after}`);
+}
+
 function setMeta(html, attr, key, content) {
-  const re = new RegExp(`(<meta\\s+${attr}="${key}"\\s+content=")[^"]*(")`);
+  const re = new RegExp(`<meta\\s+${attr}="${key}"\\s+content="[^"]*"`);
   if (!re.test(html)) throw new Error(`index.html has no <meta ${attr}="${key}"> to fill in`);
-  return html.replace(re, `$1${escapeAttr(content)}$2`);
+  return replaceLiteral(html, re, `<meta ${attr}="${key}" content="`, escapeAttr(content), '"');
 }
 
 function dropMeta(html, attr, key) {
@@ -81,16 +95,22 @@ function dropMeta(html, attr, key) {
  * undefined to keep the site card the shell already declares.
  */
 export function renderRouteHead(html, route, { origin, image }) {
-  const url = `${origin}${route.path}`;
+  // `path: null` means "this HTML answers for no particular URL" — the 404
+  // shell, which is served for every unknown path.
+  const url = route.path === null ? origin : `${origin}${route.path}`;
 
-  let out = html.replace(/<title>[^<]*<\/title>/, `<title>${escapeText(route.title)}</title>`);
+  let out = replaceLiteral(html, /<title>[^<]*<\/title>/, '<title>', escapeText(route.title), '</title>');
   if (out === html) throw new Error('index.html has no <title> to fill in');
   out = setMeta(out, 'name', 'title', route.title);
   out = setMeta(out, 'name', 'description', route.description);
 
-  const canonical = /(<link\s+rel="canonical"\s+href=")[^"]*(")/;
+  const canonical = /<link\s+rel="canonical"\s+href="[^"]*"\s*\/?>/;
   if (!canonical.test(out)) throw new Error('index.html has no canonical link to fill in');
-  out = out.replace(canonical, `$1${escapeAttr(url)}$2`);
+  // A page with no URL of its own (the 404 shell) must not claim to BE some
+  // other page: drop the canonical rather than point it at the home page.
+  out = route.path === null
+    ? out.replace(canonical, '<meta name="robots" content="noindex" />')
+    : replaceLiteral(out, canonical, '<link rel="canonical" href="', escapeAttr(url), '" />');
 
   out = setMeta(out, 'property', 'og:type', route.type);
   out = setMeta(out, 'property', 'og:url', url);
@@ -146,7 +166,9 @@ export function resolveCardImage(outDir, origin, route) {
   if (route.generatedCard && existsSync(resolve(outDir, `.${route.generatedCard}`))) {
     return {
       url: `${origin}${route.generatedCard}`,
-      alt: route.imageAlt ?? route.title,
+      // NOT route.imageAlt — that describes a screenshot, and this is a title
+      // panel. Alt text that misdescribes the image is worse than generic.
+      alt: `${route.title}`,
       width: 1200,
       height: 630,
     };

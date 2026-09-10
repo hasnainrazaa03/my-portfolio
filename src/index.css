@@ -20,8 +20,10 @@
  * connection, and `font-src 'self'` in the CSP covers it.
  *
  * `swap`: text paints immediately in the fallback and re-renders when Inter
- * lands, so the font is never on the critical rendering path. index.html
- * preloads it so that swap normally happens before first paint.
+ * lands, so the font is never on the critical rendering path. Deliberately
+ * NOT preloaded — that was measured at +300ms LCP, because the <h1> does not
+ * exist until the entry chunk runs and a high-priority font fetch competes
+ * with it. See fonts.test.js for the numbers.
  */
 @font-face {
   font-family: 'Inter';

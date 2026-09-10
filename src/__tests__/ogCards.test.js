@@ -13,8 +13,9 @@
  * the old name. `--check` compares a fingerprint of the inputs and runs in CI.
  */
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import {
   cardsToGenerate,
   fingerprint,
@@ -25,6 +26,7 @@ import {
   CARD_WIDTH,
   CARD_HEIGHT,
   SITE_HOST,
+  TECH_SHOWN,
 } from '../../scripts/buildOgCards.js';
 import { imageWorksAsCard, imageSize } from '../../scripts/routeHeads.js';
 import { routeHeads, SITE_ORIGIN } from '../utils/routeMeta';
@@ -92,9 +94,39 @@ describe('staleness detection', () => {
     expect(fingerprint(reordered)).not.toBe(fingerprint(card));
   });
 
+  it('notices a change to the author name, which is drawn in every footer', () => {
+    // Missed at first: `name` was read separately in main() and never reached
+    // the fingerprint, so renaming PERSONAL_INFO would leave three cards
+    // showing the old name with CI reporting them current. There is a pending
+    // profile update to constants.ts, so this is live, not hypothetical.
+    expect(fingerprint({ ...card, name: 'Someone Else' })).not.toBe(fingerprint(card));
+    expect(card.name, 'the card must carry the name it renders').toBeTruthy();
+  });
+
+  it('IGNORES tech entries past the fifth, which are never drawn', () => {
+    // The other direction: fingerprinting the whole array made CI fail and
+    // demand a regeneration that produced a byte-identical image. Project
+    // Vimaan lists eighteen technologies and the card shows five.
+    const longStack = { ...card, tech: [...card.tech, 'Never Rendered', 'Nor This'] };
+    expect(card.tech.length).toBeGreaterThanOrEqual(TECH_SHOWN);
+    expect(fingerprint(longStack)).toBe(fingerprint(card));
+    expect(cardHtml({ ...longStack, site: SITE_HOST, fontDataUri: 'x' }))
+      .toBe(cardHtml({ ...card, site: SITE_HOST, fontDataUri: 'x' }));
+  });
+
   it('notices a card for a project that no longer exists', () => {
     expect(staleness(cards, { cards: { ...manifest.cards, 'deleted-project': 'abc' } }).orphaned)
       .toEqual(['deleted-project']);
+  });
+
+  it('notices an orphan file even when the manifest has forgotten it', () => {
+    // staleness() used to read only the manifest, so a .jpg that had dropped
+    // out of it was invisible to --check and shipped forever — while
+    // og:build's own sweep, which scans the directory, would have deleted it.
+    const dir = mkdtempSync(join(tmpdir(), 'og-orphan-'));
+    for (const c of cards) writeFileSync(join(dir, `${c.slug}.${CARD_FORMAT.ext}`), 'x');
+    writeFileSync(join(dir, `forgotten.${CARD_FORMAT.ext}`), 'x');
+    expect(staleness(cards, manifest, dir).orphaned).toEqual(['forgotten']);
   });
 
   it('notices a template change without any content change', () => {
@@ -122,7 +154,7 @@ describe('the card template', () => {
   });
 
   it('renders at most five tech chips, so a long stack cannot overflow', () => {
-    expect((html.match(/<li>/g) ?? []).length).toBe(5);
+    expect((html.match(/<li>/g) ?? []).length).toBe(TECH_SHOWN);
     expect(html).not.toContain('<li>Six</li>');
   });
 

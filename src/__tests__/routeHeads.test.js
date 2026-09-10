@@ -94,6 +94,28 @@ describe('renderRouteHead()', () => {
     expect(after.length).toBeGreaterThan(0);
   });
 
+  it('treats $ in content literally — String.replace would expand it', () => {
+    // `$1`, `$&`, "$`" and "$'" are replacement patterns, expanded AFTER any
+    // escaping. A description reading "Cut cloud spend from $10k to $1k" made
+    // $1 expand to capture group 1 — the `<meta … content="` prefix — nesting
+    // tags and terminating the attribute with the injected quote.
+    const money = {
+      path: '/x',
+      title: 'Q$&A: from $10k to $1k',
+      description: "Saved $1 and $2, kept $` and $' too.",
+      type: 'website',
+    };
+    const html = renderRouteHead(shell, money, { origin: SITE_ORIGIN });
+    expect(html).toContain('<title>Q$&amp;A: from $10k to $1k</title>');
+    expect(html).toContain(`content="Saved $1 and $2, kept $\` and $' too."`);
+    // Nothing nested itself inside an attribute.
+    expect(html).not.toMatch(/content="[^"]*<meta/);
+    expect(html).not.toMatch(/<title>[^<]*<title>/);
+    // Exactly one title and one canonical survive.
+    expect((html.match(/<title>/g) ?? []).length).toBe(1);
+    expect((html.match(/rel="canonical"/g) ?? []).length).toBe(1);
+  });
+
   it('escapes attribute and text content', () => {
     const tricky = { path: '/x', title: 'A & B "quoted" <tag>', description: 'says "hi" & <bye>', type: 'website' };
     const html = renderRouteHead(shell, tricky, { origin: SITE_ORIGIN });
@@ -123,6 +145,15 @@ describe('renderRouteHead()', () => {
     expect(noSize).not.toContain('og:image:height');
   });
 
+  it('a null path claims no URL at all — it drops the canonical and adds noindex', () => {
+    // The 404 shell answers for every unknown URL, so a canonical would tell
+    // crawlers each dead link IS whatever page that canonical names.
+    const html = renderRouteHead(shell, { path: null, title: 'Page not found', description: 'Nope.', type: 'website' }, { origin: SITE_ORIGIN });
+    expect(html).not.toContain('rel="canonical"');
+    expect(html).toContain('<meta name="robots" content="noindex" />');
+    expect(html).toContain('<title>Page not found</title>');
+  });
+
   it('refuses a shell it cannot fill in rather than shipping a wrong head', () => {
     expect(() => renderRouteHead('<html><head></head></html>', route, { origin: SITE_ORIGIN })).toThrow(/title/);
   });
@@ -142,6 +173,19 @@ describe('social image selection', () => {
     expect(usableAsCard({ width: 500, height: 291 })).toBe(false); // too small
     expect(usableAsCard({ width: 1600, height: 444 })).toBe(false); // 3.6:1 banner loses its sides
     expect(usableAsCard(null)).toBe(false);
+  });
+
+  it('does not describe a generated card as a screenshot', () => {
+    const outDir = mkdtempSync(join(tmpdir(), 'route-heads-alt-'));
+    mkdirSync(join(outDir, 'og'));
+    writeFileSync(join(outDir, 'og/p.jpg'), readFileSync(resolve(root, 'public/og/project-vimaan.jpg')));
+    const got = resolveCardImage(outDir, SITE_ORIGIN, {
+      path: '/p', title: 'P', image: '/nope.png', generatedCard: '/og/p.jpg', imageAlt: 'P screenshot',
+    });
+    // The card is a title panel, not a picture of the software. Alt text that
+    // misdescribes the image is worse than generic alt text.
+    expect(got.alt).toBe('P');
+    expect(got.alt).not.toContain('screenshot');
   });
 
   it('prefers the generated card over the site card when artwork is unusable', () => {

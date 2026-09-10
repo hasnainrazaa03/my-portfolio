@@ -75,15 +75,19 @@ const ChatHeader = ({
       </div>
       <div className="flex items-center gap-1.5">
         {/* Demo toggle */}
+        {/* Disabled while a reply lands: entering or leaving demo mode replaces
+            the transcript, which is the same class of change as "clear". */}
         <button
           onClick={onDemoToggle}
-          className={`p-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 ${
+          disabled={isBusy}
+          className={`p-2 rounded-lg text-xs font-medium transition-colors flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed ${
             demoMode
               ? 'bg-primary/20 text-primary'
               : 'hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-primary'
           }`}
-          title={demoMode ? 'Exit demo' : 'Demo mode'}
+          title={isBusy ? 'Wait for the reply to finish' : demoMode ? 'Exit demo' : 'Demo mode'}
           aria-pressed={demoMode}
+          aria-label={demoMode ? 'Exit demo mode' : 'Play demo conversation'}
         >
           <Play size={14} />
         </button>

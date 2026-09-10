@@ -44,18 +44,25 @@ export function useChatVoice({ messages, isBusy = false, isOpen, processMessage,
   // index is fixed on the first delta while its content keeps changing, so an
   // index key spoke the first word or two and then went silent. Skip the
   // greeting (length === 1) so toggling on doesn't suddenly read it aloud.
+  //
+  // `isOpen` is a real condition, not belt-and-braces. Demo playback lives in
+  // useChat now and keeps running while the panel is closed, so without this
+  // the page fell silent on close (the effect below cancels the utterance) and
+  // then started talking again at the next canned reply — a voice with no
+  // visible source, which reads as broken rather than as a feature. It applies
+  // to live replies too: closing the panel is a request to stop.
   const lastSpokenRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!ttsEnabled || !ttsSupported || isBusy) return;
+    if (!ttsEnabled || !ttsSupported || isBusy || !isOpen) return;
     if (messages.length <= 1) return;
     const last = messages[messages.length - 1];
     if (last?.role !== 'assistant' || typeof last.content !== 'string') return;
-    // Static messages (demo, local answers) have no id; fall back to content.
+    // The greeting and canned local answers carry no id; fall back to content.
     const key = last.id ?? `${messages.length}:${last.content}`;
     if (key === lastSpokenRef.current) return;
     lastSpokenRef.current = key;
     ttsSpeak(last.content);
-  }, [messages, isBusy, ttsEnabled, ttsSupported, ttsSpeak]);
+  }, [messages, isBusy, isOpen, ttsEnabled, ttsSupported, ttsSpeak]);
 
   const toggleTts = () => {
     setTtsEnabled((prev) => {

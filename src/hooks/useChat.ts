@@ -198,15 +198,29 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
   };
 
   // ── Demo mode ───────────────────────────────────────────────────────────
+  /**
+   * Enter or leave the canned conversation.
+   *
+   * Refused while a reply is in flight, for the same reason `clearHistory` is:
+   * this replaces the transcript, and `onDelta` recreates the streaming bubble
+   * from `prev` whenever it is missing — so clearing mid-stream did not cancel
+   * the reply, it re-seeded it and then wrote the finished answer into the
+   * middle of the demo script.
+   *
+   * BOTH directions reset the transcript. Leaving used to keep the canned turns
+   * as live history: they were then sent to the model as real context, telling
+   * it that it had already said things it never said, and the header counted
+   * them as the visitor's own questions.
+   */
   const handleDemoToggle = () => {
+    if (isBusy) return;
     const next = !demoMode;
     setDemoMode(next);
     setDemoIdx(0);
     setDemoPlaying(next);
-    if (next) {
-      setMessages([INITIAL_MESSAGE]);
-      setFlaggedWarning(null);
-    }
+    setMessages([INITIAL_MESSAGE]);
+    setFlaggedWarning(null);
+    setUnreadCount(0);
   };
 
   /** Replay: back to the greeting, then the script from the top. */
@@ -229,7 +243,10 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
       // Fresh identity per playback: a replay must not reuse the ids of the
       // turns it replaced — voice replies key on them.
       setMessages((prev) => [...prev, { ...turn, id: newId() }]);
-      if (!isOpenRef.current) setUnreadCount((n) => n + 1);
+      // Only replies count as unread. The script alternates visitor questions
+      // with answers, so counting every turn made the badge read 8 for a
+      // 4-answer conversation — half of it the visitor's own simulated typing.
+      if (!isOpenRef.current && turn.role === 'assistant') setUnreadCount((n) => n + 1);
       setDemoIdx((i) => i + 1);
     }, DEMO_DELAY_MS[turn.role]);
     return () => clearTimeout(timer);

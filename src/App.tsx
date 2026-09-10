@@ -4,7 +4,7 @@ import { Analytics } from "@vercel/analytics/react";
 
 // Hooks & Config
 import { ThemeProvider } from './context/ThemeProvider';
-import { parseProjectPath } from './utils/slug';
+import { canonicalProjectPath, parseProjectPath } from './utils/slug';
 import { scrollToSection } from './utils/scroll';
 
 // Above-the-fold (eager) components
@@ -164,6 +164,14 @@ export default function App() {
   }
   const projectSlug = parseProjectPath(path);
   if (projectSlug) {
+    // Only the lowercase, unescaped form exists as a file, so /projects/USC-Ledger
+    // is served by the 404 shell — the reader would see the full case study at a
+    // URL that returned 404 to everything else. Send them to the real one.
+    const canonical = canonicalProjectPath(path);
+    if (canonical && typeof window !== 'undefined') {
+      window.location.replace(`${canonical}${window.location.hash}`);
+      return null;
+    }
     return <StandalonePage><ProjectDetailPage slug={projectSlug} /></StandalonePage>;
   }
   if (path === '/resume' || path === '/resume/') {

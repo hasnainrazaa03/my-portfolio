@@ -16,6 +16,8 @@ vi.mock('../services/analyticsService', () => ({
 }));
 
 import { useChat } from '../hooks/useChat';
+import { getChatResponse } from '../services/chatService';
+import { INITIAL_MESSAGE } from '../components/chat/chatConstants';
 import demoMessages from '../data/chatDemo.json';
 
 const script = demoMessages.map((m) => m.content);
@@ -85,14 +87,67 @@ describe('demo playback', () => {
     expect(secondIds.some((id) => firstIds.includes(id))).toBe(false);
   });
 
-  it('leaving demo mode stops playback where it is', () => {
+  it('leaving demo mode stops playback AND clears the canned turns', () => {
     const { result } = mount();
     act(() => result.current.handleDemoToggle());
     act(() => vi.advanceTimersByTime(600));
     act(() => result.current.handleDemoToggle()); // off
+
     expect(result.current.demoMode).toBe(false);
-    playTurns(script.length);
-    expect(landed(result)).toEqual(script.slice(0, 1)); // nothing more landed
     expect(result.current.demoPlaying).toBe(false);
+    playTurns(script.length);
+    expect(landed(result)).toEqual([]); // nothing more landed, nothing left behind
+  });
+
+  it('does not leave canned turns in the history sent to the model', () => {
+    // Leaving demo mode used to reset only the cursor. The scripted turns
+    // stayed in `messages`, so the next real question shipped them as context:
+    // the model was told it had already said things it never said, and the
+    // header counted the scripted questions as the visitor's own.
+    const { result } = mount();
+    act(() => result.current.handleDemoToggle());
+    playTurns(3);
+    expect(landed(result).length).toBeGreaterThan(0);
+
+    act(() => result.current.handleDemoToggle()); // back to real chat
+    expect(result.current.messages).toEqual([INITIAL_MESSAGE]);
+    expect(result.current.stats.userQuestions).toBe(0);
+  });
+
+  it('counts only replies as unread, not the scripted questions', () => {
+    // The script alternates question and answer, so counting every landed turn
+    // made a 4-answer conversation show a badge of 8 — half of it the
+    // visitor's own simulated typing.
+    const { result, rerender } = mount(true);
+    act(() => result.current.handleDemoToggle());
+    rerender({ isOpen: false });
+    playTurns(script.length + 2);
+
+    const replies = demoMessages.filter((m) => m.role === 'assistant').length;
+    expect(landed(result)).toEqual(script);
+    expect(result.current.unreadCount).toBe(replies);
+  });
+
+  it('refuses to start or stop the demo while a reply is still landing', () => {
+    // Same reason clearHistory is guarded: this replaces the transcript, and
+    // onDelta recreates the streaming bubble from `prev` whenever it is
+    // missing — so clearing mid-stream did not cancel the reply, it re-seeded
+    // it and then wrote the finished answer into the middle of the demo.
+    let release;
+    getChatResponse.mockImplementation(async (_h, opts) => {
+      opts.onDelta('Str');
+      await new Promise((r) => { release = r; });
+      return 'Streamed answer.';
+    });
+    const { result } = mount();
+    act(() => { result.current.processMessage('a real question'); });
+    expect(result.current.isBusy).toBe(true);
+
+    act(() => result.current.handleDemoToggle());
+    expect(result.current.demoMode).toBe(false);
+    expect(result.current.messages.some((m) => m.content === 'a real question')).toBe(true);
+
+    act(() => { release(); });
+    return vi.waitFor(() => expect(result.current.isBusy).toBe(false));
   });
 });

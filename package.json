@@ -20,7 +20,9 @@
     "knowledge:check": "node scripts/buildCareerKnowledge.js --check",
     "qna:build": "node scripts/buildQnaBank.js",
     "sitemap:build": "node scripts/buildSitemap.js",
-    "sitemap:check": "node scripts/buildSitemap.js --check"
+    "sitemap:check": "node scripts/buildSitemap.js --check",
+    "og:build": "node scripts/buildOgCards.js",
+    "og:check": "node scripts/buildOgCards.js --check"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",

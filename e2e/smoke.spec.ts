@@ -181,3 +181,32 @@ test.describe('route heads', () => {
     expect(html).toContain('<link rel="canonical" href="https://hasnainrazaa.vercel.app/" />');
   });
 });
+
+/**
+ * Social cards.
+ *
+ * A project's own artwork is the best preview when it crops to 1.91:1; three
+ * projects here ship artwork that does not, and used to fall back to the
+ * site-wide card, so three different links previewed identically. Those now
+ * get a generated card. This checks what a scraper actually receives: the tag
+ * in the raw HTML, and that the URL it names really resolves.
+ */
+test.describe('social cards', () => {
+  test('a project with unusable artwork gets its own generated card', async ({ request }) => {
+    const html = await (await request.get('/projects/project-vimaan')).text();
+    const url = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+    expect(url).toContain('/og/project-vimaan.jpg');
+
+    // A card the scraper cannot fetch is worse than no card.
+    const img = await request.get(new URL(url!).pathname);
+    expect(img.status()).toBe(200);
+    expect(img.headers()['content-type']).toContain('image');
+  });
+
+  test('a project with real product artwork keeps it', async ({ request }) => {
+    const html = await (await request.get('/projects/peakroutine-ai-health-and-wellness-platform')).text();
+    const url = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
+    expect(url).toContain('/peakroutine-hero.png');
+    expect((await request.get(new URL(url!).pathname)).status()).toBe(200);
+  });
+});

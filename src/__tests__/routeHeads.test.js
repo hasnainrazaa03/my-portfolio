@@ -21,6 +21,7 @@ import {
   imageSize,
   usableAsCard,
   resolveCardImage,
+  imageWorksAsCard,
   routeHeadsPlugin,
 } from '../../scripts/routeHeads.js';
 import { buildSitemap, projectTitles } from '../../scripts/buildSitemap.js';
@@ -141,6 +142,34 @@ describe('social image selection', () => {
     expect(usableAsCard({ width: 500, height: 291 })).toBe(false); // too small
     expect(usableAsCard({ width: 1600, height: 444 })).toBe(false); // 3.6:1 banner loses its sides
     expect(usableAsCard(null)).toBe(false);
+  });
+
+  it('prefers the generated card over the site card when artwork is unusable', () => {
+    const outDir = mkdtempSync(join(tmpdir(), 'route-heads-card-'));
+    mkdirSync(join(outDir, 'og'));
+    writeFileSync(join(outDir, 'og/p.jpg'), readFileSync(resolve(root, 'public/og/project-vimaan.jpg')));
+    // Unusable artwork (absent here) + a generated card present -> the card.
+    expect(
+      resolveCardImage(outDir, SITE_ORIGIN, { path: '/p', title: 'P', image: '/nope.png', generatedCard: '/og/p.jpg' }),
+    ).toEqual({ url: `${SITE_ORIGIN}/og/p.jpg`, alt: 'P', width: 1200, height: 630 });
+  });
+
+  it('still prefers real artwork over the generated card', () => {
+    const outDir = mkdtempSync(join(tmpdir(), 'route-heads-real-'));
+    mkdirSync(join(outDir, 'og'));
+    writeFileSync(join(outDir, 'real.png'), readFileSync(resolve(root, 'public/peakroutine-hero.png')));
+    writeFileSync(join(outDir, 'og/p.jpg'), readFileSync(resolve(root, 'public/og/project-vimaan.jpg')));
+    const got = resolveCardImage(outDir, SITE_ORIGIN, {
+      path: '/p', title: 'P', image: '/real.png', generatedCard: '/og/p.jpg',
+    });
+    expect(got.url).toBe(`${SITE_ORIGIN}/real.png`);
+  });
+
+  it('imageWorksAsCard answers for a real file, a missing one, and nothing at all', () => {
+    expect(imageWorksAsCard(resolve(root, 'public'), '/peakroutine-hero.png')).toBe(true);
+    expect(imageWorksAsCard(resolve(root, 'public'), '/RVSAT.png')).toBe(false); // 331x383 portrait
+    expect(imageWorksAsCard(resolve(root, 'public'), '/does-not-exist.png')).toBe(false);
+    expect(imageWorksAsCard(resolve(root, 'public'), undefined)).toBe(false);
   });
 
   it('resolves against the build output, falling back when the file is missing', () => {

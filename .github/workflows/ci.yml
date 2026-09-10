@@ -43,6 +43,13 @@ jobs:
       - name: Sitemap matches the routes
         run: npm run sitemap:check
 
+      # Social cards are committed because rendering them needs a browser, which
+      # the production build does not have. That makes staleness the risk: rename
+      # a project and its card still shows the old title to everyone it is
+      # shared with. This compares a fingerprint of the inputs — no browser.
+      - name: Social cards match the projects
+        run: npm run og:check
+
       - name: Test (with coverage)
         run: npm run test:coverage
 

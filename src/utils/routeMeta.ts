@@ -1,5 +1,5 @@
 import { PROJECTS, PERSONAL_INFO, EDUCATION, EXPERIENCE } from '../constants';
-import { projectPath } from './slug';
+import { projectPath, toSlug } from './slug';
 
 /**
  * routeMeta.ts — the <head> each stand-alone route deserves.
@@ -30,6 +30,13 @@ export interface RouteHead {
   type: 'website' | 'article';
   /** Public path of a candidate social image ("/peakroutine-hero.png"); the build decides if it is usable. */
   image?: string;
+  /**
+   * Public path of the card generated for this route
+   * (`scripts/buildOgCards.js`), used when `image` is the wrong shape to crop
+   * to 1.91:1. The build falls back to the site card if the file is absent, so
+   * naming it here is safe before it has been generated.
+   */
+  generatedCard?: string;
   imageAlt?: string;
 }
 
@@ -72,6 +79,7 @@ export function routeHeads(): RouteHead[] {
       description: clip(p.description),
       type: 'article',
       image: p.images?.[0],
+      generatedCard: `/og/${toSlug(p.title)}.jpg`,
       imageAlt: `${p.title} screenshot`,
     })),
   ];

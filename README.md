@@ -148,6 +148,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 - **Konami Easter Egg** — ↑↑↓↓←→←→BA unlocks a cockpit overlay
 - **Now Snapshot** — Live status block on the About section sourced from `constants.NOW`
 - **Print-to-PDF Resume** — Standalone `/resume` route, print-optimised
+- **Social cards** — each project's own artwork is its `og:image` when it crops to 1.91:1; the three whose artwork is the wrong shape get a generated 1200×630 card (`npm run og:build`, committed, `og:check` gates freshness in CI)
 - **Per-route heads** — the build writes one `dist/<route>.html` per stand-alone route (`scripts/routeHeads.js`, from `src/utils/routeMeta.ts`) so `/resume`, `/privacy` and every `/projects/<slug>` ship their own title, description, social tags and canonical link; Vercel serves them extensionless via `cleanUrls`
 - **Real 404s** — every real route is a file in the build; anything else (a mistyped path, a stale project slug) is served from `dist/404.html` — a build-time copy of `index.html` — with a 404 status, and the app renders its own not-found page in the same shell
 - **Typography** — Inter, self-hosted as one variable woff2 (weights 400–700, latin subset, 24 KB via `scripts/buildInterSubset.sh`). It had been declared in the Tailwind config since the start but never actually loaded, so the site rendered in each platform's generic sans-serif. Not preloaded: that cost 300 ms of LCP on a client-rendered page, and `font-display: swap` already keeps it off the rendering path

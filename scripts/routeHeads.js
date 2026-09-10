@@ -117,14 +117,41 @@ export function renderRouteHead(html, route, { origin, image }) {
   return out;
 }
 
-/** The route's own image if it exists in the build and works as a card; else undefined (site card). */
+/** True when `publicPath` names a file that would make a good social card. */
+export function imageWorksAsCard(dir, publicPath) {
+  if (!publicPath) return false;
+  const file = resolve(dir, `.${publicPath}`);
+  if (!existsSync(file)) return false;
+  return usableAsCard(imageSize(readFileSync(file)));
+}
+
+/**
+ * The social image for a route, in order of preference:
+ *
+ *   1. the project's own artwork, when it works as a card — a real screenshot
+ *      of the thing beats any generated panel;
+ *   2. the card generated for it (scripts/buildOgCards.js), for projects whose
+ *      artwork is the wrong shape — a 3.6:1 banner loses its sides, a 331x383
+ *      thumbnail renders as a stamp;
+ *   3. nothing, meaning the shell's site-wide card stands.
+ *
+ * Step 2 exists because step 3 used to catch three different projects, which
+ * then previewed identically and told a reader nothing about the link.
+ */
 export function resolveCardImage(outDir, origin, route) {
-  if (!route.image) return undefined;
-  const file = resolve(outDir, `.${route.image}`);
-  if (!existsSync(file)) return undefined;
-  const size = imageSize(readFileSync(file));
-  if (!usableAsCard(size)) return undefined;
-  return { url: `${origin}${route.image}`, alt: route.imageAlt ?? route.title, ...size };
+  if (imageWorksAsCard(outDir, route.image)) {
+    const size = imageSize(readFileSync(resolve(outDir, `.${route.image}`)));
+    return { url: `${origin}${route.image}`, alt: route.imageAlt ?? route.title, ...size };
+  }
+  if (route.generatedCard && existsSync(resolve(outDir, `.${route.generatedCard}`))) {
+    return {
+      url: `${origin}${route.generatedCard}`,
+      alt: route.imageAlt ?? route.title,
+      width: 1200,
+      height: 630,
+    };
+  }
+  return undefined;
 }
 
 /** @returns {import('vite').Plugin} */

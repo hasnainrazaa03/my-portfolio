@@ -161,3 +161,33 @@ test.describe('chat', () => {
     await expect(page.locator('#chatbot-panel').getByText(/project/i).first()).toBeVisible({ timeout: 10_000 });
   });
 });
+
+/**
+ * The résumé has two views: designed for a person, plain text for the
+ * applicant tracking system that reads it first. The view is in the URL so it
+ * survives a reload and can be sent to someone deliberately.
+ */
+test.describe('resume views', () => {
+  test('switches to the ATS view, puts it in the URL, and survives a reload', async ({ page }) => {
+    await page.goto('/resume');
+    await expect(page.getByRole('button', { name: /^designed$/i })).toHaveAttribute('aria-pressed', 'true');
+
+    await page.getByRole('button', { name: /plain text/i }).click();
+    await expect(page).toHaveURL(/\?view=ats$/);
+    // The profile URL is now readable as text, not hidden behind the word "GitHub".
+    await expect(page.getByText('github.com/hasnainrazaa03')).toBeVisible();
+
+    await page.reload();
+    await expect(page.getByRole('button', { name: /plain text/i })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  test('the back button returns to the designed view', async ({ page }) => {
+    await page.goto('/resume');
+    await page.getByRole('button', { name: /plain text/i }).click();
+    await expect(page).toHaveURL(/\?view=ats$/);
+
+    await page.goBack();
+    await expect(page).toHaveURL(/\/resume$/);
+    await expect(page.getByRole('button', { name: /^designed$/i })).toHaveAttribute('aria-pressed', 'true');
+  });
+});

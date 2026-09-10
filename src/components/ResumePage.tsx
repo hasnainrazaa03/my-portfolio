@@ -1,20 +1,26 @@
-import React, { useEffect } from 'react';
-import {
-  PERSONAL_INFO,
-  EDUCATION,
-  EXPERIENCE,
-  SKILLS,
-  PROJECTS,
-} from '../constants';
+import React, { useCallback, useEffect, useState } from 'react';
+import { PERSONAL_INFO } from '../constants';
+import DesignedResume from './resume/DesignedResume';
+import AtsResume from './resume/AtsResume';
+import { searchForView, viewFromSearch, VIEW_PARAM, type ResumeView } from './resume/resumeView';
 
 /**
- * Print-optimised resume view, data-driven from `src/constants.js`.
+ * Print-optimised résumé at `/resume`, data-driven from `src/constants.ts`.
  *
- * Reachable at `/resume` (SPA fallback). Designed to be printed via the
- * browser ("Save as PDF"). No images, no animations, no Tailwind dark mode
- * artefacts — just black text on white paper.
+ * TWO VIEWS, ONE SET OF FACTS. The designed view is for a human; the ATS view
+ * is for the parser that reads the résumé before any human does. Both render
+ * from `resume/resumeData.ts`, so they can differ in layout and never in what
+ * they claim — see `AtsResume` for what actually changes and why.
+ *
+ * The choice lives in the URL (`?view=ats`) rather than in state alone, so it
+ * survives a reload, can be bookmarked, and can be sent to someone as the view
+ * you meant them to see.
  */
 const ResumePage = () => {
+  const [view, setView] = useState<ResumeView>(() =>
+    typeof window === 'undefined' ? 'designed' : viewFromSearch(window.location.search),
+  );
+
   useEffect(() => {
     const prev = document.title;
     document.title = `${PERSONAL_INFO.name} — Resume`;
@@ -23,149 +29,69 @@ const ResumePage = () => {
     };
   }, []);
 
-  const handlePrint = () => window.print();
+  // Keep the URL in step, and keep the Back button meaningful: switching views
+  // is a navigation the reader may want to undo.
+  const choose = useCallback((next: ResumeView) => {
+    setView(next);
+    if (typeof window === 'undefined') return;
+    window.history.pushState({ [VIEW_PARAM]: next }, '', `${window.location.pathname}${searchForView(next)}`);
+  }, []);
+
+  useEffect(() => {
+    const onPop = () => setView(viewFromSearch(window.location.search));
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
+  }, []);
+
+  const tab = (value: ResumeView, label: string, hint: string) => (
+    <button
+      type="button"
+      onClick={() => choose(value)}
+      aria-pressed={view === value}
+      title={hint}
+      className={`px-3 py-1.5 rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary ${
+        view === value
+          ? 'bg-slate-900 text-white'
+          : 'text-slate-700 hover:bg-slate-200'
+      }`}
+    >
+      {label}
+    </button>
+  );
 
   return (
     <main className="bg-white text-slate-900 min-h-screen">
-      {/* Top toolbar — hidden when printing. */}
+      {/* Toolbar — hidden when printing, so neither view carries chrome onto paper. */}
       <div className="print:hidden border-b border-slate-200 bg-slate-50">
-        <div className="max-w-3xl mx-auto px-6 py-3 flex items-center justify-between text-sm">
+        <div className="max-w-3xl mx-auto px-6 py-3 flex flex-wrap items-center gap-3 justify-between text-sm">
           <a
             href="/"
             className="text-slate-700 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
           >
             &larr; Back to portfolio
           </a>
-          <button
-            type="button"
-            onClick={handlePrint}
-            className="px-4 py-1.5 rounded-md bg-primary text-black font-medium hover:bg-teal-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-          >
-            Print / Save as PDF
-          </button>
+
+          <div className="flex items-center gap-3">
+            <div
+              className="flex items-center gap-1 rounded-lg bg-slate-200/70 p-1"
+              role="group"
+              aria-label="Résumé view"
+            >
+              {tab('designed', 'Designed', 'Laid out for a person to read')}
+              {tab('ats', 'Plain text (ATS)', 'One column, full URLs, standard headings — for applicant tracking systems')}
+            </div>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="px-4 py-1.5 rounded-md bg-primary text-black font-medium hover:bg-teal-400 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            >
+              Print / Save as PDF
+            </button>
+          </div>
         </div>
       </div>
 
-      <article className="max-w-3xl mx-auto px-6 py-10 print:py-4 print:px-4">
-        <header className="border-b border-slate-300 pb-4 mb-6">
-          <h1 className="text-3xl font-bold">{PERSONAL_INFO.name}</h1>
-          <p className="text-sm text-slate-700 mt-1">
-            MSCS @ USC · AI / ML Engineer · Aerospace background
-          </p>
-          <p className="text-sm text-slate-700">
-            <a className="underline" href={`mailto:${PERSONAL_INFO.email}`}>
-              {PERSONAL_INFO.email}
-            </a>
-            {' · '}
-            <a
-              className="underline"
-              href={PERSONAL_INFO.socials.github}
-              rel="noreferrer noopener"
-            >
-              GitHub
-            </a>
-            {' · '}
-            <a
-              className="underline"
-              href={PERSONAL_INFO.socials.linkedin}
-              rel="noreferrer noopener"
-            >
-              LinkedIn
-            </a>
-          </p>
-        </header>
-
-        {/* EDUCATION */}
-        <section className="mb-6">
-          <h2 className="text-base font-bold uppercase tracking-wider border-b border-slate-300 pb-1 mb-3">
-            Education
-          </h2>
-          {EDUCATION.map((edu) => (
-            <div key={edu.id} className="mb-3">
-              <div className="flex justify-between items-baseline">
-                <strong className="text-sm">{edu.school}</strong>
-                <span className="text-xs text-slate-600">{edu.period}</span>
-              </div>
-              <div className="text-sm italic">{edu.degree}</div>
-              {edu.gpa && (
-                <div className="text-xs text-slate-700">GPA: {edu.gpa}</div>
-              )}
-              {edu.coursework && (
-                <div className="text-xs text-slate-600 mt-0.5">
-                  <span className="font-medium">Coursework:</span> {edu.coursework}
-                </div>
-              )}
-            </div>
-          ))}
-        </section>
-
-        {/* EXPERIENCE */}
-        <section className="mb-6">
-          <h2 className="text-base font-bold uppercase tracking-wider border-b border-slate-300 pb-1 mb-3">
-            Experience
-          </h2>
-          {EXPERIENCE.map((exp) => (
-            <div key={exp.id} className="mb-4">
-              <div className="flex justify-between items-baseline">
-                <strong className="text-sm">
-                  {exp.role} · {exp.company}
-                </strong>
-                <span className="text-xs text-slate-600">{exp.period}</span>
-              </div>
-              {exp.location && (
-                <div className="text-xs italic text-slate-600">
-                  {exp.location}
-                </div>
-              )}
-              <ul className="mt-1 list-disc pl-5 space-y-0.5 text-xs leading-snug">
-                {(Array.isArray(exp.description) ? exp.description : [exp.description])
-                  .filter(Boolean)
-                  .map((line, i) => (
-                    <li key={i}>{line}</li>
-                  ))}
-              </ul>
-            </div>
-          ))}
-        </section>
-
-        {/* PROJECTS */}
-        <section className="mb-6">
-          <h2 className="text-base font-bold uppercase tracking-wider border-b border-slate-300 pb-1 mb-3">
-            Selected Projects
-          </h2>
-          {PROJECTS.slice(0, 5).map((p) => (
-            <div key={p.id} className="mb-3">
-              <div className="flex justify-between items-baseline">
-                <strong className="text-sm">{p.title}</strong>
-                <span className="text-xs text-slate-600">{p.category}</span>
-              </div>
-              <div className="text-xs">{p.description}</div>
-              {Array.isArray(p.techStack) && p.techStack.length > 0 && (
-                <div className="text-[11px] text-slate-600 mt-0.5">
-                  <em>Tech:</em> {p.techStack.slice(0, 8).join(', ')}
-                </div>
-              )}
-            </div>
-          ))}
-        </section>
-
-        {/* SKILLS */}
-        <section className="mb-6">
-          <h2 className="text-base font-bold uppercase tracking-wider border-b border-slate-300 pb-1 mb-3">
-            Skills
-          </h2>
-          {SKILLS.map((group) => (
-            <div key={group.category} className="text-xs mb-1.5">
-              <strong>{group.category}:</strong>{' '}
-              {group.items.map((s) => s.name).join(', ')}
-            </div>
-          ))}
-        </section>
-
-        <footer className="text-[10px] text-slate-500 text-center pt-2 border-t border-slate-200">
-          Generated from portfolio data · hasnainrazaa.vercel.app
-        </footer>
-      </article>
+      {view === 'ats' ? <AtsResume /> : <DesignedResume />}
     </main>
   );
 };

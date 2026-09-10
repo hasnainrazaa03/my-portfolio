@@ -254,3 +254,68 @@ test.describe('the 404 response head', () => {
     expect(html).toMatch(/<title>Page not found \| Hasnain Raza<\/title>/);
   });
 });
+
+/**
+ * The job-description comparison at /fit.
+ *
+ * The API is not exercised here — a real call costs a model request and the
+ * result is non-deterministic. What matters end to end is that the route
+ * resolves, the form gates on a real posting, and a failure is reported rather
+ * than shown as an empty (and therefore flattering) assessment.
+ */
+test.describe('fit comparison', () => {
+  test('the route resolves and gates on a real posting', async ({ page }) => {
+    await page.goto('/fit');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/does this role fit/i);
+    await expect(page).toHaveTitle(/compare a role/i);
+
+    const compare = page.getByRole('button', { name: /^compare$/i });
+    await expect(compare).toBeDisabled();
+    await page.getByLabel(/job description/i).fill('ML engineer');
+    await expect(compare).toBeDisabled();
+    await page.getByLabel(/job description/i).fill('Senior Machine Learning Engineer. '.repeat(10));
+    await expect(compare).toBeEnabled();
+  });
+
+  test('says a model wrote it, before anything is submitted', async ({ page }) => {
+    await page.goto('/fit');
+    await expect(page.getByText(/written by a language model/i)).toBeVisible();
+  });
+
+  test('reports a failure instead of an empty assessment', async ({ page }) => {
+    await page.route('**/api/fit', (route) =>
+      route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ error: 'Service unavailable right now.' }) }),
+    );
+    await page.goto('/fit');
+    await page.getByLabel(/job description/i).fill('Senior Machine Learning Engineer. '.repeat(10));
+    await page.getByRole('button', { name: /^compare$/i }).click();
+
+    await expect(page.getByText(/service unavailable right now/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: /what it doesn.t/i })).toHaveCount(0);
+  });
+
+  test('renders a grounded result, with a link to the work behind each match', async ({ page }) => {
+    await page.route('**/api/fit', (route) =>
+      route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          verdict: 'partial',
+          summary: 'Strong on model work, no production Kubernetes.',
+          matches: [{ requirement: 'PyTorch', evidence: 'Built a segmentation pipeline.', sourceId: 'project:project-vimaan' }],
+          gaps: [{ requirement: 'Kubernetes', note: 'Nothing in the record shows cluster operations.' }],
+          talkingPoints: ['Ask about the ONNX parity verification.'],
+        }),
+      }),
+    );
+    await page.goto('/fit');
+    await page.getByLabel(/job description/i).fill('Senior Machine Learning Engineer. '.repeat(10));
+    await page.getByRole('button', { name: /^compare$/i }).click();
+
+    await expect(page.getByText(/partial match/i)).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Project Vimaan' })).toHaveAttribute('href', '/projects/project-vimaan');
+    // The gaps section is not optional chrome.
+    await expect(page.getByRole('heading', { name: /what it doesn.t/i })).toBeVisible();
+    await expect(page.getByText(/nothing in the record shows cluster operations/i)).toBeVisible();
+  });
+});

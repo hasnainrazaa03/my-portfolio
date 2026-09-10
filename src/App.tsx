@@ -73,6 +73,7 @@ const Contact = lazy(() => import('./components/Contact'));
 const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
 const ResumePage = lazy(() => import('./components/ResumePage'));
 const NotFoundPage = lazy(() => import('./components/NotFoundPage'));
+const FitPage = lazy(() => import('./components/FitPage'));
 
 /**
  * Shared shell for the stand-alone routes.
@@ -176,6 +177,9 @@ export default function App() {
   }
   if (path === '/resume' || path === '/resume/') {
     return <StandalonePage><ResumePage /></StandalonePage>;
+  }
+  if (path === '/fit' || path === '/fit/') {
+    return <StandalonePage><FitPage /></StandalonePage>;
   }
   if (path !== '/' && path !== '/index.html') {
     return <StandalonePage><NotFoundPage /></StandalonePage>;

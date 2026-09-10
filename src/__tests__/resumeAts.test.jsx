@@ -11,7 +11,7 @@
  * layout may change freely, the parseability may not.
  */
 import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, within, cleanup } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import AtsResume from '../components/resume/AtsResume';
 import DesignedResume from '../components/resume/DesignedResume';
 import { contactLines, bullets, RESUME_PROJECT_COUNT } from '../components/resume/resumeData';

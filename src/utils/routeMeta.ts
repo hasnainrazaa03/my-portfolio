@@ -65,6 +65,14 @@ export function routeHeads(): RouteHead[] {
       type: 'website',
     },
     {
+      path: '/fit',
+      title: `Compare a role | ${name}`,
+      description: clip(
+        `Paste a job description and see what ${name}'s record actually supports, what it does not, and the work behind every claim.`,
+      ),
+      type: 'website',
+    },
+    {
       path: '/privacy',
       title: `Privacy Notice | ${name}`,
       // The page's own TL;DR, verbatim — a description must not promise more than the page says.

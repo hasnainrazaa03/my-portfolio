@@ -63,7 +63,7 @@ describe('App routes and built files agree', () => {
   });
 
   it('emits nothing App would not render', () => {
-    const known = new Set(['/resume', '/privacy', ...PROJECTS.map((p) => projectPath(p.title))]);
+    const known = new Set(['/resume', '/privacy', '/fit', ...PROJECTS.map((p) => projectPath(p.title))]);
     for (const path of emitted) {
       expect(known.has(path), `${path} is emitted but App has no route for it`).toBe(true);
     }

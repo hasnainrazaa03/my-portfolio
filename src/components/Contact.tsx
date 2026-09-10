@@ -130,6 +130,19 @@ const Contact = () => {
               className="mb-10"
             />
 
+            {/* Hiring traffic lands here, which is the one place the fit tool
+                is worth offering — it answers the question they arrived with. */}
+            <p className="-mt-6 mb-10 text-center text-sm text-slate-600 dark:text-slate-400">
+              Hiring for something specific?{' '}
+              <a
+                href="/fit"
+                className="text-primary font-medium hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              >
+                Paste the job description
+              </a>{' '}
+              and see what my record supports — and what it doesn&rsquo;t.
+            </p>
+
             <div className="flex flex-col items-center justify-center mb-10 gap-6">
               <div className="inline-flex items-center gap-3 p-3 rounded-xl bg-slate-200/50 dark:bg-white/5 border border-slate-300 dark:border-white/10 backdrop-blur-md hover:border-primary/30 transition-colors group">
                 <div className="p-2 rounded-lg bg-primary/10 text-primary">

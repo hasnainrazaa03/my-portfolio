@@ -44,7 +44,21 @@ export default {
         gray: "#9CA3AF", // Secondary text
       },
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        // The fallback chain matters as much as Inter itself: it is what
+        // renders during `font-display: swap`, and what renders if the font
+        // request fails. The bare `sans-serif` this used to end at resolves to
+        // Helvetica on macOS and Arial on Windows — dated faces, when every
+        // platform ships a better UI font that `system-ui` names directly.
+        sans: [
+          'Inter',
+          'system-ui',
+          '-apple-system',
+          'Segoe UI',
+          'Roboto',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif',
+        ],
       },
       animation: {
         'spin-slow': 'spin 3s linear infinite',

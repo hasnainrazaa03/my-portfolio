@@ -150,6 +150,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 - **Print-to-PDF Resume** — Standalone `/resume` route, print-optimised
 - **Per-route heads** — the build writes one `dist/<route>.html` per stand-alone route (`scripts/routeHeads.js`, from `src/utils/routeMeta.ts`) so `/resume`, `/privacy` and every `/projects/<slug>` ship their own title, description, social tags and canonical link; Vercel serves them extensionless via `cleanUrls`
 - **Real 404s** — every real route is a file in the build; anything else (a mistyped path, a stale project slug) is served from `dist/404.html` — a build-time copy of `index.html` — with a 404 status, and the app renders its own not-found page in the same shell
+- **Typography** — Inter, self-hosted as one variable woff2 (weights 400–700, latin subset, 24 KB via `scripts/buildInterSubset.sh`). It had been declared in the Tailwind config since the start but never actually loaded, so the site rendered in each platform's generic sans-serif. Not preloaded: that cost 300 ms of LCP on a client-rendered page, and `font-display: swap` already keeps it off the rendering path
 - **Theme Engine** — Persisted Dark / Light + High-Contrast variant:
   - *Deep Space* 🌑
   - *Clean Slate* ☀️

@@ -2,6 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Inter — SELF-HOSTED, and until now never loaded at all.
+ *
+ * tailwind.config.js has declared `sans: ['Inter', …]` since the beginning and
+ * `font-sans` is applied at the app root, but nothing ever fetched Inter: no
+ * @font-face, no <link>, no font file in the repo. Every visitor fell through
+ * to the next family in the stack, so the site rendered in Helvetica on macOS,
+ * Arial on Windows and Roboto on Android — three different faces, none of them
+ * the one the design asks for. It is an easy miss precisely because the
+ * fallback looks fine.
+ *
+ * One variable file covers all four weights the UI uses (400/500/600/700).
+ * It is instanced to that range and subsetted to latin: 48 KB from Google
+ * becomes 24 KB. Self-hosted rather than linked from Google Fonts, matching
+ * how every icon here was de-CDN'd — no third-party origin, no extra
+ * connection, and `font-src 'self'` in the CSP covers it.
+ *
+ * `swap`: text paints immediately in the fallback and re-renders when Inter
+ * lands, so the font is never on the critical rendering path. index.html
+ * preloads it so that swap normally happens before first paint.
+ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/fonts/inter-var-latin.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
   color-scheme: light dark;
 

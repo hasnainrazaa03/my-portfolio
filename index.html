@@ -12,6 +12,11 @@
          Its sha256 is pinned in vercel.json's script-src (csp.test.js). -->
     <script>(function(){try{var d=document.documentElement,t=localStorage.getItem('theme'),m=window.matchMedia;if(t?t==='dark':(m&&m('(prefers-color-scheme: dark)').matches))d.classList.add('dark');var h=localStorage.getItem('pref:highContrast');if(h==='true'||(h===null&&m&&m('(prefers-contrast: more)').matches))d.classList.add('hc')}catch(e){}})()</script>
 
+    <!-- Installable app. `apple-touch-icon` is separate because Safari does not
+         read icons from the manifest. -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="/app-icons/apple-touch-icon.png" />
+
     <!-- The only third-party origins the page still talks to (all image hosts
          were self-hosted away). Lighthouse measured ~365ms of connection setup
          that these overlap with the rest of the load. `crossorigin` is required

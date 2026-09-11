@@ -50,6 +50,11 @@ jobs:
       - name: Social cards match the projects
         run: npm run og:check
 
+      # Install icons are committed for the same reason as the social cards —
+      # rendering needs a browser the production build does not have.
+      - name: App icons are current
+        run: npm run icons:check
+
       - name: Test (with coverage)
         run: npm run test:coverage
 

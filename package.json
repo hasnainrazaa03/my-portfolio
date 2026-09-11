@@ -22,7 +22,9 @@
     "sitemap:build": "node scripts/buildSitemap.js",
     "sitemap:check": "node scripts/buildSitemap.js --check",
     "og:build": "node scripts/buildOgCards.js",
-    "og:check": "node scripts/buildOgCards.js --check"
+    "og:check": "node scripts/buildOgCards.js --check",
+    "icons:build": "node scripts/buildAppIcons.js",
+    "icons:check": "node scripts/buildAppIcons.js --check"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.117.1",

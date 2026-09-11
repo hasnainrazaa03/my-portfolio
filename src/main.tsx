@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
 import { initSentry } from './config/sentry'
+import { registerServiceWorker } from './registerServiceWorker'
 
 // Registers a lightweight error buffer now and loads the SDK itself on idle,
 // after first paint. An error thrown during the first mount — the class of
@@ -31,6 +32,10 @@ if (import.meta.env.DEV) {
     .then(({ warnMissingEnv }) => warnMissingEnv())
     .catch((err) => console.error('[env] env check failed to run:', err))
 }
+
+// Offline support. Registers after `load`, in production only — see the module
+// for why both conditions matter.
+registerServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

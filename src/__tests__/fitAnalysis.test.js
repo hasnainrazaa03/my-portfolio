@@ -8,6 +8,8 @@
  * is a property of the prompt, so it is asserted here rather than hoped for.
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import {
   buildFitPrompt,
   evidenceSources,
@@ -287,5 +289,35 @@ describe('grounding the result', () => {
     expect(r.matches).toHaveLength(1);
     expect(r.gaps).toHaveLength(1);
     expect(r.talkingPoints).toEqual(['real point']);
+  });
+});
+
+describe('the endpoint budget', () => {
+  /**
+   * Read from the handler source rather than imported: api/fit.ts builds a
+   * durable rate limiter and the whole system prompt at module scope, so
+   * importing it here would do real work for a constant.
+   */
+  const handler = readFileSync(resolve(process.cwd(), 'api/fit.ts'), 'utf8');
+  const num = (name) => Number(new RegExp(`${name} = positiveInt\\([^,]+, ([0-9_]+)`).exec(handler)?.[1].replace(/_/g, ''));
+
+  it('leaves room for the whole fallback chain inside maxDuration', () => {
+    // If three providers at the per-provider timeout exceed maxDuration, the
+    // platform kills the request before the chain has finished trying and the
+    // reader gets a hung tab instead of a 503.
+    const perProvider = num('PROVIDER_TIMEOUT_MS');
+    const maxDuration = Number(/maxDuration: (\d+)/.exec(handler)[1]);
+    expect(perProvider).toBeGreaterThan(8000); // above the chat default
+    expect(perProvider * 3).toBeLessThanOrEqual(maxDuration * 1000);
+  });
+
+  it('rate limits far harder than the chat, because each call is far more expensive', () => {
+    expect(num('RATE_LIMIT_MAX')).toBeLessThanOrEqual(5);
+    expect(num('RATE_LIMIT_WINDOW_MS')).toBeGreaterThanOrEqual(300_000);
+  });
+
+  it('validates the posting BEFORE spending a rate-limit slot', () => {
+    // A malformed request should not cost the reader one of three attempts.
+    expect(handler.indexOf('prepareJobDescription')).toBeLessThan(handler.indexOf('await fitLimiter'));
   });
 });

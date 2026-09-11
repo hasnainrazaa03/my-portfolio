@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import { validateClientEnv } from './scripts/validateClientEnv.js'
 import { spaNotFoundPage } from './scripts/spaNotFound.js'
 import { routeHeadsPlugin } from './scripts/routeHeads.js'
+import { serviceWorkerPlugin } from './scripts/serviceWorker.js'
 import { routeHeads, SITE_ORIGIN } from './src/utils/routeMeta'
 
 // https://vite.dev/config/
@@ -22,6 +23,9 @@ export default defineConfig({
     // description, social tags and canonical — the single index.html gave every
     // case study the home page's head (and a canonical pointing at "/").
     routeHeadsPlugin({ routes: routeHeads(), origin: SITE_ORIGIN }),
+    // LAST: the precache list is built by scanning dist/, so every other
+    // generator must have written its files first.
+    serviceWorkerPlugin(),
   ],
   build: {
     // PERF: split heavyweight vendor libs into their own chunks so they can

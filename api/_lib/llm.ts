@@ -54,9 +54,26 @@ const DEFAULT_CHAIN: ProviderName[] = ['anthropic', 'gemini', 'huggingface'];
  */
 const MAX_OUTPUT_TOKENS = 1024;
 
-function timeoutMs(): number {
+/**
+ * Per-provider budget, in milliseconds.
+ *
+ * The 8-second default is sized for a chat turn: one short answer from a small
+ * prompt. A caller that sends a much larger prompt and asks for structured
+ * output legitimately needs longer, and getting this wrong is expensive in a
+ * way that hides — the provider times out, the chain silently falls through to
+ * the next one, and the caller still gets an answer, just three times slower
+ * and having paid for the abandoned calls. /api/fit was doing exactly that.
+ */
+function timeoutMs(override?: number): number {
+  if (typeof override === 'number' && Number.isFinite(override) && override > 0) return override;
   const parsed = Number.parseInt(process.env.LLM_TIMEOUT_MS || '', 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 8000;
+}
+
+/** Per-call overrides. Everything optional; omitted means the chat defaults. */
+export interface LlmOptions {
+  /** Per-provider timeout. Raise it for large prompts or structured output. */
+  timeoutMs?: number;
 }
 
 /**
@@ -112,13 +129,13 @@ export function tuningFor(model: string): AnthropicTuning {
   return { thinking: 'omit', effort: null, temperature: 0.4 };
 }
 
-async function callAnthropic(system: string, turns: ChatTurn[]): Promise<LlmResult> {
+async function callAnthropic(system: string, turns: ChatTurn[], opts: LlmOptions = {}): Promise<LlmResult> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error('ANTHROPIC_API_KEY not configured');
 
   const model = process.env.ANTHROPIC_MODEL || 'claude-sonnet-5';
   const tuning = tuningFor(model);
-  const client = new Anthropic({ apiKey, timeout: timeoutMs(), maxRetries: 1 });
+  const client = new Anthropic({ apiKey, timeout: timeoutMs(opts.timeoutMs), maxRetries: 1 });
 
   const response = await client.messages.create({
     model,
@@ -153,7 +170,7 @@ async function callAnthropic(system: string, turns: ChatTurn[]): Promise<LlmResu
 
 // ── Google Gemini ──────────────────────────────────────────────────────────
 
-async function callGemini(system: string, turns: ChatTurn[]): Promise<LlmResult> {
+async function callGemini(system: string, turns: ChatTurn[], opts: LlmOptions = {}): Promise<LlmResult> {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
 
@@ -165,7 +182,7 @@ async function callGemini(system: string, turns: ChatTurn[]): Promise<LlmResult>
     // Key in a header, not the query string — query strings land in proxy and
     // access logs far more readily than headers do.
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    signal: AbortSignal.timeout(timeoutMs()),
+    signal: AbortSignal.timeout(timeoutMs(opts.timeoutMs)),
     body: JSON.stringify({
       system_instruction: { parts: [{ text: system }] },
       contents: turns.map((t) => ({
@@ -209,7 +226,7 @@ async function callGemini(system: string, turns: ChatTurn[]): Promise<LlmResult>
 
 // ── HuggingFace ────────────────────────────────────────────────────────────
 
-async function callHuggingFace(system: string, turns: ChatTurn[]): Promise<LlmResult> {
+async function callHuggingFace(system: string, turns: ChatTurn[], opts: LlmOptions = {}): Promise<LlmResult> {
   const token = process.env.HUGGINGFACE_API_KEY;
   if (!token) throw new Error('HUGGINGFACE_API_KEY not configured');
 
@@ -218,7 +235,7 @@ async function callHuggingFace(system: string, turns: ChatTurn[]): Promise<LlmRe
   const response = await fetch('https://router.huggingface.co/v1/chat/completions', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    signal: AbortSignal.timeout(timeoutMs()),
+    signal: AbortSignal.timeout(timeoutMs(opts.timeoutMs)),
     body: JSON.stringify({
       model,
       messages: [{ role: 'system', content: system }, ...turns],
@@ -240,7 +257,7 @@ async function callHuggingFace(system: string, turns: ChatTurn[]): Promise<LlmRe
   return { text, provider: 'huggingface', model };
 }
 
-const PROVIDERS: Record<ProviderName, (system: string, turns: ChatTurn[]) => Promise<LlmResult>> = {
+const PROVIDERS: Record<ProviderName, (system: string, turns: ChatTurn[], opts?: LlmOptions) => Promise<LlmResult>> = {
   anthropic: callAnthropic,
   gemini: callGemini,
   huggingface: callHuggingFace,
@@ -486,7 +503,8 @@ export async function runChain(
   system: string,
   turns: ChatTurn[],
   onAttemptFailure?: (attempt: ProviderAttempt) => void,
-  registry: Partial<Record<ProviderName, (s: string, t: ChatTurn[]) => Promise<LlmResult>>> = PROVIDERS,
+  registry: Partial<Record<ProviderName, (s: string, t: ChatTurn[], o?: LlmOptions) => Promise<LlmResult>>> = PROVIDERS,
+  opts: LlmOptions = {},
 ): Promise<LlmResult> {
   const attempts: ProviderAttempt[] = [];
 
@@ -494,7 +512,7 @@ export async function runChain(
     const call = registry[name];
     if (!call) continue;
     try {
-      return await call(system, turns);
+      return await call(system, turns, opts);
     } catch (err) {
       const attempt = { provider: name, error: err instanceof Error ? err.message : String(err) };
       attempts.push(attempt);

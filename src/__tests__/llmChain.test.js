@@ -126,3 +126,47 @@ describe('runChain', () => {
     expect(result.provider).toBe('gemini');
   });
 });
+
+describe('per-call options', () => {
+  /**
+   * The chat's 8s per-provider budget is sized for one short answer. /api/fit
+   * sends the whole evidence corpus and asks for structured JSON, and at 8s
+   * its providers were timing out and the chain was falling through — which
+   * surfaces as nothing at all, because a fall-through still returns a reply.
+   * It just costs three calls and three times the wait. The first production
+   * request took 24 seconds.
+   */
+  it('forwards options to the provider it calls', async () => {
+    const seen = [];
+    await runChain('sys', [{ role: 'user', content: 'q' }], undefined, {
+      anthropic: async (_s, _t, opts) => {
+        seen.push(opts);
+        return { text: 'ok', provider: 'anthropic', model: 'm' };
+      },
+    }, { timeoutMs: 18_000 });
+    expect(seen).toEqual([{ timeoutMs: 18_000 }]);
+  });
+
+  it('passes an empty object when a caller supplies none, so providers can destructure', async () => {
+    let received = 'unset';
+    await runChain('sys', [{ role: 'user', content: 'q' }], undefined, {
+      anthropic: async (_s, _t, opts) => {
+        received = opts;
+        return { text: 'ok', provider: 'anthropic', model: 'm' };
+      },
+    });
+    expect(received).toEqual({});
+  });
+
+  it('gives every provider in the chain the same options', async () => {
+    const seen = [];
+    await runChain('sys', [{ role: 'user', content: 'q' }], undefined, {
+      anthropic: async (_s, _t, opts) => { seen.push(['anthropic', opts]); throw new Error('down'); },
+      gemini: async (_s, _t, opts) => {
+        seen.push(['gemini', opts]);
+        return { text: 'ok', provider: 'gemini', model: 'm' };
+      },
+    }, { timeoutMs: 12_345 });
+    expect(seen).toEqual([['anthropic', { timeoutMs: 12_345 }], ['gemini', { timeoutMs: 12_345 }]]);
+  });
+});

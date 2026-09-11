@@ -47,6 +47,21 @@ const fitLimiter = createDurableLimiter({
   prefix: 'fit',
 });
 
+/**
+ * Per-provider budget for THIS endpoint, well above the 8s the chat uses.
+ *
+ * Measured, not guessed: the first production call took 24 seconds and still
+ * returned a good answer, which is the signature of providers timing out at 8s
+ * and the chain falling through. Nothing surfaced, because a fall-through
+ * still produces a reply — it just costs three calls and three times the wait.
+ * This prompt carries the whole evidence corpus and asks for structured JSON,
+ * so it needs a budget that matches.
+ *
+ * The ceiling is `maxDuration` below: three providers at this timeout must fit
+ * inside it, or the platform kills the request before the chain gives up.
+ */
+const PROVIDER_TIMEOUT_MS = positiveInt(process.env.FIT_PROVIDER_TIMEOUT_MS, 18_000);
+
 /** Built once per cold start: the evidence corpus does not change per request. */
 const SYSTEM_PROMPT = buildFitPrompt();
 const VALID_SOURCE_IDS = new Set(evidenceSources().map((s) => s.id));
@@ -97,6 +112,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       SYSTEM_PROMPT,
       [{ role: 'user', content: wrapJobDescription(jdResult.jd) }],
       ({ provider, error }) => console.warn(`[fit:${requestId}] provider ${provider} failed: ${error}`),
+      undefined,
+      { timeoutMs: PROVIDER_TIMEOUT_MS },
     );
 
     const parsed = parseFitResult(result.text, VALID_SOURCE_IDS);
@@ -132,6 +149,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 }
 
-export const config = { maxDuration: 30 };
+// Three providers at PROVIDER_TIMEOUT_MS must fit inside this, or the platform
+// kills the request before the fallback chain has finished trying.
+export const config = { maxDuration: 60 };
 
 export { MAX_JD_CHARS };

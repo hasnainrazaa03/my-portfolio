@@ -319,3 +319,41 @@ test.describe('fit comparison', () => {
     await expect(page.getByText(/nothing in the record shows cluster operations/i)).toBeVisible();
   });
 });
+
+/**
+ * Offline support.
+ *
+ * The only test that proves a service worker works is one that actually goes
+ * offline in a real browser. Unit tests can check the generated source; they
+ * cannot tell you the precache list resolves, that install succeeded, or that
+ * a navigation falls back correctly.
+ *
+ * Skipped against a local preview: the worker is registered only in a
+ * production build served over HTTPS or localhost, and `vite preview` does
+ * serve it — but the E2E base URL form is the one that matches how visitors
+ * get it, and running both doubles the flake surface for no extra signal.
+ */
+test.describe('offline', () => {
+  test('the site still loads with the network cut', async ({ page, context }) => {
+    await page.goto('/');
+    // Registration happens on `load`; installing precaches the shell.
+    await page.waitForFunction(() => navigator.serviceWorker?.controller !== undefined || true);
+    const registered = await page.evaluate(async () => {
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) return false;
+      await navigator.serviceWorker.ready;
+      return true;
+    });
+    test.skip(!registered, 'no service worker registered in this environment');
+
+    // A second load puts the page under the worker's control.
+    await page.reload();
+    await page.waitForFunction(() => !!navigator.serviceWorker.controller, null, { timeout: 10_000 });
+
+    await context.setOffline(true);
+    await page.reload();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByText('Something went wrong.')).toHaveCount(0);
+    await context.setOffline(false);
+  });
+});

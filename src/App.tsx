@@ -1,4 +1,5 @@
-import React, { Suspense, lazy, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
+import { lazyWithRecovery } from './utils/lazyWithRecovery';
 import { MotionConfig } from 'framer-motion';
 import { Analytics } from "@vercel/analytics/react";
 
@@ -21,18 +22,20 @@ import CursorGlow from './components/CursorGlow';
 import Footer from './components/Footer';
 import KonamiEasterEgg from './components/KonamiEasterEgg';
 
-// PERF: Below-the-fold sections are code-split via React.lazy so the initial
-// JS payload only ships what the user can see above the fold.
-const Education = lazy(() => import('./components/Education'));
-const Projects = lazy(() => import('./components/Projects'));
-const GitHubSection = lazy(() => import('./components/GitHubSection'));
+// PERF: Below-the-fold sections are code-split so the initial JS payload only
+// ships what the user can see above the fold. lazyWithRecovery rather than bare
+// lazy(): one chunk that cannot be fetched (offline, or after a deploy) must
+// not take the whole page down with it.
+const Education = lazyWithRecovery(() => import('./components/Education'), { name: 'Education' });
+const Projects = lazyWithRecovery(() => import('./components/Projects'), { name: 'Projects' });
+const GitHubSection = lazyWithRecovery(() => import('./components/GitHubSection'), { name: 'GitHub activity' });
 /**
  * The chat panel is an overlay nobody sees until they click the launcher, and
  * it drags in the whole local Q&A corpus for offline/instant answers. Keeping
  * it eager put that corpus on the critical path, where it competed with first
  * paint and capped how far the answer bank could grow.
  */
-const Chatbot = lazy(() => import('./components/Chatbot'));
+const Chatbot = lazyWithRecovery(() => import('./components/Chatbot'), { name: 'Chat', silent: true });
 
 /**
  * Mount the chat widget once the browser is idle, not at hydration.
@@ -63,18 +66,18 @@ function useIdleMount(timeoutMs = 3000): boolean {
   }, [timeoutMs]);
   return ready;
 }
-const ProjectDetailPage = lazy(() => import('./components/ProjectDetailPage'));
-const Experience = lazy(() => import('./components/Experience'));
-const Skills = lazy(() => import('./components/Skills'));
-const Achievements = lazy(() => import('./components/Achievements'));
-const Contact = lazy(() => import('./components/Contact'));
+const ProjectDetailPage = lazyWithRecovery(() => import('./components/ProjectDetailPage'), { name: 'This case study' });
+const Experience = lazyWithRecovery(() => import('./components/Experience'), { name: 'Flight Log' });
+const Skills = lazyWithRecovery(() => import('./components/Skills'), { name: 'Skills' });
+const Achievements = lazyWithRecovery(() => import('./components/Achievements'), { name: 'Achievements' });
+const Contact = lazyWithRecovery(() => import('./components/Contact'), { name: 'Contact' });
 
 // Stand-alone routes (no router dep — selected by pathname in `App`).
-const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
-const ResumePage = lazy(() => import('./components/ResumePage'));
-const NotFoundPage = lazy(() => import('./components/NotFoundPage'));
-const FitPage = lazy(() => import('./components/FitPage'));
-const InsightsPage = lazy(() => import('./components/InsightsPage'));
+const PrivacyPage = lazyWithRecovery(() => import('./components/PrivacyPage'), { name: 'The privacy notice' });
+const ResumePage = lazyWithRecovery(() => import('./components/ResumePage'), { name: 'The résumé' });
+const NotFoundPage = lazyWithRecovery(() => import('./components/NotFoundPage'), { name: 'This page' });
+const FitPage = lazyWithRecovery(() => import('./components/FitPage'), { name: 'The comparison page' });
+const InsightsPage = lazyWithRecovery(() => import('./components/InsightsPage'), { name: 'Insights' });
 
 /**
  * Shared shell for the stand-alone routes.

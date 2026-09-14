@@ -333,6 +333,38 @@ test.describe('fit comparison', () => {
  * serve it — but the E2E base URL form is the one that matches how visitors
  * get it, and running both doubles the flake surface for no extra signal.
  */
+/**
+ * A section whose code cannot be fetched must not take the page down.
+ *
+ * It used to: every section sits under the app-level error boundary, so one
+ * failed chunk replaced the whole page with "Something went wrong." The daily
+ * production check caught it intermittently offline, and the same happens to
+ * an open tab after any deploy, when the old chunk names stop existing.
+ */
+test.describe('unfetchable section chunks', () => {
+  // After the recovery reload the service worker controls the page, and
+  // requests a service worker makes are invisible to page.route — so the
+  // blocked chunk would quietly load through it and the test would prove
+  // nothing. Offline behaviour with the worker is covered by the next block.
+  test.use({ serviceWorkers: 'block' });
+
+  test('the page stays up and only that section says it did not load', async ({ page }) => {
+    // Every attempt fails, so the one recovery reload happens and then the notice shows.
+    await page.route(/\/assets\/Projects-[^/]+\.js$/, (route) => route.abort());
+    // The section chunk is requested at mount, so the recovery reload fires
+    // straight away; wait for the notice that follows it rather than scrolling
+    // (a scroll loop dies mid-reload with "execution context destroyed").
+    await page.goto('/');
+    const notice = page.getByText("Projects didn't load");
+    await notice.waitFor({ state: 'attached', timeout: 15_000 });
+    await notice.scrollIntoViewIfNeeded();
+    await expect(notice).toBeVisible();
+    await expect(page.getByRole('button', { name: /try again/i })).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByText('Something went wrong.')).toHaveCount(0);
+  });
+});
+
 test.describe('offline', () => {
   test('the site still loads with the network cut', async ({ page, context }) => {
     await page.goto('/');

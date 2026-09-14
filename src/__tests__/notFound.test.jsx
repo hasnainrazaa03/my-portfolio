@@ -52,7 +52,7 @@ describe('App routing', () => {
   const app = readFileSync(resolve(process.cwd(), 'src/App.tsx'), 'utf8');
 
   it('sends unrecognised pathnames to NotFoundPage instead of the home page', () => {
-    expect(app).toMatch(/const NotFoundPage = lazy\(/);
+    expect(app).toMatch(/const NotFoundPage = (lazy|lazyWithRecovery)\(/);
     expect(app).toMatch(
       /path !== '\/' && path !== '\/index\.html'[\s\S]{0,80}<StandalonePage><NotFoundPage \/><\/StandalonePage>/,
     );

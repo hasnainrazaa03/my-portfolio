@@ -22,7 +22,8 @@ function insideSuspense(source, pos) {
 }
 
 describe('App.tsx', () => {
-  const lazyNames = [...src.matchAll(/const\s+(\w+)\s*=\s*lazy\(/g)].map((m) => m[1]);
+  // lazyWithRecovery is React.lazy underneath, so the same Suspense rule applies.
+  const lazyNames = [...src.matchAll(/const\s+(\w+)\s*=\s*(?:lazy|lazyWithRecovery)\(/g)].map((m) => m[1]);
 
   it('declares lazy components to check', () => {
     expect(lazyNames.length).toBeGreaterThan(0);

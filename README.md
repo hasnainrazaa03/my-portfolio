@@ -49,18 +49,19 @@ Embedding an LLM into a portfolio introduces security, reliability, and UX chall
   - If every provider fails, the client falls back to canned local responses
 - **Conversation memory** — the last 10 turns are sent and re-validated server-side,
   so follow-up questions resolve against context
-- **Per-IP rate limiting** — fixed-window in-memory limiter (10/min on `/api/chat`, 30/min on `/api/analytics`)
+- **Per-IP rate limiting** — durable across serverless instances via Upstash Redis, falling back to a per-instance limiter if Redis is unreachable (10/min on `/api/chat`, 3 per 10 min on `/api/fit`). `/api/analytics` is not rate limited; it is admin-only behind a timing-safe token check
 - **Input Sanitization & Prompt-Injection Defense**:
   - Unicode normalization (NFKC), zero-width character stripping, control-char removal
   - Suspicious-pattern detection (ignore/forget/jailbreak/reveal-prompt variants)
   - 500-char input cap and unbroken-token obfuscation detection
   - User text wrapped in `<<USER>>…<<END_USER>>` delimiters before reaching the model
 - **Server-built system prompt** — the client cannot inject `context` or override the persona
-- **Local Q&A Fuzzy Search**:
-  - Offline-first fuzzy matching against `jarvisQnA.json` (50+ curated Q&A pairs)
-  - Users can search locally or escalate to the live LLM with one click
+- **Curated career knowledge** — the system prompt is built from `constants.ts` plus a claim-checked corpus derived from private master documents, including what must never be claimed
+- **Local Q&A search**:
+  - TF-IDF matching over ~140 curated and generated answers (`jarvisQnA.json` + `qnaBank.generated.ts`)
+  - Search locally, or escalate to the live model in one click
 
-Result: **Chat works 100% of the time — even if all external APIs fail.**
+Result: **when every provider is down, the chat still answers from the local bank** rather than showing an error.
 
 ---
 
@@ -72,26 +73,24 @@ Result: **Chat works 100% of the time — even if all external APIs fail.**
 Rendering complex Three.js scenes on low-power devices causes lag, layout thrashing, and battery drain.
 
 **The Solution**
-- **Conditional Rendering** — 3D Orbital Engine is gated to desktop viewports (`hidden md:block`)
-- **Lazy Loading** — Heavy `Hero3D` component loaded via `React.lazy` and `Suspense`
-- **Raycasting Optimization** — Scene rotates only during active mouse interaction using normalized coordinates
+- **Mount gating, not CSS hiding** — `Hero3D` mounts only at desktop widths (`useMediaQuery`). A `hidden md:block` wrapper only hides; React still mounts, and every phone was downloading the 127 KB three.js chunk to render nothing
+- **Data Saver** — also skipped when the browser reports Save-Data or a 2g/3g link; a CSS orbital stands in
+- **Lazy loading** — `React.lazy` + `Suspense`, inside a local error boundary so a WebGL failure degrades to the CSS fallback instead of blanking the page
+- **Interaction** — pointer parallax; clicking the core re-colours it via raycasting, with Enter/Space as the keyboard equivalent
+- **Frugal rendering** — the loop pauses offscreen and in hidden tabs, and renders one static frame under `prefers-reduced-motion`
 
 Result: **Near-instant First Contentful Paint (FCP)** with zero mobile performance penalties.
 
 ---
 
-### 3. Responsive GitHub Heatmap
+### 3. Live GitHub Activity
 
-Standard GitHub contribution graphs are fixed-width and break mobile layouts.
+**The Problem**
+Calling the GitHub API from the browser spends a 60-requests-per-hour anonymous quota shared by every visitor behind the same network, and fails loudly when it runs out.
 
-**The Problem**  
-`react-github-calendar` overflows horizontally on phones, harming UX.
-
-**The Solution — Custom Data Transformation Layer**
-
-- **Desktop** — Full 365-day contribution history
-- **Mobile** — Automatically sliced to the last 5 months
-- **Thematic Integration** — Custom color map enforces the site's **Teal (#2DD4BF)** palette
+**The Solution**
+- **Cached proxy** — `/api/github` fetches events server-side (with `GITHUB_TOKEN` when set), caches them, and serves the last good copy if GitHub is unavailable
+- **Contribution calendar** — the last year via `react-github-calendar`, coloured in the site's teal ramp for both themes
 
 ---
 
@@ -99,13 +98,15 @@ Standard GitHub contribution graphs are fixed-width and break mobile layouts.
 
 The chat system speaks in **first-person as Hasnain** — not a generic bot.
 
-- **Dual LLM Providers** — HuggingFace Llama 3 8B (default) + Gemini 2.0 Flash (optional)
+- **Provider chain** — Anthropic Claude (primary), Google Gemini, then Hugging Face, first success wins
+- **Streaming** — replies stream over SSE, capped at three sentences as they arrive, so nothing painted is ever taken back
+- **Source chips** — each answer links to the page sections backing it, derived server-side rather than trusted from the model
 - **Server-side persona** — system prompt is hardcoded server-side; clients cannot inject context
 - **Persona switcher** — server-side allow-list (`default` / `recruiter` / `aerospace` / `startup`) with a UI dropdown in the chatbot header
 - **Voice input** — mic button (Web Speech API) with inline error surfacing for `not-allowed` / `no-speech` / `audio-capture` / `network`
 - **Voice replies (TTS)** — opt-in speaker toggle reads assistant messages aloud via `SpeechSynthesis`
 - **Semantic Q&A search** — TF-IDF + bigram + cosine ranking over `jarvisQnA.json` with keyboard navigation
-- **Conversational memory** — last 10 turns persisted in `sessionStorage`
+- **Conversational memory** — the last 10 turns are sent with each request and re-validated server-side (held in component state, not persisted)
 - **Demo Mode** — Plays a canned conversation showcasing chat capabilities
 - **Reactor Core Launcher** — Icon-only floating button with microprocessor (CPU) icon, pulsing neon ring, and unread badge
 - **Security** — NFKC normalization, prompt-injection detection, per-IP rate limiting, CORS allow-list
@@ -172,15 +173,15 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 - Content-driven badges wall sourced from `constants.ACHIEVEMENTS`
 
 ### 🧪 Testing
-- **Vitest** — 92+ passing tests across 17 test suites
-- Coverage thresholds enforced in CI (`@vitest/coverage-v8`)
-- Coverage: chat persona, Q&A search, project filters, demo mode, about image, input sanitizer, rate limiter, IP hasher, chat service contract, speech recognition + synthesis hooks, reduced-motion + high-contrast hooks
+- **Vitest** — ~890 unit and component tests across ~90 files, with coverage thresholds enforced in CI
+- **Playwright** — 38 end-to-end specs against the built site locally, and against production on demand (`E2E_BASE_URL`)
+- **Content gates** — the content schema, résumé-PDF parity, claim integrity (phrasings the evidence cannot support), sitemap, social-card and app-icon freshness
 
 ### 🛡️ Supply-chain & CI
-- GitHub Actions: lint + test + coverage + build on Node 22, `actions@v5`
-- Lighthouse CI on PR (a11y gate)
-- Dependabot weekly, grouped by ecosystem
-- OSV scanner job (non-blocking) on every push
+- GitHub Actions on Node 22 (`actions/checkout@v7`, `setup-node@v7`): lint, typecheck (client and API), tests with coverage, build, and an initial-payload bundle budget
+- Lighthouse CI on pushes to main and on PRs — four routes; accessibility, best practices and SEO gate, performance warns (config in `lighthouserc.json`)
+- Dependency gate that fails only on production-reachable advisories, plus an OSV scanner job
+- Dependabot weekly, grouped; ESLint 10 held until `eslint-plugin-jsx-a11y` supports it
 
 ---
 
@@ -188,13 +189,14 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 
 | Layer | Technology |
 |-------|------------|
-| Frontend | React 19, Vite 7, Tailwind CSS 3 |
-| Animations | Framer Motion, CSS Keyframes |
-| 3D Engine | Three.js (WebGL) |
-| AI Chat | HuggingFace Llama 3 8B (default), Google Gemini 2.0 Flash (optional) |
-| Backend | Vercel Serverless Functions (Node.js) |
-| Database | Supabase (analytics) |
-| Testing | Vitest |
+| Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
+| Animations | Framer Motion, CSS keyframes |
+| 3D | Three.js (WebGL), desktop only |
+| AI chat | Anthropic Claude (primary), Google Gemini, Hugging Face — server-side chain |
+| Backend | Vercel serverless functions (Node, ESM) |
+| Data | Supabase (analytics), Upstash Redis (rate limits) |
+| Observability | Sentry (client and server), Vercel Analytics |
+| Testing | Vitest 5, Testing Library, Playwright, Lighthouse CI |
 | Services | EmailJS, GitHub API |
 
 ---
@@ -285,12 +287,25 @@ HF_MODEL="meta-llama/Meta-Llama-3-8B-Instruct"
 
 LLM_TIMEOUT_MS="8000"                              # per-provider budget
 
-# CORS allow-list (comma-separated). Vercel preview deploys & localhost are auto-allowed.
+# CORS: extra allowed origins (comma-separated). Previews are trusted only when
+# their host starts with VERCEL_PREVIEW_PREFIX; localhost only outside production.
 ALLOWED_ORIGIN="https://your-domain.vercel.app"
+VERCEL_PREVIEW_PREFIX="my-portfolio"
 
 # Rate limiting (optional overrides)
 CHAT_RATE_LIMIT_MAX="10"
 CHAT_RATE_LIMIT_WINDOW_MS="60000"
+FIT_RATE_LIMIT_MAX="3"
+FIT_RATE_LIMIT_WINDOW_MS="600000"
+FIT_PROVIDER_TIMEOUT_MS="18000"                    # /api/fit sends a large prompt
+
+# Durable rate limiting across instances (either naming works)
+UPSTASH_REDIS_REST_URL="https://..."
+UPSTASH_REDIS_REST_TOKEN="..."
+
+# GitHub activity proxy (optional token raises the API quota)
+GITHUB_TOKEN="ghp_..."
+GITHUB_USERNAME="hasnainrazaa03"
 
 # Contact Form (EmailJS)
 VITE_EMAILJS_SERVICE_ID="your_service_id"
@@ -300,11 +315,15 @@ VITE_EMAILJS_PUBLIC_KEY="your_public_key"
 # Analytics (Supabase)
 SUPABASE_URL="your_supabase_url"
 SUPABASE_SERVICE_KEY="your_service_key"
-ANALYTICS_SECRET_TOKEN="your_admin_token"          # for the in-chat analytics viewer
+ANALYTICS_SECRET_TOKEN="your_admin_token"          # for the analytics viewer
 ANALYTICS_IP_SALT="long_random_string"             # required for hashed-IP analytics
 
+# Error tracking
+SENTRY_DSN="https://...ingest.sentry.io/..."       # server
+VITE_SENTRY_DSN="https://...ingest.sentry.io/..."  # client; loads only on first error
+
 # Build flags
-VITE_ENABLE_ADMIN="false"                          # set 'true' to include the analytics viewer in the bundle
+VITE_ENABLE_ADMIN="false"                          # 'true' includes the analytics viewer in the bundle
 ```
 
 ### 3. Run Locally
@@ -321,7 +340,10 @@ npm run dev
 
 ### 4. Run Tests
 ```bash
-npm test
+npm run lint && npm run typecheck
+npx vitest run                     # unit + component tests
+npm run build && npx playwright test          # E2E against the local build
+E2E_BASE_URL=https://hasnainrazaa.vercel.app npx playwright test   # against production
 ```
 
 ---
@@ -330,33 +352,29 @@ npm test
 
 ```
 my-portfolio/
-├── api/                     # Vercel Serverless Functions
-│   ├── chat.js              # Dual LLM proxy (Gemini + HuggingFace)
-│   └── analytics.js         # Supabase analytics logger
-├── public/                  # Static assets (images, resume, icons)
+├── api/                        # Vercel serverless functions (TypeScript, ESM)
+│   ├── chat.ts                 # Streaming chat over the provider chain
+│   ├── fit.ts                  # Job-description comparison
+│   ├── analytics.ts            # Admin-only analytics read
+│   ├── github.ts               # Cached GitHub activity proxy
+│   ├── csp-report.ts · health.ts
+│   └── _lib/                   # llm, rateLimit, cors, sanitize, history, sentry, fitAnalysis…
+├── e2e/                        # Playwright specs
+├── public/                     # Images (+ .webp siblings), fonts, app icons, social cards
+├── scripts/                    # Build-time generators and CI checks
+│   ├── routeHeads.js           # One HTML file per route, each with its own <head>
+│   ├── spaNotFound.js          # 404.html with a not-found head
+│   ├── serviceWorker.js        # Generated offline worker
+│   ├── buildOgCards.js · buildAppIcons.js · buildSitemap.js
+│   └── checkBundleSize.js · checkDeps.js · buildCareerKnowledge.js
 ├── src/
-│   ├── components/          # React components
-│   │   ├── Hero.jsx         # 3D hero section
-│   │   ├── About.jsx        # Bio + circular portrait
-│   │   ├── Chatbot.jsx      # Chat panel + integrations
-│   │   ├── ChatLauncher.jsx # Icon-only floating button
-│   │   ├── ChatDemo.jsx     # Canned demo conversation
-│   │   ├── QnASearch.jsx    # Fuzzy local Q&A search
-│   │   ├── Projects.jsx     # Filterable project grid
-│   │   ├── ProjectCard.jsx  # Thumbnail project cards
-│   │   ├── ProjectModal.jsx # Full project detail modal
-│   │   ├── Contact.jsx      # EmailJS contact form
-│   │   └── ...
-│   ├── data/
-│   │   ├── jarvisQnA.json   # 50+ curated Q&A pairs
-│   │   └── chatDemo.json    # Demo conversation script
-│   ├── services/            # API service layers
-│   ├── hooks/               # Custom React hooks
-│   ├── __tests__/           # Vitest test suites
-│   ├── constants.js         # All site content (single source of truth)
-│   └── App.jsx              # Root component
-├── tailwind.config.js       # Extended theme (neon, glass tokens)
-└── vite.config.js
+│   ├── components/             # Sections, chat/, resume/, case-study pages, charts
+│   ├── hooks/ · services/ · utils/ · context/
+│   ├── data/                   # Content schema, claim rules, generated knowledge + Q&A
+│   ├── __tests__/              # Vitest suites
+│   ├── constants.ts            # All site content — the single source of truth
+│   └── App.tsx                 # Pathname routing, no router dependency
+├── lighthouserc.json · vercel.json · vite.config.js
 ```
 
 ---
@@ -375,23 +393,25 @@ It's designed to feel less like a website — and more like **a system**.
 ## 🔐 Security & Privacy
 
 **Server-side defenses**
-- Per-IP fixed-window rate limiting on `/api/chat` (10/min) and `/api/analytics` (30/min)
-- Strict CORS allow-list: production origin + `*.vercel.app` previews + localhost
-- Production headers (see [vercel.json](vercel.json)): HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Permissions-Policy`, `Referrer-Policy`, and a Content-Security-Policy in **Report-Only** mode pending observation
+- Per-IP rate limiting, durable across instances: `/api/chat` 10/min, `/api/fit` 3 per 10 min; `/api/analytics` is admin-only behind a timing-safe token check
+- CORS allow-list: the production origin, previews of THIS project only (`VERCEL_PREVIEW_PREFIX`), and localhost outside production
+- Production headers (see [vercel.json](vercel.json)): HSTS, `X-Frame-Options: DENY`, `X-Content-Type-Options: nosniff`, `Permissions-Policy`, `Referrer-Policy`, and an **enforcing** Content-Security-Policy with no `'unsafe-inline'` scripts — the two inline scripts are allowed by pinned hashes, which a test recomputes
+- Violations report to `/api/csp-report`
 - All API responses carry a `requestId` for correlation; upstream errors are never leaked to clients
 - Honeypot field + time-gate on the contact form to deter bots
 
 **Prompt-injection defense**
 - System prompt is hardcoded server-side — clients cannot inject `context`
 - Client `provider` hint is ignored — provider is selected by env only
-- User text is NFKC-normalized, stripped of zero-width / control chars, and capped at 500 chars
+- Chat text is NFKC-normalized, stripped of zero-width / control chars, and capped at 500 chars; pasted job descriptions on `/fit` are delimited and neutralised instead of pattern-matched, because a real posting for an AI role says "system prompt"
 - Suspicious patterns (`ignore previous`, `jailbreak`, `reveal prompt`, …) are detected and refused
 - User text is wrapped in `<<USER>>…<<END_USER>>` delimiters before reaching the model
 
 **Privacy posture**
 - Analytics never store raw `User-Agent` or `Referer`
 - IPs are hashed server-side with SHA-256 + a per-deploy salt (`ANALYTICS_IP_SALT`)
-- Admin analytics viewer is gated behind a build flag (`VITE_ENABLE_ADMIN`) and a backend-validated password kept in `sessionStorage`
+- The admin analytics viewer is excluded from production builds (`VITE_ENABLE_ADMIN`) and needs a backend-validated token, held in `sessionStorage`
+- The browser writes no analytics: `/api/chat` records each exchange server-side, so there is no client credential to steal
 
 **Reporting**
 Found a vulnerability? See [SECURITY.md](SECURITY.md) (or `.well-known/security.txt`).
@@ -399,6 +419,14 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) (or `.well-known/security.
 ---
 
 ## 📜 Changelog
+
+### 2026-08 → 2026-09 — Production hardening and features
+
+**Found only in production, then guarded:** `/resume`, `/privacy` and case studies 404'd with no SPA fallback; every serverless function failed to load (extensionless ESM imports); the declared font, Inter, never loaded; a Vercel deploy was silently skipped; the Lighthouse gate had never passed.
+
+**Built:** streaming chat with source chips and curated career knowledge; project case studies with per-route heads, generated social cards and a real 404; ATS résumé view; job-description comparison (`/fit`); installable offline support; the career arc chart; Vimaan's runtime diagram.
+
+**Corrected claims:** a "10x throughput" figure the evidence could not support, Vimaan's "inter-process communication" (a thread and a queue in one process) and INT8 presented as a speed gain (it was for memory). `claimRules.ts` now fails CI if any return.
 
 ### 2026-05 — Audit Remediation (v2.1)
 

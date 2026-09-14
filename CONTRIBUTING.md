@@ -13,7 +13,7 @@ Thanks for your interest in this project. This is primarily a personal portfolio
 ```bash
 git clone https://github.com/hasnainrazaa03/my-portfolio.git
 cd my-portfolio
-npm install --legacy-peer-deps
+npm install                  # no --legacy-peer-deps: peer conflicts are fixed, not overridden
 cp .env.example .env.local   # then fill in keys; see README.md
 vercel dev                   # frontend + serverless functions
 # or
@@ -23,14 +23,17 @@ npm run dev                  # frontend only (chat / analytics will be offline)
 ## Before opening a PR
 
 ```bash
-npm run lint   # ESLint must pass
-npm test       # All Vitest suites must pass
-npm run build  # Production build must succeed
+npm run lint && npm run typecheck      # ESLint, and tsc for both client and api/
+npx vitest run                         # unit + component tests
+npm run build && npm run check:bundle  # build, then the initial-payload budget
+npx playwright test                    # E2E against the built site
+npm run sitemap:check && npm run og:check && npm run icons:check
 ```
 
 ## What this project will not accept
 
 - Removal of CSP, rate limiting, or input sanitization
+- Content in `src/constants.ts` that the claim rules reject — every figure there traces to evidence
 - Re-introduction of client-side context injection into the chat system prompt
 - Logging of raw IPs, User-Agent strings, or referrers
 - Dependencies that ship analytics or trackers
@@ -42,7 +45,7 @@ npm run build  # Production build must succeed
 
 ## Style
 
-- ES modules, modern React (hooks only — no class components).
+- TypeScript, ES modules, modern React (hooks only — no class components). Relative imports under `api/` must end in `.js` — see the README.
 - Tailwind utilities first; bespoke CSS only when utilities don't compose cleanly.
 - Keep new files small (< 300 lines). Extract helpers into `src/services/` or `api/_lib/`.
 - Tests live next to the suite they exercise in `src/__tests__/`.

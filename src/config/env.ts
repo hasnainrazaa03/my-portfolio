@@ -29,8 +29,6 @@ export function readEnv(source = import.meta.env) {
 
   return {
     emailjs,
-    // Build flag — include the in-chat analytics viewer in the bundle.
-    adminEnabled: source.VITE_ENABLE_ADMIN === 'true',
   };
 }
 

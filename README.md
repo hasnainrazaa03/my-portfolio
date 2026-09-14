@@ -315,15 +315,13 @@ VITE_EMAILJS_PUBLIC_KEY="your_public_key"
 # Analytics (Supabase)
 SUPABASE_URL="your_supabase_url"
 SUPABASE_SERVICE_KEY="your_service_key"
-ANALYTICS_SECRET_TOKEN="your_admin_token"          # for the analytics viewer
+ANALYTICS_SECRET_TOKEN="your_admin_token"          # unlocks the private /insights page
 ANALYTICS_IP_SALT="long_random_string"             # required for hashed-IP analytics
 
 # Error tracking
 SENTRY_DSN="https://...ingest.sentry.io/..."       # server
 VITE_SENTRY_DSN="https://...ingest.sentry.io/..."  # client; loads only on first error
 
-# Build flags
-VITE_ENABLE_ADMIN="false"                          # 'true' includes the analytics viewer in the bundle
 ```
 
 ### 3. Run Locally
@@ -410,7 +408,7 @@ It's designed to feel less like a website — and more like **a system**.
 **Privacy posture**
 - Analytics never store raw `User-Agent` or `Referer`
 - IPs are hashed server-side with SHA-256 + a per-deploy salt (`ANALYTICS_IP_SALT`)
-- The admin analytics viewer is excluded from production builds (`VITE_ENABLE_ADMIN`) and needs a backend-validated token, held in `sessionStorage`
+- Visitor insights live on a private, noindex page (`/insights`) that shows nothing without `ANALYTICS_SECRET_TOKEN`; the API sends aggregates, never raw rows or hashed IPs, and redacts contact details visitors typed
 - The browser writes no analytics: `/api/chat` records each exchange server-side, so there is no client credential to steal
 
 **Reporting**

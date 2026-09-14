@@ -8,7 +8,6 @@ const FULL = {
   VITE_EMAILJS_SERVICE_ID: 'svc',
   VITE_EMAILJS_TEMPLATE_ID: 'tpl',
   VITE_EMAILJS_PUBLIC_KEY: 'pub',
-  VITE_ENABLE_ADMIN: 'true',
 };
 
 describe('readEnv', () => {
@@ -19,20 +18,15 @@ describe('readEnv', () => {
     // analytics at all, so there is no client-side credential to read. See
     // api/_lib/analyticsLog.ts.
     expect(e).not.toHaveProperty('analyticsWriteToken');
-    expect(e.adminEnabled).toBe(true);
+    // The build flag that included an in-chat analytics viewer is gone too:
+    // the private /insights page replaced it, gated by the server token.
+    expect(e).not.toHaveProperty('adminEnabled');
   });
 
   it('marks emailjs unconfigured when any of the three keys is missing', () => {
     expect(readEnv({ ...FULL, VITE_EMAILJS_PUBLIC_KEY: undefined }).emailjs.isConfigured).toBe(false);
     expect(readEnv({ ...FULL, VITE_EMAILJS_SERVICE_ID: '' }).emailjs.isConfigured).toBe(false);
     expect(readEnv({}).emailjs.isConfigured).toBe(false);
-  });
-
-  it('treats adminEnabled as a strict "true" string flag', () => {
-    expect(readEnv({ VITE_ENABLE_ADMIN: 'true' }).adminEnabled).toBe(true);
-    expect(readEnv({ VITE_ENABLE_ADMIN: 'false' }).adminEnabled).toBe(false);
-    expect(readEnv({ VITE_ENABLE_ADMIN: '1' }).adminEnabled).toBe(false);
-    expect(readEnv({}).adminEnabled).toBe(false);
   });
 
   it('never throws on a totally empty source', () => {

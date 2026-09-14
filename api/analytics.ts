@@ -4,6 +4,8 @@ import { randomUUID, timingSafeEqual as nodeTimingSafeEqual } from 'node:crypto'
 import { applyCors } from './_lib/cors.js';
 import { captureServerError, flushSentry } from './_lib/sentry.js';
 import { usableSecret } from './_lib/secrets.js';
+import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
+import { buildInsights, type InsightRow } from './_lib/insights.js';
 
 /**
  * Supabase client is created LAZILY. At module scope, `createClient` runs on
@@ -33,15 +35,13 @@ function getSupabase() {
  *    the existing table schema valid without exposing PII.
  */
 
-/** A row of the `jarvis_analytics` table, as consumed by the insights pass. */
-interface AnalyticsRow {
-  question?: string | null;
-  session_id?: string | null;
-  timestamp: string;
-}
-
-/** Keyed occurrence counts (topics, entities, hour buckets). */
-type Counter = Record<string, number>;
+/**
+ * Reads are rate limited now that /insights is a real, discoverable page with
+ * a token form. The token is long and random and compared in constant time,
+ * so guessing it was never realistic; this just keeps a form someone can find
+ * from becoming a free database-read amplifier.
+ */
+const readLimiter = createDurableLimiter({ windowMs: 10 * 60_000, max: 20, prefix: 'analytics' });
 
 function safeEq(a: unknown, b: unknown): boolean {
   if (typeof a !== 'string' || typeof b !== 'string') return false;
@@ -94,6 +94,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // ── READ ─────────────────────────────────────────────────────────────────
   if (req.method === 'GET') {
+    const { limited } = await readLimiter(getClientIp(req));
+    if (limited) {
+      return res.status(429).json({ error: 'Too many requests. Try again in a few minutes.', requestId });
+    }
     try {
       const authHeader = req.headers.authorization || '';
       const expectedToken = usableSecret(
@@ -108,9 +112,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           .json({ error: 'Unauthorized', message: 'Provide the analytics secret token', requestId });
       }
 
+      // Only the columns the insights use. `select('*')` also shipped the hashed
+      // IP of every visitor to the browser, where nothing read it.
       const { data, error } = await getSupabase()
         .from('jarvis_analytics')
-        .select('*')
+        .select('question, response, session_id, timestamp')
         .order('timestamp', { ascending: false })
         .limit(1000);
 
@@ -119,11 +125,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         return res.status(500).json({ error: 'Failed to fetch analytics', requestId });
       }
 
+      // Aggregates, not rows: replies, session ids and anything IP-shaped stay
+      // on the server, and contact details visitors typed are redacted.
       return res.status(200).json({
         success: true,
-        total: data.length,
-        data,
-        insights: processAnalyticsData(data),
+        insights: buildInsights((data ?? []) as InsightRow[]),
         requestId,
       });
     } catch (err) {
@@ -135,73 +141,4 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   return res.status(405).json({ error: 'Method not allowed', requestId });
-}
-
-// ── Insights (unchanged shape) ─────────────────────────────────────────────
-function processAnalyticsData(data: AnalyticsRow[]) {
-  if (!data || data.length === 0) {
-    return {
-      totalSessions: 0,
-      totalQuestions: 0,
-      topicBreakdown: {},
-      mostAskedTopics: [],
-      entityMentions: {},
-      hourlyBreakdown: {},
-    };
-  }
-
-  const topicBreakdown: Counter = {};
-  const entityMentions: Counter = {};
-  const hourlyBreakdown: Counter = {};
-
-  data.forEach((interaction: AnalyticsRow) => {
-    const topics = extractTopics(interaction.question);
-    const entities = extractEntities(interaction.question);
-    const hour = new Date(interaction.timestamp).getHours();
-    topics.forEach((t) => (topicBreakdown[t] = (topicBreakdown[t] || 0) + 1));
-    entities.forEach((e) => (entityMentions[e] = (entityMentions[e] || 0) + 1));
-    hourlyBreakdown[`${hour}:00`] = (hourlyBreakdown[`${hour}:00`] || 0) + 1;
-  });
-
-  const mostAskedTopics = Object.entries(topicBreakdown)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([topic, count]) => ({ topic, count }));
-
-  const topEntities = Object.entries(entityMentions).sort((a, b) => b[1] - a[1]).slice(0, 10);
-  const uniqueSessions = new Set(data.map((d: AnalyticsRow) => d.session_id)).size;
-
-  return {
-    totalSessions: uniqueSessions,
-    totalQuestions: data.length,
-    topicBreakdown,
-    mostAskedTopics,
-    entityMentions: topEntities,
-    hourlyBreakdown,
-  };
-}
-
-function extractTopics(question: unknown): string[] {
-  const lower = String(question || '').toLowerCase();
-  const topics: string[] = [];
-  if (/(project|vimaan|tumor|brain)/.test(lower)) topics.push('projects');
-  if (/(skill|tech|language|proficient)/.test(lower)) topics.push('skills');
-  if (/(experience|work|deloitte|drdo|prana)/.test(lower)) topics.push('experience');
-  if (/(education|usc|rvce|university|degree)/.test(lower)) topics.push('education');
-  if (/(contact|email|reach|linkedin|github)/.test(lower)) topics.push('contact');
-  if (/(ai|machine learning|\bml\b|deep learning)/.test(lower)) topics.push('ai_ml');
-  if (/(aerospace|cfd|aerodynamic|flight)/.test(lower)) topics.push('aerospace');
-  return topics;
-}
-
-function extractEntities(question: unknown): string[] {
-  const lower = String(question || '').toLowerCase();
-  const entities: string[] = [];
-  const dict = [
-    'vimaan', 'brain tumor', 'segmentation', 'recipe vault', 'expense tracker', 'cfd', 'aerodynamic',
-    'python', 'pytorch', 'tensorflow', 'react', 'nodejs', 'matlab', 'sql', 'java', 'cpp', 'javascript',
-    'deloitte', 'drdo', 'prana', 'usc', 'rvce', 'liba space',
-  ];
-  dict.forEach((d) => { if (lower.includes(d)) entities.push(d); });
-  return [...new Set(entities)];
 }

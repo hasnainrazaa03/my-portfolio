@@ -28,6 +28,12 @@ export interface RouteHead {
   description: string;
   /** `article` for a case study, `website` for everything else. */
   type: 'website' | 'article';
+  /**
+   * Keep out of search results: emits `robots: noindex` in place of the
+   * canonical link. For private pages that still need a real file so the URL
+   * answers 200 rather than falling to the 404 shell.
+   */
+  noindex?: boolean;
   /** Public path of a candidate social image ("/peakroutine-hero.png"); the build decides if it is usable. */
   image?: string;
   /**
@@ -71,6 +77,13 @@ export function routeHeads(): RouteHead[] {
         `Paste a job description and see what ${name}'s record actually supports, what it does not, and the work behind every claim.`,
       ),
       type: 'website',
+    },
+    {
+      path: '/insights',
+      title: `Visitor insights | ${name}`,
+      description: 'Private visitor analytics for the site owner. Nothing loads without a token.',
+      type: 'website',
+      noindex: true,
     },
     {
       path: '/privacy',

@@ -37,7 +37,6 @@ describe('findEnvProblems', () => {
         VITE_ANALYTICS_WRITE_TOKEN: 'a3f8'.repeat(16),
         VITE_SENTRY_DSN: 'https://abc@o1.ingest.us.sentry.io/2',
         VITE_EMAILJS_PUBLIC_KEY: 'user_AbC123',
-        VITE_ENABLE_ADMIN: 'true',
       }),
     ).toEqual([]);
   });

@@ -52,6 +52,10 @@
   --arc-aerospace: #d97706;
   --arc-ai: #0d9488;
   --arc-software: #2a78d6;
+
+  /* Single-series mark on the insights page. teal-600: validated with the
+     dataviz checker at 3.74:1 on a white card. */
+  --viz-accent: #0d9488;
 }
 
 .dark {
@@ -63,6 +67,9 @@
   --arc-aerospace: #d97706;
   --arc-ai: #0d9488;
   --arc-software: #3987e5;
+
+  /* 5.11:1 on the dark card surface (#0f0d1f). */
+  --viz-accent: #0d9488;
 }
 
 html {

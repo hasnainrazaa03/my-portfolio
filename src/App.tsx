@@ -74,6 +74,7 @@ const PrivacyPage = lazy(() => import('./components/PrivacyPage'));
 const ResumePage = lazy(() => import('./components/ResumePage'));
 const NotFoundPage = lazy(() => import('./components/NotFoundPage'));
 const FitPage = lazy(() => import('./components/FitPage'));
+const InsightsPage = lazy(() => import('./components/InsightsPage'));
 
 /**
  * Shared shell for the stand-alone routes.
@@ -180,6 +181,9 @@ export default function App() {
   }
   if (path === '/fit' || path === '/fit/') {
     return <StandalonePage><FitPage /></StandalonePage>;
+  }
+  if (path === '/insights' || path === '/insights/') {
+    return <StandalonePage><InsightsPage /></StandalonePage>;
   }
   if (path !== '/' && path !== '/index.html') {
     return <StandalonePage><NotFoundPage /></StandalonePage>;

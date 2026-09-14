@@ -374,3 +374,57 @@ test.describe('case study architecture', () => {
     await expect(page.getByRole('heading', { name: /how it works/i })).toHaveCount(0);
   });
 });
+
+/**
+ * The private insights page. The real API needs ANALYTICS_SECRET_TOKEN, so the
+ * data is mocked; what matters end to end is that the route exists, stays out
+ * of search, shows nothing without a token, and renders what the API returns.
+ */
+test.describe('visitor insights', () => {
+  test('is noindex and shows only a token form until a token is accepted', async ({ page, request }) => {
+    const html = await (await request.get('/insights')).text();
+    expect(html).toContain('name="robots" content="noindex"');
+
+    await page.goto('/insights');
+    await expect(page.getByRole('heading', { level: 1, name: /visitor insights/i })).toBeVisible();
+    await expect(page.getByLabel(/analytics token/i)).toHaveAttribute('type', 'password');
+    await expect(page.getByText(/questions per day/i)).toHaveCount(0);
+  });
+
+  test('renders insights once the API accepts the token', async ({ page }) => {
+    const now = new Date().toISOString();
+    await page.route('**/api/analytics', (route) => {
+      const ok = route.request().headers().authorization === 'Bearer test-token';
+      return route.fulfill({
+        status: ok ? 200 : 401,
+        contentType: 'application/json',
+        body: JSON.stringify(
+          ok
+            ? {
+                success: true,
+                insights: {
+                  rows: 1, from: now, to: now,
+                  totals: { questions: 1, conversations: 1, medianPerConversation: 1, offTopic: 0, possibleGaps: 0 },
+                  timestamps: [now],
+                  topics: [{ id: 'projects', label: 'Projects', count: 1 }],
+                  mentions: [{ label: 'Project Vimaan', count: 1 }],
+                  possibleGaps: [], offTopic: [],
+                  recent: [{ question: 'How did you validate the ONNX export?', at: now, topics: ['Projects'] }],
+                },
+              }
+            : { error: 'Unauthorized' },
+        ),
+      });
+    });
+
+    await page.goto('/insights');
+    await page.getByLabel(/analytics token/i).fill('wrong');
+    await page.getByRole('button', { name: /view insights/i }).click();
+    await expect(page.getByText(/that token was not accepted/i)).toBeVisible();
+
+    await page.getByLabel(/analytics token/i).fill('test-token');
+    await page.getByRole('button', { name: /view insights/i }).click();
+    await expect(page.getByText('How did you validate the ONNX export?')).toBeVisible();
+    await expect(page.getByRole('group', { name: /questions per day/i })).toBeVisible();
+  });
+});

@@ -43,13 +43,11 @@ class AnalyticsService {
   interactions: Interaction[];
   sessionStart: Date;
   sessionId: string;
-  backendUrl: string;
 
   constructor() {
     this.interactions = [];
     this.sessionStart = new Date();
     this.sessionId = this.generateSessionId();
-    this.backendUrl = '/api/analytics';
     this.pruneStaleSessions();
   }
 
@@ -205,30 +203,6 @@ class AnalyticsService {
       sessionStart: this.sessionStart.toISOString(),
       sessionId: this.sessionId,
     };
-  }
-
-  async fetchAnalyticsFromBackend(token: string): Promise<unknown> {
-    try {
-      const response = await fetch(this.backendUrl, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Unauthorized: Invalid or missing token');
-        }
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
-    } catch (error) {
-      console.error('Failed to fetch analytics:', error);
-      return null;
-    }
   }
 
   clearAnalytics(): void {

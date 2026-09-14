@@ -108,7 +108,7 @@ export function renderRouteHead(html, route, { origin, image }) {
   if (!canonical.test(out)) throw new Error('index.html has no canonical link to fill in');
   // A page with no URL of its own (the 404 shell) must not claim to BE some
   // other page: drop the canonical rather than point it at the home page.
-  out = route.path === null
+  out = route.path === null || route.noindex
     ? out.replace(canonical, '<meta name="robots" content="noindex" />')
     : replaceLiteral(out, canonical, '<link rel="canonical" href="', escapeAttr(url), '" />');
 

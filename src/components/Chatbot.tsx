@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ChatLauncher from './ChatLauncher';
 import QnASearch from './QnASearch';
@@ -10,16 +10,8 @@ import { useChat } from '../hooks/useChat';
 import { useChatVoice } from '../hooks/useChatVoice';
 import { useFocusTrap } from '../hooks/useFocusTrap';
 
-// SECURITY/PERF: the admin AnalyticsViewer is only included in the bundle
-// when explicitly enabled at build time. Production deploys ship without it.
-const ADMIN_ENABLED = import.meta.env.VITE_ENABLE_ADMIN === 'true';
-const AnalyticsViewer = ADMIN_ENABLED
-  ? lazy(() => import('./AnalyticsViewer'))
-  : null;
-
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [showAnalyticsVault, setShowAnalyticsVault] = useState(false);
   const panelRef = useRef(null);
 
   const chat = useChat({ isOpen });
@@ -43,30 +35,6 @@ const Chatbot = () => {
     setIsOpen(false);
     scrollToSection(sectionId);
   }, []);
-
-  // Close the analytics vault whenever the panel closes.
-  useEffect(() => {
-    if (!isOpen) setShowAnalyticsVault(false);
-  }, [isOpen]);
-
-  // Dismiss the analytics vault on an outside click.
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (showAnalyticsVault) {
-        const target = e.target as Node | null;
-        const analyticsElement = document.querySelector('.analytics-vault');
-        const chatbotElement = document.querySelector('.chatbot-container');
-
-        if (analyticsElement && !analyticsElement.contains(target) &&
-            chatbotElement && !chatbotElement.contains(target)) {
-          setShowAnalyticsVault(false);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [showAnalyticsVault]);
 
   return (
     <>
@@ -98,8 +66,6 @@ const Chatbot = () => {
               ttsEnabled={voice.ttsEnabled}
               ttsSpeaking={voice.ttsSpeaking}
               onToggleTts={voice.toggleTts}
-              adminEnabled={ADMIN_ENABLED}
-              onToggleAnalytics={() => setShowAnalyticsVault((v) => !v)}
               onClearHistory={chat.clearHistory}
               onClose={() => setIsOpen(false)}
               isBusy={chat.isBusy}
@@ -147,16 +113,6 @@ const Chatbot = () => {
           </motion.div>
         )}
       </AnimatePresence>
-
-      {ADMIN_ENABLED && AnalyticsViewer && (
-        <Suspense fallback={null}>
-          <AnalyticsViewer
-            isOpen={showAnalyticsVault}
-            onClose={() => setShowAnalyticsVault(false)}
-            className="analytics-vault"
-          />
-        </Suspense>
-      )}
     </>
   );
 };

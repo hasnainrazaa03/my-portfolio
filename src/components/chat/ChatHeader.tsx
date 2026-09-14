@@ -1,6 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, Trash2, BarChart3, Play, Volume2, VolumeX, X } from 'lucide-react';
+import { Sparkles, Trash2, Play, Volume2, VolumeX, X } from 'lucide-react';
 import Avatar from './Avatar';
 import ChatDemo from '../ChatDemo';
 import { AVATAR_SRC, PERSONAS } from './chatConstants';
@@ -13,8 +12,6 @@ interface ChatHeaderProps {
   ttsEnabled: boolean;
   ttsSpeaking: boolean;
   onToggleTts: () => void;
-  adminEnabled: boolean;
-  onToggleAnalytics: () => void;
   onClearHistory: () => void;
   /** Close the panel from INSIDE it. The launcher sits outside the focus trap,
    *  so without this a keyboard or screen-reader user's only exit is Escape. */
@@ -43,8 +40,6 @@ const ChatHeader = ({
   ttsEnabled,
   ttsSpeaking,
   onToggleTts,
-  adminEnabled,
-  onToggleAnalytics,
   onClearHistory,
   onClose,
   isBusy,
@@ -105,16 +100,6 @@ const ChatHeader = ({
           >
             {ttsEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
           </button>
-        )}
-        {adminEnabled && (
-          <motion.button
-            whileHover={{ scale: 1.1 }}
-            onClick={onToggleAnalytics}
-            className="p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-white/10 text-slate-400 hover:text-primary transition-colors"
-            title="View Analytics Vault"
-          >
-            <BarChart3 size={16} />
-          </motion.button>
         )}
         <button
           onClick={onClearHistory}

@@ -13,18 +13,24 @@
  */
 import { readFileSync, writeFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { readProjects } from './projectData.js';
 
 const ORIGIN = 'https://hasnainrazaa.vercel.app';
 const OUT = resolve(process.cwd(), 'public/sitemap.xml');
 
-/** Read titles straight from constants.ts — no TS toolchain needed here. */
+/**
+ * Project titles from constants.ts — no TS toolchain needed here.
+ *
+ * Delegates to projectData.js, which splits the PROJECTS block into entries
+ * and takes each entry's OWN title. This used to match every line reading
+ * `title: "..."` in the block, which was fine until a project gained a nested
+ * object with a title of its own: Vimaan's architecture diagram is titled "One
+ * voice command, key press to read-back", and the sitemap advertised
+ * /projects/one-voice-command-key-press-to-read-back — a URL that 404s. Two
+ * parsers for the same file will disagree eventually; now there is one.
+ */
 export function projectTitles(constantsSource) {
-  const start = constantsSource.indexOf('export const PROJECTS');
-  if (start < 0) return [];
-  const rest = constantsSource.slice(start);
-  const end = rest.indexOf('\nexport const', 1);
-  const block = end > 0 ? rest.slice(0, end) : rest;
-  return [...block.matchAll(/^\s*title:\s*"([^"]+)"/gm)].map((m) => m[1]);
+  return readProjects(constantsSource).map((p) => p.title);
 }
 
 /** Mirrors src/utils/slug.ts. Kept in step by sitemap.test.js. */

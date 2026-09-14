@@ -114,7 +114,7 @@ export const PROJECTS: Project[] = [
     category: "AI/ML",
     status: "In Progress",
     description: "An NLU-driven voice command co-pilot integrated into the X-Plane flight simulator.",
-    longDescription: "Project Vimaan is an AI-powered natural language understanding system designed to control the X-Plane flight simulator through voice commands. I engineered a schema-driven data generation pipeline that produced structured, labeled command examples using transformer-based paraphrasing (Pegasus, FLAN-T5). I fine-tuned a DistilBERT-based joint intent-and-slot model and optimized it using dynamic INT8 quantization for efficient offline inference. The trained model was integrated into the X-Plane plugin architecture using a thread-safe inter-process communication layer with real-time text-to-speech feedback, enabling hands-free cockpit interaction without blocking the simulator's execution loop.",
+    longDescription: "Project Vimaan is an AI-powered natural language understanding system designed to control the X-Plane flight simulator through voice commands. I engineered a schema-driven data generation pipeline that produced structured, labeled command examples using transformer-based paraphrasing (Pegasus, FLAN-T5). I fine-tuned a DistilBERT-based joint intent-and-slot model, used dynamic INT8 quantization to cut its memory footprint, and exported it to ONNX Runtime for inference. Inside the X-Plane plugin, blocking microphone capture and speech recognition run on a worker thread that hands each command to the simulator's main thread through a thread-safe queue, so the simulator never stalls, and every accepted command is read back aloud.",
     images: ["/Xplane.jpg", "/Xplane2.jpg"],
     techStack: [
       "Python",
@@ -130,13 +130,52 @@ export const PROJECTS: Project[] = [
       "NLU Pipeline Architecture",
       "X-Plane SDK",
       "XPPython3",
-      "Thread-safe Inter-Process Communication",
+      "Thread-safe Worker Queue",
       "Text-to-Speech (TTS)",
       "NumPy",
       "Pandas",
-      "Git"
+      "Git",
+      "ONNX Runtime"
     ],
-    links: { github: "https://github.com/hasnainrazaa03/Project-Vimaan", demo: null }
+    links: { github: "https://github.com/hasnainrazaa03/Project-Vimaan", demo: null },
+    // Authored from VIMAAN_MASTER.md section 3 ("End-to-End Architecture"),
+    // runtime side. No latency figures anywhere: the microphone-to-command path
+    // has never been measured end to end (see claimRules.ts).
+    architecture: {
+      title: "One voice command, key press to read-back",
+      summary: "Blocking audio work stays off the simulator's thread, and four guards stand between the model's output and the aircraft, each with its own way out.",
+      lanes: [
+        {
+          label: "Worker thread",
+          why: "Microphone capture and speech recognition both block; on the simulator's thread they would freeze the aircraft mid-flight.",
+          stages: [
+            { label: "Push-to-talk capture", detail: "Key-down starts one capture; a lock refuses a second", passes: "audio" },
+            { label: "Mic health check + speech-to-text", passes: "transcript" },
+          ],
+        },
+        {
+          label: "X-Plane main thread",
+          why: "A flight-loop callback drains the queue every 0.2 s, so every simulator call happens on the thread that owns the simulator.",
+          stages: [
+            { label: "Normalize aviation input", detail: "Five ordered passes", passes: "normalized text" },
+            { label: "Joint DistilBERT", detail: "ONNX Runtime; knows nothing about X-Plane, safety or units", passes: "intent + slot logits" },
+            { label: "Decode", detail: "Softmax confidence; BIO tags into a slot dictionary", passes: "intent, slots" },
+            { label: "Correct + post-process", detail: "A spoken instance number overrides the model; range-aware slots", passes: "candidate command" },
+            { label: "Confidence floor", exit: { when: "below 0.55", outcome: "\"Please repeat that\" — nothing sent" } },
+            { label: "Actionable intent?", exit: { when: "chit-chat", outcome: "Acknowledged — no command" } },
+            { label: "Safety interlocks", exit: { when: "risky", outcome: "Spoken warning; confirmation gate armed" } },
+            { label: "Slot validation", exit: { when: "invalid value", outcome: "Rejected with a spoken error" }, passes: "validated command" },
+            { label: "Command the simulator", detail: "xp.commandOnce / xp.setDataf", passes: "result" },
+            { label: "Phonetic read-back", detail: "Spoken confirmation of what was done" },
+          ],
+        },
+      ],
+      handoffs: ["queue.Queue — the only thing the two threads share"],
+      notes: [
+        "The model consumes normalized text and returns logits. Everything domain-specific happens outside it, which is what makes the stack testable without a simulator.",
+        "The plugin does simulator I/O and nothing else; every decision is a pure function. That is why 284 tests run in under 8 seconds with no simulator, microphone, GPU or network.",
+      ],
+    },
   },
   {
     id: 2,

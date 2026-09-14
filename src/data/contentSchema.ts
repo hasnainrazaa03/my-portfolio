@@ -117,6 +117,39 @@ export const EducationSchema = z.object({
   path: ['period'],
 });
 
+/**
+ * Short labels are enforced, not suggested: a box that holds a sentence is a
+ * paragraph drawn badly, and explanation belongs in `detail`, `why` or the
+ * caption.
+ */
+const ArchitectureStageSchema = z.object({
+  label: z.string().min(1).max(40),
+  detail: z.string().min(1).max(90).optional(),
+  passes: z.string().min(1).max(40).optional(),
+  exit: z.object({ when: z.string().min(1).max(30), outcome: z.string().min(1).max(60) }).optional(),
+});
+
+const ArchitectureSchema = z
+  .object({
+    title: z.string().min(1).max(70),
+    summary: z.string().min(1).max(240),
+    lanes: z
+      .array(
+        z.object({
+          label: z.string().min(1).max(40),
+          why: z.string().min(1).max(160),
+          stages: z.array(ArchitectureStageSchema).min(1),
+        }),
+      )
+      .min(1),
+    handoffs: z.array(z.string().min(1).max(80)),
+    notes: z.array(z.string().min(1).max(260)),
+  })
+  .refine((d) => d.handoffs.length === d.lanes.length - 1, {
+    message: 'one hand-off label per boundary between lanes',
+    path: ['handoffs'],
+  });
+
 export const ProjectSchema = z.object({
   id: z.number(),
   title: z.string().min(1),
@@ -130,6 +163,7 @@ export const ProjectSchema = z.object({
     github: z.url().nullable(),
     demo: z.url().nullable(),
   }),
+  architecture: ArchitectureSchema.optional(),
 });
 
 export const AchievementSchema = z.object({

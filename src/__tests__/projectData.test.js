@@ -46,3 +46,32 @@ describe('readProjects()', () => {
     expect(readPersonalName()).toBe(PERSONAL_INFO.name);
   });
 });
+
+describe('nested titles', () => {
+  it('take each project\'s OWN title, not one from an object nested inside it', async () => {
+    // The sitemap once matched every `title: "..."` line in the block, and
+    // advertised a case-study URL built from Vimaan's DIAGRAM title.
+    const { projectTitles } = await import('../../scripts/buildSitemap.js');
+    const source = `
+export const PROJECTS: Project[] = [
+  {
+    id: 1,
+    title: "Real Project",
+    category: "AI/ML",
+    architecture: {
+      title: "A diagram title",
+      lanes: [{ label: "x", stages: [{ label: "y" }] }],
+    },
+  },
+  {
+    id: 2,
+    title: "Second Project",
+    category: "Aerospace",
+  },
+];
+export const NEXT = 1;
+`;
+    expect(projectTitles(source)).toEqual(['Real Project', 'Second Project']);
+    expect(readProjects(source).map((p) => p.title)).toEqual(['Real Project', 'Second Project']);
+  });
+});

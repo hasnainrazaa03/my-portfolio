@@ -357,3 +357,20 @@ test.describe('offline', () => {
     await context.setOffline(false);
   });
 });
+
+test.describe('case study architecture', () => {
+  test('Vimaan explains how it works, with its guards visible', async ({ page }) => {
+    await page.goto('/projects/project-vimaan');
+    await expect(page.getByRole('heading', { level: 2, name: /how it works/i })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Worker thread' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'X-Plane main thread' })).toBeVisible();
+    await expect(page.getByText(/queue\.Queue/)).toBeVisible();
+    await expect(page.getByText('Rejected with a spoken error')).toBeVisible();
+  });
+
+  test('projects without a diagram do not render an empty section', async ({ page }) => {
+    await page.goto('/projects/usc-ledger');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /how it works/i })).toHaveCount(0);
+  });
+});

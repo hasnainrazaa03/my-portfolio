@@ -57,6 +57,33 @@ export const PROHIBITED_CLAIMS: readonly ClaimRule[] = [
     reason: 'the detector service ran in staging',
     instead: '"served from a containerized FastAPI microservice" (staging)',
   },
+  // ── Project Vimaan (VIMAAN_MASTER.md, "Verb and claim constraints") ──────
+  {
+    pattern: /inter-?process communication/i,
+    reason:
+      "Vimaan's hand-off is a daemon worker thread and a queue.Queue inside ONE process; the site said inter-process for months",
+    instead: '"a worker thread hands each command to the simulator\'s main thread through a thread-safe queue"',
+  },
+  {
+    pattern: /\bUDP\b/i,
+    reason: 'the master rules UDP out: no Vimaan component communicates over UDP',
+    instead: 'describe the in-process worker-thread queue',
+  },
+  {
+    pattern: /INT8[^.]{0,80}\b(faster|speed-?ups?|lower latency|efficient (offline )?inference)\b/i,
+    reason: 'dynamic INT8 was measured for memory, not speed; the speed came from the parity-verified ONNX export',
+    instead: '"INT8 quantization to cut the memory footprint, and an ONNX Runtime export for inference"',
+  },
+  {
+    pattern: /\b89,?000\b/i,
+    reason: 'the pre-v11 training set, which included word-form augmentation later removed; v11 is 69,918 rows',
+    instead: '"a 69,918-row training set"',
+  },
+  {
+    pattern: /\b(sub-?\s?500\s?ms|under 500\s?ms)\b/i,
+    reason: 'the microphone-to-command path has never been measured end to end',
+    instead: 'describe the architecture, not a latency',
+  },
 ];
 
 /**

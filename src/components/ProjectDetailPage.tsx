@@ -4,6 +4,7 @@ import { PROJECTS, PERSONAL_INFO } from '../constants';
 import { toSlug } from '../utils/slug';
 import LazyImage from './ui/LazyImage';
 import NotFoundPage from './NotFoundPage';
+import ArchitectureFlow from './ArchitectureFlow';
 import type { Project } from '../types/content';
 
 /**
@@ -106,6 +107,15 @@ const ProjectDetailPage = ({ slug }: ProjectDetailPageProps) => {
             {project.longDescription || project.description}
           </p>
         </section>
+
+        {project.architecture && (
+          <section className="mb-10">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-primary mb-3">
+              How it works
+            </h2>
+            <ArchitectureFlow diagram={project.architecture} />
+          </section>
+        )}
 
         <section className="mb-10">
           <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-primary mb-3">

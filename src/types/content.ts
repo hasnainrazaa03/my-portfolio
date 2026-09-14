@@ -79,6 +79,44 @@ export interface ProjectLinks {
   demo: string | null;
 }
 
+/**
+ * One step on a project's runtime path.
+ *
+ * `passes` labels the arrow to the NEXT stage — what actually moves. An
+ * unlabeled arrow only says "related somehow".
+ */
+export interface ArchitectureStage {
+  label: string;
+  detail?: string;
+  passes?: string;
+  /** A way out of the pipeline before the end — the guard, and what happens. */
+  exit?: { when: string; outcome: string };
+}
+
+/** A run of stages that share an execution context (a thread, a service). */
+export interface ArchitectureLane {
+  label: string;
+  /** Why this work lives here and not elsewhere. One sentence. */
+  why: string;
+  stages: ArchitectureStage[];
+}
+
+/**
+ * A case-study diagram of how a project actually runs. Authored only from the
+ * master document's architecture section, never from memory: a wrong diagram
+ * misrepresents the work to exactly the reader it is meant to convince.
+ */
+export interface ArchitectureDiagram {
+  title: string;
+  /** The claim the figure makes, as a caption. */
+  summary: string;
+  lanes: ArchitectureLane[];
+  /** Labels for the hand-off between lane i and lane i + 1. */
+  handoffs: string[];
+  /** Boundaries a reader cannot see in the boxes. */
+  notes: string[];
+}
+
 export interface Project {
   id: number;
   title: string;
@@ -89,6 +127,8 @@ export interface Project {
   images: string[];
   techStack: string[];
   links: ProjectLinks;
+  /** Optional runtime diagram for the case-study page. */
+  architecture?: ArchitectureDiagram;
 }
 
 export interface Achievement {

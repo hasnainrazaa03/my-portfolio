@@ -148,6 +148,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 - **Konami Easter Egg** — ↑↑↓↓←→←→BA unlocks a cockpit overlay
 - **Now Snapshot** — Live status block on the About section sourced from `constants.NOW`
 - **Print-to-PDF Resume** — Standalone `/resume` route, print-optimised, with a **plain-text (ATS) view** at `?view=ats`: one column, standard section names, full profile URLs as text, complete tech stacks. Both views render from one data module so they cannot disagree
+- **How it works** — case studies can carry a runtime diagram (`architecture` in constants.ts): execution contexts as lanes, labelled arrows, and each guard's condition and outcome. Vimaan's is authored from its master document
 - **Career arc** — every role and degree since 2018 on one to-scale time axis, coloured by field, with hover/focus details and a table view; dates parse strictly from the same `period` strings the rest of the site renders
 - **Installable, and works offline** — web manifest, maskable icons and launcher shortcuts; a generated service worker precaches the shell and runtime-caches the rest, so a previously visited page (chat Q&A included) still opens with no network
 - **Compare a role** — `/fit` takes a pasted job description and returns what the record supports, what it doesn't, and a link to the work behind each claim. Every match is validated server-side against a fixed list of real projects and roles, so an invented citation cannot reach the page

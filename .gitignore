@@ -36,3 +36,6 @@ _roadmap/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Lighthouse CI writes collected reports here on every local `lhci autorun`.
+.lighthouseci/

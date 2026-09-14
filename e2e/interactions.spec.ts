@@ -191,3 +191,32 @@ test.describe('resume views', () => {
     await expect(page.getByRole('button', { name: /^designed$/i })).toHaveAttribute('aria-pressed', 'true');
   });
 });
+
+/**
+ * The career arc: to-scale bars, a tooltip on hover and focus, and a table
+ * view so no value depends on hovering.
+ */
+test.describe('career arc', () => {
+  test('shows real totals, reveals details on hover, and switches to a table', async ({ page }) => {
+    await page.goto('/');
+    const arc = page.locator('figure', { hasText: 'The arc, to scale' });
+    await arc.scrollIntoViewIfNeeded();
+    await expect(arc).toBeVisible();
+    await expect(arc).not.toContainText('NaN');
+
+    await arc.getByRole('button', { name: /^Prana\.ai/ }).hover();
+    await expect(arc.getByText(/Sep 2019 – Dec 2021/)).toBeVisible();
+
+    await arc.getByRole('button', { name: 'View as table' }).click();
+    await expect(arc.getByRole('table')).toBeVisible();
+    await expect(arc.getByRole('row')).toHaveCount(9); // header + 6 roles + 2 degrees
+  });
+
+  test('is reachable by keyboard, with the same detail as hover', async ({ page }) => {
+    await page.goto('/');
+    const bar = page.getByRole('button', { name: /^Deloitte, Technology Analyst/ });
+    await bar.scrollIntoViewIfNeeded();
+    await bar.focus();
+    await expect(page.getByText('Aug 2022 – Nov 2024')).toBeVisible();
+  });
+});

@@ -4,6 +4,7 @@ import { BookOpen, ExternalLink } from 'lucide-react';
 import { EDUCATION } from '../constants';
 import SectionHeading from './ui/SectionHeading';
 import LazyImage from './ui/LazyImage';
+import { yearsOnly } from '../utils/period';
 
 const Education = () => (
   <section id="education" className="py-20 relative">
@@ -43,7 +44,7 @@ const Education = () => (
               </a>
               
               <span className="text-accent font-mono text-xs border border-accent/20 px-2 py-1 rounded bg-accent/5">
-                {edu.period}
+                {yearsOnly(edu.period)}
               </span>
             </div>
 

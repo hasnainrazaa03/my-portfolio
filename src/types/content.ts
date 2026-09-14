@@ -52,12 +52,27 @@ export interface Education {
   gpa: string;
   /** Optional distinction, e.g. "Silver Medalist". Absent for most entries. */
   honors?: string;
+  /**
+   * Set for the degrees that belong on the career arc. Absent means "before
+   * the arc" (high school), and the schema requires a month-precise period
+   * whenever it is set.
+   */
+  focus?: FocusArea;
   coursework: string;
   image: string;
   url: string;
 }
 
 export type ProjectCategory = 'AI/ML' | 'Aerospace' | 'Full-Stack Web';
+
+/**
+ * The primary field a role or degree was spent in, for the career arc chart.
+ * Chosen by what the work WAS, not by the title: PeakRoutine's title is
+ * Software Engineer, but the work is the LLM layer and risk models, so it is
+ * `ai`. Three values on purpose: a fourth colour on a time axis, where any
+ * two bars can sit side by side, stops being reliably distinguishable.
+ */
+export type FocusArea = 'aerospace' | 'ai' | 'software';
 
 export interface ProjectLinks {
   github: string | null;
@@ -112,6 +127,8 @@ export interface Experience {
   location: string;
   logo: string;
   description: string[];
+  /** Primary field of the work. Required: every role is on the career arc. */
+  focus: FocusArea;
 }
 
 export interface SiteConfig {

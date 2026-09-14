@@ -60,7 +60,10 @@ export const EDUCATION: Education[] = [
     id: 1,
     degree: "M.S. in Computer Science",
     school: "University of Southern California",
-    period: "2025 - 2027 (Expected)",
+    // Month precision from public/resume.pdf. The career arc needs months:
+    // a bare "2025" would be drawn from January, most of a year early.
+    period: "Aug 2025 - Dec 2027 (Expected)",
+    focus: "software",
     gpa: "3.67 / 4.0", 
     coursework: "Analysis of Algorithms (CSCI570), Computer Networks (EE450), Programming Systems Design (CSCI455), Database Systems (CSCI585)",
     image: "/USC.png",
@@ -70,7 +73,8 @@ export const EDUCATION: Education[] = [
     id: 2,
     degree: "B.E. in Aerospace Engg.",
     school: "RV College of Engineering",
-    period: "2018 - 2022",
+    period: "Aug 2018 - Jul 2022",
+    focus: "aerospace",
     // Native 10-point CGPA, then the 4.0-scale figure the résumé PDF prints.
     // A recruiter sees both documents; with only the first number here they
     // read as different results. resumeParity.test.js holds them in agreement.
@@ -456,6 +460,7 @@ export const EXPERIENCE: Experience[] = [
     role: "Software Engineer",
     company: "PeakRoutine",
     period: "Mar 2026 - Present",
+    focus: "ai", // title is Software Engineer; the work is the LLM layer and risk models
     location: "Los Angeles, CA",
     logo: "/peakroutine.png",
     description: [
@@ -470,6 +475,7 @@ export const EXPERIENCE: Experience[] = [
     role: "AI Software Engineer Intern",
     company: "Sunbase Data",
     period: "May 2026 - Aug 2026",
+    focus: "ai", // YOLO detection and a RAG sales agent
     location: "Orlando, FL (Remote)",
     logo: "/sunbase.png",
     description: [
@@ -483,6 +489,7 @@ export const EXPERIENCE: Experience[] = [
     role: "Technology Analyst",
     company: "Deloitte",
     period: "Aug 2022 - Nov 2024",
+    focus: "software", // mostly Pega workflow platform, REST orchestration and reporting; two LLM bullets of six
     location: "Bengaluru, India",
     logo: "/Deloitte.png",
     description: [
@@ -499,6 +506,7 @@ export const EXPERIENCE: Experience[] = [
     role: "Research Intern",
     company: "Defence Research and Development Organisation (DRDO)",
     period: "Jan 2022 - Aug 2022",
+    focus: "aerospace", // store-separation CFD
     location: "Bengaluru, India",
     logo: "/DRDO.png",
     description: [
@@ -514,6 +522,7 @@ export const EXPERIENCE: Experience[] = [
     role: "Founding Engineer",
     company: "Prana.ai",
     period: "Sep 2019 - Dec 2021",
+    focus: "ai", // medical-imaging ML pipelines
     location: "Remote",
     logo: "/Prana.png",
     description: [
@@ -529,6 +538,7 @@ export const EXPERIENCE: Experience[] = [
     role: "Project Head and Engineer",
     company: "Team Antariksh",
     period: "Sep 2018 - Aug 2022",
+    focus: "aerospace", // CubeSat and sounding-rocket programmes
     location: "Bengaluru, India",
     logo: "/ta.svg",
     description: [

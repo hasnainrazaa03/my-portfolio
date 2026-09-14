@@ -45,11 +45,24 @@
      washed out. Kept verbatim for dark, where it scores 11.13:1 on #030014. */
   --color-primary: 15 118 110;
   --color-accent: 146 64 14; /* amber-800 — clears 4.5:1 even on its own 10% tint */
+
+  /* Career arc marks (src/utils/careerArc.ts). Validated as a set with the
+     dataviz palette checker — all pairs, against a white card and the light
+     page — not picked by eye. Mark colours only: text never wears them. */
+  --arc-aerospace: #d97706;
+  --arc-ai: #0d9488;
+  --arc-software: #2a78d6;
 }
 
 .dark {
   --color-primary: 45 212 191;
   --color-accent: 245 158 11; /* amber-500 */
+
+  /* Stepped for the dark surface, not flipped: amber-500 and teal-400 sit
+     above the dark lightness band and were rejected by the checker. */
+  --arc-aerospace: #d97706;
+  --arc-ai: #0d9488;
+  --arc-software: #3987e5;
 }
 
 html {

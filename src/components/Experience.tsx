@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { EXPERIENCE } from '../constants';
 import SectionHeading from './ui/SectionHeading';
 import TimelineItem from './TimelineItem';
+import CareerArc from './CareerArc';
 
 const Experience = () => {
   return (
@@ -10,6 +11,10 @@ const Experience = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         
         <SectionHeading number="05" title="Flight Log" subtitle="Career trajectory and mission history" />
+
+        {/* The shape first, then the detail: the arc shows how the fields
+            overlap and follow each other, which the list below cannot. */}
+        <CareerArc />
 
         <div className="relative">
           <div className="absolute left-4 md:left-1/2 transform md:-translate-x-1/2 top-0 bottom-0 w-[2px] bg-slate-200 dark:bg-white/10">

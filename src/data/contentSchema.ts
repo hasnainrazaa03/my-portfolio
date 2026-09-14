@@ -14,6 +14,7 @@
  * `z.string().email()` form is deprecated in v4).
  */
 import { z } from 'zod';
+import { parsePeriod } from '../utils/period';
 import { isIconKey, ICON_KEYS } from '../components/ui/iconMap';
 import {
   PERSONAL_INFO,
@@ -87,6 +88,17 @@ export const NowSchema = z.object({
     .min(1),
 });
 
+const FocusSchema = z.enum(['aerospace', 'ai', 'software']);
+
+/**
+ * A period the career arc can place. Checked here rather than in the chart, so
+ * an edit to constants.ts that the parser cannot read fails validation loudly
+ * instead of dropping a bar from the chart without a word.
+ */
+const chartablePeriod = z.string().min(1).refine((p) => parsePeriod(p) !== null, {
+  message: 'must be "Mon YYYY - Mon YYYY", "Mon YYYY - Present" or "... (Expected)"',
+});
+
 export const EducationSchema = z.object({
   id: z.number(),
   degree: z.string().min(1),
@@ -99,6 +111,10 @@ export const EducationSchema = z.object({
   coursework: z.string().min(1),
   image: assetRef,
   url: z.url(),
+  focus: FocusSchema.optional(),
+}).refine((e) => !e.focus || parsePeriod(e.period) !== null, {
+  message: 'an education entry on the career arc needs a month-precise period',
+  path: ['period'],
 });
 
 export const ProjectSchema = z.object({
@@ -149,10 +165,11 @@ export const ExperienceSchema = z.object({
   id: z.number(),
   role: z.string().min(1),
   company: z.string().min(1),
-  period: z.string().min(1),
+  period: chartablePeriod,
   location: z.string().min(1),
   logo: assetRef,
   description: z.array(z.string().min(1)).min(1),
+  focus: FocusSchema,
 });
 
 /**

@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_lib/vercel.js';
 
 /**
  * Liveness probe. Deliberately imports NOTHING from ./_lib so it isolates

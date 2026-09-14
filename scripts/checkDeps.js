@@ -5,7 +5,7 @@
  * advisories that cannot be fixed from here. At the time of writing, six
  * packages are flagged — js-yaml, minimatch, path-to-regexp, undici, ajv,
  * smol-toml — every one of them a transitive dependency pinned by its parent
- * (@vercel/node, lighthouse, eslint), and every one dev-only. A blanket block
+ * (dev tooling such as lighthouse and eslint), and every one dev-only. A blanket block
  * would fail CI on day one for problems this repo cannot act on, which trains
  * everyone to ignore the red X. That is worse than no gate.
  *

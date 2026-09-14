@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_lib/vercel.js';
 import { createClient } from '@supabase/supabase-js';
 import { randomUUID, timingSafeEqual as nodeTimingSafeEqual } from 'node:crypto';
 import { applyCors } from './_lib/cors.js';

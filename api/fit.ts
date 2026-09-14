@@ -1,4 +1,4 @@
-import type { VercelRequest, VercelResponse } from '@vercel/node';
+import type { VercelRequest, VercelResponse } from './_lib/vercel.js';
 import { randomUUID } from 'node:crypto';
 import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
 import { applyCors } from './_lib/cors.js';

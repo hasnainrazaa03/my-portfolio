@@ -2,9 +2,10 @@
  * checkDeps.test.js — the production-reachability dependency gate.
  *
  * The gate blocks only on advisories reachable from production dependencies.
- * A blanket block would fail on day one over six dev-only transitives pinned by
- * @vercel/node, lighthouse and eslint — unfixable from this repo, and a red X
- * nobody can act on is one everybody learns to ignore.
+ * A blanket block would have failed on day one over dev-only transitives pinned
+ * by tooling — unfixable from this repo at the time, and a red X nobody can act
+ * on is one everybody learns to ignore. (The largest source, @vercel/node, was
+ * later removed outright: it supplied two type names.)
  *
  * So the dev/prod split IS the gate. These tests pin it.
  */

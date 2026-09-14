@@ -47,6 +47,8 @@ export interface ChatOptions {
 export interface SourceLink {
   id: string;
   label: string;
+  /** A case-study page to open; absent for a chip that scrolls to a section. */
+  href?: string;
 }
 
 /**

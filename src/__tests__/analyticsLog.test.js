@@ -231,7 +231,8 @@ describe('recorded question is unwrapped', () => {
     const { resolve } = await import('node:path');
     const src = readFileSync(resolve(process.cwd(), 'api/chat.ts'), 'utf8');
 
-    const values = [...src.matchAll(/^\s*question:\s*(.+?),\s*$/gm)].map((m) => m[1].trim());
+    // `question,` shorthand counts too: it records the variable of that name.
+    const values = [...src.matchAll(/^\s*question(?::\s*(.+?))?,\s*$/gm)].map((m) => (m[1] ?? 'question').trim());
     expect(values.length).toBeGreaterThan(0);
 
     for (const value of values) {

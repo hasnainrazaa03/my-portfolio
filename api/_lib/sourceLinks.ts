@@ -17,11 +17,19 @@
  * links that scroll nowhere.
  */
 
+import { PROJECTS } from '../../src/constants.js';
+import { projectPath } from '../../src/utils/slug.js';
+
 export interface SourceLink {
-  /** DOM id of the section, e.g. `projects`. */
+  /** DOM id of the section, e.g. `projects`, or `case-study:<slug>`. */
   id: string;
   /** Human label rendered on the chip. */
   label: string;
+  /**
+   * Set for a case study: the page to open. A chip without one scrolls to the
+   * section named by `id`.
+   */
+  href?: string;
 }
 
 interface SectionRule extends SourceLink {
@@ -119,3 +127,83 @@ export function deriveSources(question: string, reply: string, limit = 2): Sourc
 
 /** Exposed so tests can assert every id corresponds to a real page section. */
 export const SOURCE_SECTION_IDS: readonly string[] = SECTIONS.map((s) => s.id);
+
+/**
+ * Case studies a reply names, by the names people actually use for them.
+ *
+ * Keyed by the project's exact title so a renamed project fails the test that
+ * resolves every entry, instead of producing a link to a slug that no longer
+ * exists. Patterns are specific on purpose: "orbit" would match every CubeSat
+ * answer, so USC Ledger's later name is left out.
+ */
+const CASE_STUDY_NAMES: readonly { title: string; label: string; patterns: readonly RegExp[] }[] = [
+  { title: 'Project Vimaan', label: 'Vimaan', patterns: [/\bvimaan\b/] },
+  { title: 'PeakRoutine - AI Health & Wellness Platform', label: 'PeakRoutine', patterns: [/\bpeak\s?routine\b/] },
+  {
+    title: 'Brain Tumor Segmentation (BraTS 2021 - Vision Transformer)',
+    label: 'BraTS segmentation',
+    patterns: [/\bbrats\b/, /\bbrain tumou?r segmentation\b/],
+  },
+  { title: 'RVSAT-1 (Team Antariksh)', label: 'RVSAT-1', patterns: [/\brvsat\b/, /\bcubesat\b/] },
+  { title: 'ReSOLV-1 (Team Antariksh)', label: 'ReSOLV-1', patterns: [/\bresolv\b/, /\bsounding rockets?\b/] },
+  { title: 'Manzil Recipe Vault', label: 'Manzil Recipe Vault', patterns: [/\bmanzil\b/, /\brecipe vault\b/] },
+  { title: 'USC Ledger', label: 'USC Ledger', patterns: [/\busc ledger\b/, /\bexpense tracker\b/] },
+  {
+    title: 'Numerical Investigation of Store Separation from a Rectangular Cavity',
+    label: 'Store separation',
+    patterns: [/\bstore separation\b/, /\bweapons?[- ]bay\b/],
+  },
+  {
+    title: 'Numerical Investigation of Vortex Influence on NACA 4412 Airfoil',
+    label: 'NACA 4412 study',
+    patterns: [/\bnaca\s?4412\b/, /\bvortex influence\b/],
+  },
+];
+
+/** Exposed so tests can check every entry resolves and every project has one. */
+export const CASE_STUDY_TITLES: readonly string[] = CASE_STUDY_NAMES.map((c) => c.title);
+
+/**
+ * Case-study pages for the projects this exchange is about, strongest first.
+ *
+ * Same scoring as `deriveSources`: the answer counts double, and the
+ * "[Ask about: …]" suggestions are ignored. A title that no longer matches a
+ * project is skipped rather than linked.
+ */
+export function deriveCaseStudies(question: string, reply: string, limit = 1): SourceLink[] {
+  const q = String(question ?? '').toLowerCase();
+  const r = String(reply ?? '')
+    .replace(/\[Ask about:[^\]]*\]/gi, '')
+    .toLowerCase();
+  const hits = (text: string, patterns: readonly RegExp[]) => patterns.filter((p) => p.test(text)).length;
+
+  return CASE_STUDY_NAMES.map((c, order) => ({
+    c,
+    order,
+    score: hits(r, c.patterns) * REPLY_WEIGHT + hits(q, c.patterns) * QUESTION_WEIGHT,
+    project: PROJECTS.find((p) => p.title === c.title),
+  }))
+    .filter((x) => x.score > 0 && x.project)
+    .sort((a, b) => b.score - a.score || a.order - b.order)
+    .slice(0, Math.max(0, limit))
+    .map(({ c }) => {
+      const href = projectPath(c.title);
+      return { id: `case-study:${href.slice('/projects/'.length)}`, label: `${c.label} case study`, href };
+    });
+}
+
+const GITHUB_SECTION: SourceLink = { id: 'github', label: 'GitHub' };
+
+/**
+ * Everything the chat shows under one answer: a case study when a project is
+ * named, then the sections, at most three chips. When the answer drew on live
+ * GitHub data the GitHub section always makes the cut, because that is where
+ * the same activity is shown on the page.
+ */
+export function deriveChatLinks(question: string, reply: string, { live = false } = {}): SourceLink[] {
+  const cases = deriveCaseStudies(question, reply, 1);
+  const sections = deriveSources(question, reply, 3);
+  const ordered = live ? [...cases, GITHUB_SECTION, ...sections] : [...cases, ...sections];
+  const seen = new Set<string>();
+  return ordered.filter((l) => !seen.has(l.id) && seen.add(l.id)).slice(0, 3);
+}

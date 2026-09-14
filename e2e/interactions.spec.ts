@@ -259,3 +259,44 @@ test.describe('chat to fit hand-off', () => {
     await expect(page.getByText(/brought over from the chat/i)).toBeVisible();
   });
 });
+
+/**
+ * Chips under a chat answer: a named project links to its case study, in a
+ * new tab so the conversation survives; a section chip still scrolls.
+ */
+test.describe('chat case-study links', () => {
+  test('a project named in the answer opens its case study in a new tab', async ({ page, context }) => {
+    const reply = 'Project Vimaan is my voice copilot for X-Plane. [Ask about: its safety guards?]';
+    const sources = [
+      { id: 'case-study:project-vimaan', label: 'Vimaan case study', href: '/projects/project-vimaan' },
+      { id: 'projects', label: 'Projects' },
+    ];
+    await page.route('**/api/chat', (route) =>
+      route.fulfill({
+        status: 200,
+        headers: { 'content-type': 'text/event-stream' },
+        body:
+          `event: delta\ndata: ${JSON.stringify({ text: 'Project Vimaan is my voice copilot for X-Plane.' })}\n\n` +
+          `event: done\ndata: ${JSON.stringify({ reply, sources, provider: 'mock', requestId: 'e2e' })}\n\n`,
+      }),
+    );
+
+    await page.goto('/');
+    await page.locator("button[aria-controls='chatbot-panel']").click();
+    const input = page.getByPlaceholder(/ask about projects/i);
+    await input.fill('Tell me about Vimaan');
+    await input.press('Enter');
+
+    const chip = page.locator('#chatbot-panel').getByRole('link', { name: /vimaan case study/i });
+    await expect(chip).toBeVisible({ timeout: 10_000 });
+    await expect(chip).toHaveAttribute('target', '_blank');
+    await expect(page.locator('#chatbot-panel').getByRole('button', { name: /jump to the projects section/i })).toBeVisible();
+
+    const [tab] = await Promise.all([context.waitForEvent('page'), chip.click()]);
+    await tab.waitForLoadState();
+    await expect(tab).toHaveURL(/\/projects\/project-vimaan$/);
+    await expect(tab.getByRole('heading', { level: 1 })).toContainText('Vimaan');
+    // The conversation is still here.
+    await expect(page.locator('#chatbot-panel').getByText(/voice copilot/)).toBeVisible();
+  });
+});

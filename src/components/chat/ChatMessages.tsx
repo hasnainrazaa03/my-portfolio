@@ -108,7 +108,26 @@ const ChatMessages = ({ messages, isTyping, onNavigate }: ChatMessagesProps) => 
                   Read more
                 </span>
                 <div className="flex flex-wrap gap-1.5 mt-1.5" role="group" aria-labelledby={`sources-label-${idx}`}>
-                  {msg.sources.map((source) => (
+                  {msg.sources.map((source) =>
+                    source.href ? (
+                      // A case study is a page, not a section. It opens in a
+                      // new tab because the conversation lives in this one
+                      // and would be lost on navigation.
+                      <a
+                        key={source.id}
+                        href={source.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center min-h-[24px] px-2.5 py-1 rounded-full text-[11px] font-medium
+                                   bg-primary/10 text-primary border border-primary/30
+                                   hover:bg-primary/20 transition-colors
+                                   focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+                      >
+                        {source.label}
+                        <span aria-hidden="true">&nbsp;↗</span>
+                        <span className="sr-only"> (opens in a new tab)</span>
+                      </a>
+                    ) : (
                     <button
                       key={source.id}
                       type="button"
@@ -124,7 +143,8 @@ const ChatMessages = ({ messages, isTyping, onNavigate }: ChatMessagesProps) => 
                           it (WCAG 2.5.3 Label in Name). */}
                       <span className="sr-only"> — jump to the {source.label} section</span>
                     </button>
-                  ))}
+                    ),
+                  )}
                 </div>
               </div>
             )}

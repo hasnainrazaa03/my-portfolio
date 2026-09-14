@@ -141,8 +141,15 @@ describe('case-study links', () => {
     expect(new Set(links.map((l) => l.id)).size).toBe(links.length);
   });
 
-  it('always includes GitHub for a live answer', () => {
-    const links = deriveChatLinks('what are you building this week?', 'Mostly the portfolio.', { live: true });
-    expect(links.map((l) => l.id)).toContain('github');
+  it('puts GitHub first for a live answer', () => {
+    const links = deriveChatLinks('what are you building this week?', 'Mostly the portfolio, plus diagrams for Manzil.', { live: true });
+    expect(links[0].id).toBe('github');
+  });
+
+  it('does not cite Education for the words "USC Ledger"', () => {
+    // Found in production: a reply about this week's commits named USC Ledger
+    // and got an Education chip.
+    const links = deriveChatLinks('what are you building?', 'Diagrams for Manzil and USC Ledger.', { live: true });
+    expect(links.map((l) => l.id)).not.toContain('education');
   });
 });

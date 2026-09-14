@@ -91,6 +91,7 @@ Calling the GitHub API from the browser spends a 60-requests-per-hour anonymous 
 **The Solution**
 - **Cached proxy** — `/api/github` fetches events server-side (with `GITHUB_TOKEN` when set), caches them, and serves the last good copy if GitHub is unavailable
 - **Contribution calendar** — the last year via `react-github-calendar`, coloured in the site's teal ramp for both themes
+- **Live chat answers** — a question about recent work ("what is he building this week?") makes the chat fetch the public repositories pushed in the last 14 days and their commits from the last 7 (`api/_lib/githubActivity.ts`), passed to the model as delimited data in the visitor's turn so the cached system prompt never changes. The events feed is not used for this: GitHub's public event payloads no longer carry commit messages
 
 ---
 
@@ -100,7 +101,9 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 
 - **Provider chain** — Anthropic Claude (primary), Google Gemini, then Hugging Face, first success wins
 - **Streaming** — replies stream over SSE, capped at three sentences as they arrive, so nothing painted is ever taken back
-- **Source chips** — each answer links to the page sections backing it, derived server-side rather than trusted from the model
+- **Source chips** — each answer links to the page sections backing it, and to a project's case study (in a new tab, so the conversation survives) when the answer names one; derived server-side, so the model never emits a URL it could invent
+- **Live GitHub answers** — questions about recent work are answered from GitHub fetched at question time (cached 10 minutes; says so plainly when GitHub is unreachable)
+- **Job-description hand-off** — a pasted posting is not sent to the model; the chat offers to compare it on `/fit`, which opens pre-filled
 - **Server-side persona** — system prompt is hardcoded server-side; clients cannot inject context
 - **Persona switcher** — server-side allow-list (`default` / `recruiter` / `aerospace` / `startup`) with a UI dropdown in the chatbot header
 - **Voice input** — mic button (Web Speech API) with inline error surfacing for `not-allowed` / `no-speech` / `audio-capture` / `network`
@@ -132,14 +135,17 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 - **Glassmorphism UI** — `backdrop-blur-md` components supporting Dark & Light modes
 
 ### 💼 Projects
-- **8 Projects** — AI/ML, Full-Stack Web, and Aerospace categories with thumbnail cards
+- **9 Projects** — AI/ML, Full-Stack Web, and Aerospace categories with thumbnail cards
+- **Case studies** — `/projects/<slug>` pages with their own heads, social cards and schema.org JSON-LD (`SoftwareSourceCode` or `CreativeWork`, plus breadcrumbs)
+- **How it works** — runtime diagrams for Vimaan, Manzil Recipe Vault and USC Ledger, each authored from the project's code or master document
+- **Lift-curve explorer** — the NACA 4412 study carries an interactive thin-airfoil-theory plot, labelled as a textbook model rather than the study's CFD results
 - **Filter Tabs** — Category-based filtering with `useMemo` optimization
 - **Modal View** — Image carousel, full description, tech stack badges, GitHub/demo links
 - **Focus Trap** — Keyboard-accessible modal with escape-to-close
 
 ### 📊 Live Data Feeds
 - **GitHub Integration** — Real-time commit and contribution data
-- **Analytics Vault** — Supabase-backed interaction logging with in-chat analytics viewer
+- **Visitor insights** — `/insights` (noindex, token-gated) charts what visitors ask, aggregated server-side with emails and phone numbers redacted
 
 ### ⚡ Technical Polish
 - **ErrorBoundary** — Graceful error handling with user-friendly fallback UI
@@ -173,8 +179,8 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 - Content-driven badges wall sourced from `constants.ACHIEVEMENTS`
 
 ### 🧪 Testing
-- **Vitest** — ~890 unit and component tests across ~90 files, with coverage thresholds enforced in CI
-- **Playwright** — 38 end-to-end specs against the built site locally, and against production on demand (`E2E_BASE_URL`)
+- **Vitest** — ~1,050 unit and component tests across ~100 files, with coverage thresholds enforced in CI
+- **Playwright** — 46 end-to-end specs against the built site locally; against production (`E2E_BASE_URL`) they add API checks and run daily from `.github/workflows/production.yml`, which opens a `production-health` issue on failure and closes it on recovery
 - **Content gates** — the content schema, résumé-PDF parity, claim integrity (phrasings the evidence cannot support), sitemap, social-card and app-icon freshness
 
 ### 🛡️ Supply-chain & CI
@@ -424,7 +430,9 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) (or `.well-known/security.
 
 **Built:** streaming chat with source chips and curated career knowledge; project case studies with per-route heads, generated social cards and a real 404; ATS résumé view; job-description comparison (`/fit`); installable offline support; the career arc chart; Vimaan's runtime diagram.
 
-**Corrected claims:** a "10x throughput" figure the evidence could not support, Vimaan's "inter-process communication" (a thread and a queue in one process) and INT8 presented as a speed gain (it was for memory). `claimRules.ts` now fails CI if any return.
+**Also built:** a daily production health check with deploy-freshness; chunk-load recovery so one unfetchable section cannot take the page down; zero npm advisories (`@vercel/node` replaced by local types); private visitor insights; live GitHub answers and case-study links in the chat; "How it works" diagrams for Manzil and USC Ledger; the NACA 4412 lift-curve explorer; JSON-LD per case study.
+
+**Corrected claims:** USC Ledger's "atomic transactions", "P2034 write-conflict resolution" and a race-preventing "reconciliation engine" (none exist in its code) and a dead demo link; Manzil described as "collaborative" (recipes are owner-only). Earlier: a "10x throughput" figure the evidence could not support, Vimaan's "inter-process communication" (a thread and a queue in one process) and INT8 presented as a speed gain (it was for memory). `claimRules.ts` now fails CI if any return.
 
 ### 2026-05 — Audit Remediation (v2.1)
 

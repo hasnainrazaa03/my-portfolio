@@ -104,13 +104,16 @@ function scoreFor(rule: SectionRule, haystack: string): number {
  * than guessing.
  */
 export function deriveSources(question: string, reply: string, limit = 2): SourceLink[] {
-  const q = String(question ?? '').toLowerCase();
+  // "USC Ledger" is a project name, not a mention of the university: in
+  // production a reply about this week's commits cited Education because of it.
+  const q = String(question ?? '').toLowerCase().replace(/\busc ledger\b/g, 'ledger');
   // Strip the "[Ask about: …]" affordance: it names other topics by design, so
   // scoring it would cite whichever sections the SUGGESTIONS mention rather
   // than the ones the answer actually drew on.
   const r = String(reply ?? '')
     .replace(/\[Ask about:[^\]]*\]/gi, '')
-    .toLowerCase();
+    .toLowerCase()
+    .replace(/\busc ledger\b/g, 'ledger');
 
   if (!q && !r) return [];
 
@@ -197,13 +200,14 @@ const GITHUB_SECTION: SourceLink = { id: 'github', label: 'GitHub' };
 /**
  * Everything the chat shows under one answer: a case study when a project is
  * named, then the sections, at most three chips. When the answer drew on live
- * GitHub data the GitHub section always makes the cut, because that is where
- * the same activity is shown on the page.
+ * GitHub data the GitHub section comes first, because that is where the same
+ * activity is shown on the page; a project the summary merely passes through
+ * should not outrank it.
  */
 export function deriveChatLinks(question: string, reply: string, { live = false } = {}): SourceLink[] {
   const cases = deriveCaseStudies(question, reply, 1);
   const sections = deriveSources(question, reply, 3);
-  const ordered = live ? [...cases, GITHUB_SECTION, ...sections] : [...cases, ...sections];
+  const ordered = live ? [GITHUB_SECTION, ...cases, ...sections] : [...cases, ...sections];
   const seen = new Set<string>();
   return ordered.filter((l) => !seen.has(l.id) && seen.add(l.id)).slice(0, 3);
 }

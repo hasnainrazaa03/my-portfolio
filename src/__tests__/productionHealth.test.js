@@ -99,3 +99,10 @@ describe('the suite is safe to run against production', () => {
     expect(readFileSync(resolve(root, 'api/health.ts'), 'utf8')).toMatch(/commit: process\.env\.VERCEL_GIT_COMMIT_SHA/);
   });
 });
+
+describe('the alert path can be exercised on purpose', () => {
+  it('offers a manual simulate_failure run, off by default', () => {
+    const wf = readFileSync(resolve(root, '.github/workflows/production.yml'), 'utf8');
+    expect(wf).toMatch(/simulate_failure:[\s\S]*?type: boolean[\s\S]*?default: false/);
+  });
+});

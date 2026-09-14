@@ -24,6 +24,11 @@ on:
     # schedules behind everyone else's and can drop them under load.
     - cron: '17 14 * * *'
   workflow_dispatch:
+    inputs:
+      simulate_failure:
+        description: 'Force a failure to exercise the issue path (opens an issue; a normal run closes it)'
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -70,6 +75,10 @@ jobs:
           pushed=$(gh run list --workflow ci.yml --branch main --limit 30 --json headSha,createdAt \
             --jq ".[] | select(.headSha == \"$head\") | .createdAt" | head -1)
           [ -n "$pushed" ] || pushed=$(git log -1 --format=%cI "$head")
+          if [ "${{ inputs.simulate_failure }}" = "true" ]; then
+            echo "FAIL: simulated failure (manual run with simulate_failure) — the alerting path works" | tee freshness.txt
+            exit 1
+          fi
           node scripts/deployFreshness.js "$prod" "$head" "$pushed" 30 | tee freshness.txt
 
       - name: Install Chromium

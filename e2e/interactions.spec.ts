@@ -220,3 +220,42 @@ test.describe('career arc', () => {
     await expect(page.getByText('Aug 2022 – Nov 2024')).toBeVisible();
   });
 });
+
+/**
+ * A job posting pasted into the chat is handed to /fit, intact, without ever
+ * reaching /api/chat — the shared fixture fails this test if it does.
+ */
+test.describe('chat to fit hand-off', () => {
+  test('pasting a posting offers the comparison and arrives pre-filled', async ({ page }) => {
+    const posting = [
+      'Machine Learning Engineer',
+      'About the role',
+      'We are looking for an engineer to join our team. You will build perception models.',
+      'Responsibilities:',
+      '- Train 3D segmentation models',
+      '- Build point-cloud pipelines',
+      '- Ship on-device inference',
+      'Requirements:',
+      '- 3+ years of experience with PyTorch',
+      'Full-time, hybrid. Benefits include equity.',
+    ].join('\n');
+
+    await page.goto('/');
+    await page.locator("button[aria-controls='chatbot-panel']").click();
+    const input = page.getByPlaceholder(/ask about projects/i);
+    await input.focus();
+    await input.evaluate((el, text) => {
+      const data = new DataTransfer();
+      data.setData('text/plain', text);
+      el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+    }, posting);
+
+    const link = page.getByRole('link', { name: /compare this role/i });
+    await expect(link).toBeVisible();
+    await link.click();
+
+    await expect(page).toHaveURL(/\/fit$/);
+    await expect(page.getByLabel(/job description/i)).toHaveValue(posting);
+    await expect(page.getByText(/brought over from the chat/i)).toBeVisible();
+  });
+});

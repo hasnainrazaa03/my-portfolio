@@ -5,6 +5,7 @@ import { analyticsService } from '../services/analyticsService';
 import { INITIAL_MESSAGE } from '../components/chat/chatConstants';
 import type { ChatMessage, SourceLink } from '../components/chat/types';
 import demoMessagesJson from '../data/chatDemo.json';
+import { asksAboutFit, looksLikeJobDescription, stashFitDraft, wordCount } from '../utils/jobDescription';
 
 const DEMO_MESSAGES = demoMessagesJson as ChatMessage[];
 /** Delay before each canned turn lands — longer for replies, so they read as typed. */
@@ -87,8 +88,39 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
     };
   };
 
+  /**
+   * A pasted job posting goes to /fit, not to the model.
+   *
+   * Sent to /api/chat it was flattened to one line, cut to 500 characters,
+   * sometimes flagged as prompt injection (a posting for an AI role says
+   * "system prompt"), and written to analytics as if it were a question. So it
+   * never leaves the browser here: it is stashed for /fit, and the transcript
+   * shows a short stand-in rather than a wall of pasted text.
+   */
+  const handleJobDescription = useCallback((text: string) => {
+    if (!text.trim() || demoMode || isBusy) return;
+    stashFitDraft(text);
+    setInput('');
+    setMessages((prev) => [
+      ...prev,
+      { id: newId(), role: 'user', content: `📋 Pasted a job description (${wordCount(text).toLocaleString()} words)` },
+      {
+        id: newId(),
+        role: 'assistant',
+        content:
+          "That looks like a job description. The chat only takes short questions, but the comparison page " +
+          "reads the whole posting and shows what my record supports, what it doesn't, and the work behind each point.",
+        action: { label: 'Compare this role', href: '/fit' },
+      },
+    ]);
+  }, [demoMode, isBusy]);
+
   const processMessage = useCallback(async (text: string) => {
     if (!text.trim() || demoMode || isBusy) return;
+    if (looksLikeJobDescription(text)) {
+      handleJobDescription(text);
+      return;
+    }
 
     const userMessage: ChatMessage = { id: newId(), role: 'user', content: text };
     setMessages((prev) => [...prev, userMessage]);
@@ -163,7 +195,11 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
       // The canonical reply differs from the streamed text only by the
       // "[Ask about: …]" affordance the server withholds during streaming, so
       // this reads as the chips arriving, not as a rewrite.
-      finalise(responseText, { sources });
+      // A question ABOUT fit gets a normal answer plus a pointer to the tool
+      // that answers it against a specific posting.
+      finalise(responseText, asksAboutFit(text)
+        ? { sources, action: { label: 'Compare a specific posting', href: '/fit' } }
+        : { sources });
 
       analyticsService.logInteraction(text, responseText, {
         success: true,
@@ -183,7 +219,7 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
       setIsTyping(false);
       setIsBusy(false);
     }
-  }, [demoMode, isBusy, messages, persona]);
+  }, [demoMode, isBusy, messages, persona, handleJobDescription]);
 
   const handleFormSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -296,6 +332,7 @@ export function useChat({ isOpen }: { isOpen: boolean }) {
     handleDemoReset,
     handleUseLocalAnswer,
     handleAskLive,
+    handleJobDescription,
     stats: getHistoryStats(),
   };
 }

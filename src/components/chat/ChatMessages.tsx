@@ -86,6 +86,16 @@ const ChatMessages = ({ messages, isTyping, onNavigate }: ChatMessagesProps) => 
               : msg.content
             }
 
+            {msg.role === 'assistant' && msg.action && (
+              <a
+                href={msg.action.href}
+                className="mt-2.5 inline-flex min-h-[32px] items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-black hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1"
+              >
+                {msg.action.label}
+                <span aria-hidden="true">→</span>
+              </a>
+            )}
+
             {/*
               Sections backing the answer. Real <button>s, not styled spans:
               they move focus and the page, so they must be reachable and

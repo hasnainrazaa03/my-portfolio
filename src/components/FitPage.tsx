@@ -3,6 +3,7 @@ import { ArrowLeft, Check, AlertTriangle, Loader2, MessageSquareQuote } from 'lu
 import { PERSONAL_INFO, PROJECTS, EXPERIENCE, EDUCATION } from '../constants';
 import { toSlug } from '../utils/slug';
 import { compareToJobDescription, FitError, type FitResult, type Verdict } from '../services/fitService';
+import { clearFitDraft, peekFitDraft } from '../utils/jobDescription';
 
 /**
  * FitPage — paste a job description, get an honest comparison against the
@@ -70,7 +71,18 @@ function sourceIndex(): Map<string, Source> {
 }
 
 const FitPage = () => {
-  const [jd, setJd] = useState('');
+  // A posting pasted into the chat arrives here intact. Never submitted
+  // automatically: each comparison is a costly, rate-limited call, and the
+  // reader should see what is being compared first.
+  //
+  // Peeked during render, cleared after commit. Render must not have side
+  // effects: React can discard and retry it, and a read-and-remove initializer
+  // let the discarded attempt consume the posting (see peekFitDraft).
+  const [carried] = useState(() => (typeof window === 'undefined' ? null : peekFitDraft()));
+  const [jd, setJd] = useState(() => (carried ?? '').slice(0, MAX_JD_CHARS));
+  useEffect(() => {
+    if (carried !== null) clearFitDraft();
+  }, [carried]);
   const [result, setResult] = useState<FitResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -163,7 +175,13 @@ const FitPage = () => {
             className="w-full rounded-xl border border-slate-300 dark:border-white/15 bg-white dark:bg-white/5 p-4 text-sm leading-relaxed focus:border-primary focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
           />
           <div id="jd-hint" className="mt-2 flex flex-wrap gap-x-4 gap-y-1 justify-between text-xs text-slate-500 dark:text-slate-400">
-            <span>{tooShort ? `At least ${MIN_JD_CHARS} characters — paste the whole posting.` : 'Nothing is stored.'}</span>
+            <span>
+              {tooShort
+                ? `At least ${MIN_JD_CHARS} characters — paste the whole posting.`
+                : carried
+                  ? 'Brought over from the chat — check it, then compare. Nothing is stored.'
+                  : 'Nothing is stored.'}
+            </span>
             <span>
               {jd.length.toLocaleString()} / {MAX_JD_CHARS.toLocaleString()}
             </span>

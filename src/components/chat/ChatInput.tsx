@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Loader2, AlertTriangle, Mic, MicOff } from 'lucide-react';
 import type { FormEvent } from 'react';
 import { SUGGESTIONS, CHIP_PREFIXES } from './chatConstants';
+import { looksLikeJobDescription } from '../../utils/jobDescription';
 
 interface ChatInputProps {
   input: string;
@@ -16,6 +17,8 @@ interface ChatInputProps {
   voiceErrorMessage: string | null;
   onToggleVoice: () => void;
   onSendText: (text: string) => void;
+  /** A pasted job posting, read from the clipboard with its newlines intact. */
+  onJobDescription?: (text: string) => void;
 }
 
 /**
@@ -34,6 +37,7 @@ const ChatInput = ({
   voiceErrorMessage,
   onToggleVoice,
   onSendText,
+  onJobDescription,
 }: ChatInputProps) => (
   <>
     <div className="px-4 pb-2 pt-2 bg-slate-50 dark:bg-[#0F172A]">
@@ -97,6 +101,15 @@ const ChatInput = ({
           type="text"
           value={input}
           onChange={(e) => onInputChange(e.target.value)}
+          // Read the clipboard, not the field: a single-line input strips the
+          // newlines, and a posting's bullet list is most of its meaning.
+          onPaste={(e) => {
+            const pasted = e.clipboardData.getData('text');
+            if (onJobDescription && looksLikeJobDescription(pasted)) {
+              e.preventDefault();
+              onJobDescription(pasted);
+            }
+          }}
           placeholder="Ask about projects... 💭"
           className={`w-full pl-4 py-3 rounded-xl bg-white dark:bg-black/20 border border-slate-200 dark:border-white/10 focus:border-primary focus:ring-1 focus:ring-primary outline-none text-slate-900 dark:text-white placeholder-slate-400 transition-all text-sm shadow-inner ${voiceSupported ? 'pr-20' : 'pr-12'}`}
           disabled={isTyping || demoMode}

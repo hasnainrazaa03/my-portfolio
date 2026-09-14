@@ -19,6 +19,17 @@ export interface ChatMessage {
    * worse than no chip.
    */
   sources?: SourceLink[];
+  /**
+   * A link to another part of the site that answers better than the chat can —
+   * today, /fit for a pasted job posting or a question about fitting a role.
+   * Rendered as a real link under the message.
+   */
+  action?: ChatAction;
+}
+
+export interface ChatAction {
+  label: string;
+  href: string;
 }
 
 /** A section of the page an answer drew on. */

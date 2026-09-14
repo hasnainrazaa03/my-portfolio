@@ -142,6 +142,7 @@ const Chatbot = () => {
               voiceErrorMessage={voice.voiceErrorMessage}
               onToggleVoice={voice.toggleVoice}
               onSendText={chat.processMessage}
+              onJobDescription={chat.handleJobDescription}
             />
           </motion.div>
         )}

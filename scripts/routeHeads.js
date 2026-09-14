@@ -134,7 +134,24 @@ export function renderRouteHead(html, route, { origin, image }) {
       out = dropMeta(out, 'property', 'og:image:height');
     }
   }
+  if (route.structuredData) {
+    if (!/<\/head>/.test(out)) throw new Error('index.html has no </head> to add structured data to');
+    out = replaceLiteral(out, /<\/head>/, '', jsonLdBlock(route.structuredData), '\n  </head>');
+  }
   return out;
+}
+
+/**
+ * A JSON-LD data block that cannot end early.
+ *
+ * JSON.stringify leaves `</script>` intact, and a project description
+ * containing it would close the element and put the rest of the JSON into the
+ * page as markup. Escaping every `<` as \u003c is still valid JSON, and parses
+ * back to the same string.
+ */
+export function jsonLdBlock(data) {
+  const json = JSON.stringify(data).replace(/</g, '\\u003c');
+  return `<script type="application/ld+json" data-route>${json}</script>`;
 }
 
 /** True when `publicPath` names a file that would make a good social card. */

@@ -1,4 +1,5 @@
 import { PROJECTS, PERSONAL_INFO, EDUCATION, EXPERIENCE } from '../constants';
+import type { Project } from '../types/content';
 import { projectPath, toSlug } from './slug';
 
 /**
@@ -44,6 +45,56 @@ export interface RouteHead {
    */
   generatedCard?: string;
   imageAlt?: string;
+  /**
+   * schema.org JSON-LD for this page, written into its <head> as a data
+   * block. Browsers do not run CSP's script-src check on data blocks (checked
+   * in Chromium: no violation, no report), so these carry no pinned hash.
+   */
+  structuredData?: Record<string, unknown>;
+}
+
+/**
+ * What a case study IS, for a search engine: the work itself and where it
+ * sits on the site.
+ *
+ * A project with public source is SoftwareSourceCode, pointing at the
+ * repository; research without one is a CreativeWork. Only fields the page
+ * itself shows are included: a rich result must not promise what the page
+ * does not say.
+ */
+export function projectStructuredData(p: Project, origin = SITE_ORIGIN): Record<string, unknown> {
+  const url = `${origin}${projectPath(p.title)}`;
+  const github = p.links?.github ?? null;
+  const work: Record<string, unknown> = {
+    '@type': github ? 'SoftwareSourceCode' : 'CreativeWork',
+    '@id': `${url}#work`,
+    name: p.title,
+    headline: p.title,
+    description: p.description,
+    abstract: p.longDescription,
+    url,
+    mainEntityOfPage: url,
+    genre: p.category,
+    creativeWorkStatus: p.status,
+    keywords: p.techStack.join(', '),
+    author: { '@type': 'Person', name: PERSONAL_INFO.name, url: origin },
+  };
+  if (p.images?.[0]) work.image = `${origin}${p.images[0]}`;
+  if (github) work.codeRepository = github;
+
+  return {
+    '@context': 'https://schema.org',
+    '@graph': [
+      work,
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: PERSONAL_INFO.name, item: `${origin}/` },
+          { '@type': 'ListItem', position: 2, name: p.title, item: url },
+        ],
+      },
+    ],
+  };
 }
 
 /** Descriptions past ~160 characters are cut off in results; clip at a word rather than mid-token. */
@@ -102,6 +153,7 @@ export function routeHeads(): RouteHead[] {
       image: p.images?.[0],
       generatedCard: `/og/${toSlug(p.title)}.jpg`,
       imageAlt: `${p.title} screenshot`,
+      structuredData: projectStructuredData(p),
     })),
   ];
 }

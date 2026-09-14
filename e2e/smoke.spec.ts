@@ -163,6 +163,30 @@ test.describe('route heads', () => {
     expect(html).toContain('<link rel="canonical" href="https://hasnainrazaa.vercel.app/projects/project-vimaan" />');
     expect(html).toMatch(/<meta property="og:title" content="Project Vimaan \| Hasnain Raza" \/>/);
     expect(html).toMatch(/<meta property="og:type" content="article" \/>/);
+
+    // Structured data, in the raw response where a crawler reads it.
+    const block = /<script type="application\/ld\+json" data-route>([\s\S]*?)<\/script>/.exec(html);
+    expect(block, 'no per-route JSON-LD').not.toBeNull();
+    const work = JSON.parse(block![1])['@graph'].find((n: { '@id'?: string }) => n['@id']?.endsWith('#work'));
+    expect(work['@type']).toBe('SoftwareSourceCode');
+    expect(work.codeRepository).toBe('https://github.com/hasnainrazaa03/Project-Vimaan');
+  });
+
+  test('the structured data raises no CSP violation under the real header', async ({ page }) => {
+    // The per-route JSON-LD carries no pinned hash, on the basis that browsers
+    // do not apply script-src to data blocks. Against production this runs
+    // under the enforcing policy, so a browser that disagrees fails here.
+    await page.addInitScript(() => {
+      (window as unknown as { __csp: string[] }).__csp = [];
+      document.addEventListener('securitypolicyviolation', (e) =>
+        (window as unknown as { __csp: string[] }).__csp.push(`${e.violatedDirective} ${e.sample}`),
+      );
+    });
+    await page.goto('/projects/project-vimaan');
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.waitForLoadState('networkidle');
+    const violations = await page.evaluate(() => (window as unknown as { __csp: string[] }).__csp);
+    expect(violations.filter((v) => v.startsWith('script-src'))).toEqual([]);
   });
 
   test('the résumé and privacy pages carry their own heads too', async ({ request }) => {

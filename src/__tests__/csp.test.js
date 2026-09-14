@@ -10,8 +10,12 @@
  * schema, with no error anywhere in the app. This recomputes the hash from
  * index.html and fails the build if vercel.json has drifted.
  *
- * Note `<script type="application/ld+json">` IS governed by script-src even
- * though it executes nothing — which is exactly why the hash is required.
+ * This comment used to say `<script type="application/ld+json">` is governed
+ * by script-src. Tested in Chromium under this exact policy shape, it is not:
+ * a data block is never prepared as a script, so there is no violation and no
+ * report. The shell's Person block keeps its hash anyway (it costs nothing),
+ * but the per-route blocks scripts/routeHeads.js adds carry none, and the E2E
+ * route-heads spec checks the live header raises no violation for them.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';

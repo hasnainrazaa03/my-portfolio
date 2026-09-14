@@ -13,7 +13,7 @@ import { existsSync, mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { createHash } from 'node:crypto';
-import { routeHeads, clip, SITE_ORIGIN } from '../utils/routeMeta';
+import { routeHeads, clip, SITE_ORIGIN, projectStructuredData } from '../utils/routeMeta';
 import { projectPath } from '../utils/slug';
 import { PROJECTS, PERSONAL_INFO } from '../constants';
 import {
@@ -23,6 +23,7 @@ import {
   resolveCardImage,
   imageWorksAsCard,
   routeHeadsPlugin,
+  jsonLdBlock,
 } from '../../scripts/routeHeads.js';
 import { buildSitemap, projectTitles } from '../../scripts/buildSitemap.js';
 
@@ -74,6 +75,48 @@ describe('routeHeads()', () => {
   });
 });
 
+describe('projectStructuredData()', () => {
+  const work = (p) => projectStructuredData(p)['@graph'].find((n) => n['@id']?.endsWith('#work'));
+
+  it('calls open-source work SoftwareSourceCode and points at the repository', () => {
+    for (const p of PROJECTS.filter((x) => x.links.github)) {
+      expect(work(p)['@type'], p.title).toBe('SoftwareSourceCode');
+      expect(work(p).codeRepository).toBe(p.links.github);
+    }
+  });
+
+  it('calls work without public source a CreativeWork, with no repository field', () => {
+    const closed = PROJECTS.filter((x) => !x.links.github);
+    expect(closed.length).toBeGreaterThan(0);
+    for (const p of closed) {
+      expect(work(p)['@type'], p.title).toBe('CreativeWork');
+      expect(work(p)).not.toHaveProperty('codeRepository');
+    }
+  });
+
+  it('only says what the page says', () => {
+    for (const p of PROJECTS) {
+      const w = work(p);
+      expect(w.description).toBe(p.description);
+      expect(w.abstract).toBe(p.longDescription);
+      expect(w.keywords).toBe(p.techStack.join(', '));
+      expect(w.image).toBe(`${SITE_ORIGIN}${p.images[0]}`);
+    }
+  });
+
+  it('gives every case study a two-step breadcrumb ending at itself', () => {
+    for (const p of PROJECTS) {
+      const crumbs = projectStructuredData(p)['@graph'].find((n) => n['@type'] === 'BreadcrumbList').itemListElement;
+      expect(crumbs.map((c) => c.position)).toEqual([1, 2]);
+      expect(crumbs[1].item).toBe(`${SITE_ORIGIN}${projectPath(p.title)}`);
+    }
+  });
+
+  it('is attached to case studies only', () => {
+    for (const r of routes) expect(Boolean(r.structuredData), r.path).toBe(r.path.startsWith('/projects/'));
+  });
+});
+
 describe('renderRouteHead()', () => {
   const route = routes.find((r) => r.path === projectPath(PROJECTS[0].title));
   const out = renderRouteHead(shell, route, { origin: SITE_ORIGIN });
@@ -87,11 +130,30 @@ describe('renderRouteHead()', () => {
     expect(out).not.toContain('Hasnain Raza | Portfolio');
   });
 
-  it('leaves every inline script byte-identical, so the CSP hashes still hold', () => {
+  it('leaves every inline script from the shell byte-identical, so the CSP hashes still hold', () => {
     const before = inlineScripts(shell).map(sha);
-    const after = inlineScripts(out).map(sha);
+    const after = inlineScripts(out.replace(/<script[^>]*data-route[^>]*>[\s\S]*?<\/script>/g, '')).map(sha);
     expect(after).toEqual(before);
     expect(after.length).toBeGreaterThan(0);
+  });
+
+  it('adds one JSON-LD block describing the case study', () => {
+    const blocks = [...out.matchAll(/<script type="application\/ld\+json" data-route>([\s\S]*?)<\/script>/g)];
+    expect(blocks).toHaveLength(1);
+    expect(out.indexOf(blocks[0][0])).toBeLessThan(out.indexOf('</head>'));
+    const data = JSON.parse(blocks[0][1]);
+    const work = data['@graph'].find((n) => n['@id']?.endsWith('#work'));
+    expect(work.name).toBe(PROJECTS[0].title);
+    expect(work.url).toBe(`${SITE_ORIGIN}${route.path}`);
+    expect(work.description).toBe(PROJECTS[0].description);
+    expect(work.author.name).toBe(PERSONAL_INFO.name);
+  });
+
+  it('cannot be closed early by content that contains </script>', () => {
+    const block = jsonLdBlock({ name: 'a </script><script>alert(1)</script> b' });
+    expect(block.match(/<\/script>/g)).toHaveLength(1);
+    const json = block.replace(/^<script[^>]*>/, '').replace(/<\/script>$/, '');
+    expect(JSON.parse(json).name).toBe('a </script><script>alert(1)</script> b');
   });
 
   it('treats $ in content literally — String.replace would expand it', () => {

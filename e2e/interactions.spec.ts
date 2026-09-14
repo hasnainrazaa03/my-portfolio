@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 /**
  * interactions.spec.ts — the three flows the audit checklist named (chat,

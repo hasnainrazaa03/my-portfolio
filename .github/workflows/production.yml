@@ -1,0 +1,139 @@
+name: Production health
+
+# Runs the whole E2E suite against the LIVE site every day, and checks that
+# production is actually serving main.
+#
+# WHY THIS EXISTS: the worst failures this project has had were invisible to
+# every check that runs on a commit, because they existed only in production.
+#   - /resume and /privacy returned 404 for months. `vite preview`, which every
+#     local check used, has an SPA fallback; Vercel did not.
+#   - Every serverless function failed to load for an extended period; the
+#     client's graceful fallbacks hid it completely.
+#   - A push to main produced no deploy at all, and production kept serving the
+#     previous build with nothing anywhere turning red.
+# CI tests the code. This tests the thing visitors get.
+#
+# On failure it opens (or comments on) an issue labelled production-health,
+# which notifies the repository owner; on recovery it closes that issue.
+# Note: GitHub disables scheduled workflows after 60 days with no repository
+# activity. Re-enable it from the Actions tab if that happens.
+
+on:
+  schedule:
+    # 14:17 UTC daily. Off the hour on purpose: GitHub queues top-of-the-hour
+    # schedules behind everyone else's and can drop them under load.
+    - cron: '17 14 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+  actions: read
+
+concurrency:
+  group: production-health
+  cancel-in-progress: false
+
+env:
+  SITE: https://hasnainrazaa.vercel.app
+
+jobs:
+  production:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Is production on main's HEAD? A mismatch only fails once HEAD has been
+      # on main longer than the grace period, so a check that lands mid-deploy
+      # does not cry wolf.
+      - name: Deploy freshness
+        id: freshness
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -o pipefail
+          prod=$(curl -fsS --max-time 20 "$SITE/api/health" \
+            | node -e "let d='';process.stdin.on('data',c=>d+=c).on('end',()=>console.log(JSON.parse(d).commit ?? 'null'))") || prod=null
+          head=$(git rev-parse HEAD)
+          # Push time ~ when CI started for that commit; the commit date can be
+          # much older than the push.
+          pushed=$(gh run list --workflow ci.yml --branch main --limit 30 --json headSha,createdAt \
+            --jq ".[] | select(.headSha == \"$head\") | .createdAt" | head -1)
+          [ -n "$pushed" ] || pushed=$(git log -1 --format=%cI "$head")
+          node scripts/deployFreshness.js "$prod" "$head" "$pushed" 30 | tee freshness.txt
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      # The same suite CI runs against the build, pointed at production. The
+      # shared fixture blocks the analytics beacon and fails any test that
+      # reaches /api/chat or /api/fit unmocked, so a daily run neither inflates
+      # visitor counts nor writes fake questions into the analytics table.
+      - name: E2E against production
+        id: e2e
+        continue-on-error: true
+        env:
+          E2E_BASE_URL: ${{ env.SITE }}
+        run: npx playwright test 2>&1 | tee e2e.txt
+
+      - name: Upload Playwright report
+        if: steps.e2e.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 14
+
+      - name: Open, update or close the tracking issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          FRESHNESS: ${{ steps.freshness.outcome }}
+          E2E: ${{ steps.e2e.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          label=production-health
+          gh label create "$label" --color B60205 \
+            --description "The scheduled production check is failing" --force >/dev/null 2>&1 || true
+          open=$(gh issue list --label "$label" --state open --json number --jq '.[0].number // empty')
+
+          if [ "$FRESHNESS" = "success" ] && [ "$E2E" = "success" ]; then
+            if [ -n "$open" ]; then
+              gh issue close "$open" --comment "Recovered: production is on main and all E2E specs pass. [Run]($RUN_URL)"
+            fi
+            echo "Production healthy."
+            exit 0
+          fi
+
+          {
+            echo "The scheduled production check failed. [Run]($RUN_URL)"
+            echo
+            echo "**Deploy freshness:** $FRESHNESS"
+            echo '```'
+            cat freshness.txt 2>/dev/null || echo "(no output)"
+            echo '```'
+            echo "**E2E against $SITE:** $E2E"
+            echo '```'
+            grep -E "✘|failed|passed|skipped|Error:" e2e.txt 2>/dev/null | tail -25 || echo "(no output)"
+            echo '```'
+            echo "The Playwright report is attached to the run when E2E failed."
+          } > body.md
+
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body-file body.md
+          else
+            gh issue create --title "Production health check failing" --label "$label" --body-file body.md
+          fi
+          exit 1

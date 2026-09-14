@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 
 /**
  * motion.spec.ts — every test here runs with `prefers-reduced-motion: reduce`.

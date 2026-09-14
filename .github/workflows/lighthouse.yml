@@ -1,22 +1,43 @@
 name: Lighthouse CI
 
-# Runs Lighthouse against the production build on every PR to catch
-# regressions in performance, accessibility, best-practices, and SEO.
-# Uses `lhci collect` in static mode (no live server needed for a PR check).
+# Lighthouse against the built site, on four routes: home, résumé, the fit
+# tool and a case study. Assertions live in lighthouserc.json, not here.
+#
+# WHY THIS WAS REWRITTEN (2026-09-14)
+# ──────────────────────────────────
+# The previous version failed on every run it ever made, for three reasons:
+#
+#   1. Its thresholds were passed as CLI flags on top of the
+#      `lighthouse:no-pwa` preset, and the flags never took. It documented
+#      "performance warns below 0.85" and actually errored below 0.9 on every
+#      audit the preset covers.
+#   2. That preset asserts CPU-bound audits (main-thread work, max potential
+#      FID) as errors. A shared CI runner scores 0 on those regardless of the
+#      site, so the gate measured the runner.
+#   3. It ran on pull requests only. Every real change here lands on main, so
+#      the only code it ever tested was Dependabot's — and it failed all of
+#      them. Eight dependency PRs then sat for a month, because a check that
+#      is always red teaches everyone to ignore red.
+#
+# Now: deterministic categories (accessibility, best practices, SEO) gate;
+# performance only warns, because runner CPU noise makes it a bad gate and
+# production is measured separately. It runs on pushes to main too.
 
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main, master]
-  workflow_dispatch: # allow manual trigger
+  workflow_dispatch:
 
 jobs:
   lighthouse:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: 'npm'
@@ -24,22 +45,13 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # Same placeholder DSN as ci.yml, so the audited bundle matches production.
       - name: Build
+        env:
+          VITE_SENTRY_DSN: https://ci0000000000000000000000000000@o0.ingest.us.sentry.io/0
         run: npm run build
 
       - name: Run Lighthouse CI
-        # @lhci/cli@0.14.x is the current stable line.
-        run: |
-          npm install -g @lhci/cli@0.14.x
-          lhci autorun \
-            --collect.staticDistDir=./dist \
-            --collect.numberOfRuns=2 \
-            --upload.target=temporary-public-storage \
-            --assert.preset=lighthouse:no-pwa \
-            --assert.assertions.categories:performance="warn:0.85" \
-            --assert.assertions.categories:accessibility="error:0.9" \
-            --assert.assertions.categories:best-practices="warn:0.9" \
-            --assert.assertions.categories:seo="warn:0.9"
+        run: npx -y @lhci/cli@0.15.1 autorun
         env:
-          # Posts a link to the report as a check on the PR.
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN }}

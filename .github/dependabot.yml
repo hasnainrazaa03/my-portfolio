@@ -19,6 +19,16 @@ updates:
         patterns: ["vitest", "@vitest/*", "@testing-library/*", "jsdom"]
       eslint:
         patterns: ["eslint", "eslint-*", "@eslint/*"]
+    ignore:
+      # ESLint 10 is blocked upstream: eslint-plugin-jsx-a11y (6.10.2, latest as
+      # of 2026-09-14) declares a peer range that stops at ESLint 9. Taking the
+      # bump means --legacy-peer-deps, which this repo removed deliberately.
+      # Remove this rule once jsx-a11y ships ESLint 10 support:
+      #   npm view eslint-plugin-jsx-a11y peerDependencies.eslint
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@eslint/js"
+        update-types: ["version-update:semver-major"]
     labels:
       - "dependencies"
     commit-message:

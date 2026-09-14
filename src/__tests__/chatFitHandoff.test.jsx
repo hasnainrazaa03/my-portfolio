@@ -7,7 +7,7 @@
  * transcript stays readable, and /fit receives the posting intact.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, waitFor, cleanup } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup } from '@testing-library/react';
 
 vi.mock('../services/chatService', () => ({ getChatResponse: vi.fn() }));
 vi.mock('../services/analyticsService', () => ({

@@ -84,6 +84,28 @@ export const PROHIBITED_CLAIMS: readonly ClaimRule[] = [
     reason: 'the microphone-to-command path has never been measured end to end',
     instead: 'describe the architecture, not a latency',
   },
+  // ── USC Ledger / Orbit (ORBIT_EXPENSE_TRACKER_MASTER.md; code wins over README)
+  {
+    pattern: /\bP2034\b/i,
+    reason: 'the Prisma write-conflict code appears only in the README narrative; nothing in the code handles or retries it',
+    instead: 'describe the idempotent full-state reconcile that replaced the transaction',
+  },
+  {
+    pattern: /\batomic transactions?\b/i,
+    reason: 'the budget and semester reconciles deliberately run without a transaction (it was removed after Atlas commit acks failed)',
+    instead: '"idempotent full-state saves, so retries converge"',
+  },
+  {
+    pattern: /\b(surgical sync|reconciliation engine)\b/i,
+    reason: 'sequential upserts that rely on idempotency; nothing locks or orders overlapping requests, so it is not an engine that prevents races',
+    instead: '"the client sends the complete desired state and the server reconciles it"',
+  },
+  // ── Manzil Recipe Vault (MANZIL_RECIPE_VAULT_MASTER.md) ─────────────────
+  {
+    pattern: /\bcollaborative recipe\b/i,
+    reason: 'recipes, collections and history are owner-only; the social features are follows, comments and ratings, not co-editing',
+    instead: '"a recipe-sharing web app"',
+  },
 ];
 
 /**

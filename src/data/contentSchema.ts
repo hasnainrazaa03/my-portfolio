@@ -164,6 +164,7 @@ export const ProjectSchema = z.object({
     demo: z.url().nullable(),
   }),
   architecture: ArchitectureSchema.optional(),
+  explorer: z.enum(['thin-airfoil-lift']).optional(),
 });
 
 export const AchievementSchema = z.object({

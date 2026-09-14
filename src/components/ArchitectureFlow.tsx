@@ -112,7 +112,7 @@ const ArchitectureFlow = ({ diagram }: Props) => (
             <div className="flex flex-col items-start">
               <Connector label={lastStage.passes} />
               <div className="ml-1.5 rounded-md border border-primary/40 bg-primary/5 px-3 py-1.5 text-xs font-medium text-slate-800 dark:text-slate-100">
-                <span className="sr-only">Hand-off between threads: </span>
+                <span className="sr-only">Hand-off: </span>
                 {diagram.handoffs[laneIndex]}
               </div>
               <Connector />

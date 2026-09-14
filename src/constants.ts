@@ -210,69 +210,159 @@ export const PROJECTS: Project[] = [
     title: "Manzil Recipe Vault",
     category: "Full-Stack Web",
     status: "Completed",
-    description: "Scalable MERN-based collaborative recipe platform with secure authentication and optimized query architecture.",
-    longDescription: "Manzil Recipe Vault is a full-stack MERN application designed for collaborative recipe management. I architected a RESTful API using Node.js and Express.js with optimized MongoDB indexing and pagination to ensure efficient query performance under concurrent usage. The platform uses Firebase Authentication with backend JWT verification to enforce strict user-level access control. For media handling, I integrated Cloudinary Signed Uploads with server-side validation to securely manage user-generated content. On the frontend, I used React with Context API and custom hooks to reduce prop drilling and improve maintainability. I also implemented debounced search, dynamic filtering, and TipTap rich text editing with DOMPurify sanitization to prevent XSS vulnerabilities.",
+    description: "A recipe-sharing web app with a hardened API: strict schemas on every route, server-side sanitization, and a recipe import guarded against request forgery.",
+    longDescription: "Manzil Recipe Vault is a recipe-sharing web app: a React and TypeScript front end on Vercel, an Express and MongoDB API on Render, and Firebase sign-in. The API owns data and authorization. Every protected route runs a rate limiter, verifies the Firebase ID token with firebase-admin, and replaces the request body with the output of a strict Zod schema, so fields the form never sends cannot reach the database and the author always comes from the verified token. Rich text written in TipTap is sanitized on the server against a tag allowlist, and again with DOMPurify when it is shown. Images go straight from the browser to Cloudinary with a signature the API mints for the user's folder and allowed formats. Importing a recipe from a link needed the most care, because a server that fetches user-supplied URLs can be pointed at internal addresses: the fetcher refuses any private, loopback, link-local or reserved address, re-checks every redirect hop, and caps time, size and redirects. Rating and comment counters update in single atomic MongoDB writes, which fixed counters that drifted under parallel requests. It also has collections, follows, recipe version history, a meal planner, debounced search with filters, and a Gemini tidy-up assistant that is not allowed to invent quantities.",
     images: [
       "/ManzilDash.jpg"
     ],
     techStack: [
       "React",
-      "Context API",
-      "Custom React Hooks",
+      "TypeScript",
+      "TanStack Query",
       "Node.js",
       "Express.js",
       "MongoDB",
+      "Mongoose",
       "MongoDB Indexing",
-      "Pagination",
-      "REST API Architecture",
+      "Zod Validation",
       "Firebase Authentication",
-      "JWT Verification",
       "Cloudinary Signed Uploads",
       "TipTap Rich Text Editor",
       "DOMPurify (XSS Prevention)",
+      "SSRF-safe URL Fetching",
+      "Google Gemini API",
       "Debounced Search",
-      "Query Optimization",
+      "Vitest",
       "Git"
     ],
     links: {
       github: "https://github.com/hasnainrazaa03/Manzil-Recipe-Vault",
       demo: "https://manzil-recipe-vault.vercel.app/"
-    }
+    },
+    // Authored from the repository's code (server/src/routes/import.ts,
+    // lib/safeFetch.ts, lib/parseRecipe.ts, routes/upload.ts, routes/recipes.ts)
+    // and MANZIL_RECIPE_VAULT_MASTER.md section 5. Import was chosen over a
+    // plain create because it is the path with a real threat model.
+    architecture: {
+      title: "One recipe import, pasted link to saved recipe",
+      summary: "The server fetches a stranger's URL only after screening where it resolves, and the import only proposes: nothing is saved until the author reviews it and saves through the ordinary guarded path.",
+      lanes: [
+        {
+          label: "Express API — import",
+          why: "A server that fetches user-supplied URLs can be aimed at its own network, so every check runs before a byte is requested.",
+          stages: [
+            { label: "Rate limit", exit: { when: "over 20 per 15 min", outcome: "429" } },
+            { label: "Verify Firebase ID token", detail: "firebase-admin verifyIdToken", exit: { when: "missing or invalid", outcome: "401" }, passes: "uid" },
+            { label: "Strict schema", detail: "Unknown keys rejected; a bare domain gets https:// added", exit: { when: "invalid body", outcome: "400" }, passes: "url" },
+            { label: "Resolve and screen addresses", detail: "http(s) only; every DNS answer checked, IPv4 and IPv6", exit: { when: "any address private", outcome: "400 blocked_address" } },
+            { label: "Fetch, redirects by hand", detail: "Each hop re-screened; at most 3 redirects, 8 s, 2 MB, HTML only", exit: { when: "a limit is hit", outcome: "400 with a specific code" }, passes: "HTML" },
+            { label: "Parse JSON-LD Recipe", detail: "Every field sanitized", exit: { when: "no recipe found", outcome: "422 — nothing saved" }, passes: "draft recipe" },
+          ],
+        },
+        {
+          label: "Browser — review",
+          why: "The import fills the form and stops. The author edits, adds a photo and decides whether to save.",
+          stages: [
+            { label: "Pre-filled recipe form", passes: "image file" },
+            { label: "Upload straight to Cloudinary", detail: "Signature from the API pins folder, formats and a 2000 px cap", passes: "image URL + recipe" },
+          ],
+        },
+        {
+          label: "Express API — save",
+          why: "An imported recipe gets no shortcut: it passes the same guards as one typed by hand.",
+          stages: [
+            { label: "Rate limit + token", exit: { when: "over limit / no token", outcome: "429 / 401" } },
+            { label: "Strict schema + sanitize", detail: "Rich text cleaned against a tag allowlist, no attributes", exit: { when: "invalid body", outcome: "400" }, passes: "clean recipe" },
+            { label: "Write to MongoDB", detail: "Author and name taken from the token, never the body" },
+          ],
+        },
+      ],
+      handoffs: ["JSON draft — nothing written to the database yet", "POST /api/recipes with a Bearer token"],
+      notes: [
+        "The image bytes never pass through the API. The server signs where an upload may go and in what format; it does not inspect the file.",
+        "Two bypasses were found while attacking the fetcher and fixed: bracketed IPv6 literals, and IPv4-mapped addresses like ::ffff:7f00:1, now compared as bits rather than text.",
+      ],
+    },
   },
   {
     id: 4,
     title: "USC Ledger",
     category: "Full-Stack Web",
-    status: "Live (Personal)",
-    description: "AI-augmented financial management platform featuring a custom reconciliation engine and precision-first transaction architecture.",
-    longDescription: "USC Ledger is a full-stack financial systems project I built using React, Node.js, and MongoDB. At its core, I designed a sequential reconciliation engine (“Surgical Sync”) to resolve MongoDB write conflicts and prevent race conditions during rapid state updates. I implemented precision-first financial logic using epsilon-aware rounding and fixed-precision arithmetic to eliminate floating-point inconsistencies in multi-currency transactions (USD/INR). The system integrates the Frankfurter FX API for currency normalization and Google Gemini for structured financial analysis and automated audit-style insights. Performance was optimized using debounced autosave and controlled state updates to maintain transactional consistency under concurrent interactions.",
+    status: "Personal project",
+    description: "A full-stack expense tracker for international students, with integer-cent money storage, an offline queue with idempotent replay, and Gemini-assisted statement import.",
+    longDescription: "USC Ledger, since renamed Orbit, is an expense tracker I built for international students at USC: expenses, budgets and tuition installment plans, in dollars and rupees. It is React and TypeScript on the front, with Express, Prisma and MongoDB behind it. Money correctness came first. Amounts are stored as integer cents; existing records were migrated from floating-point dollars with an idempotent pipeline; and splits hand out leftover cents, so an installment plan always adds back up. Foreign amounts convert to USD in the browser with Frankfurter exchange rates, and each record keeps its original amount and currency. Expenses entered offline wait in an IndexedDB queue and replay on reconnect with an idempotency key, so a retry returns the existing row instead of a duplicate. Budget and semester saves send the complete desired state for the server to reconcile. They first ran inside a database transaction, but on Atlas over Render's network the commit acknowledgement sometimes failed after the writes had landed, so I made the operation idempotent and removed the transaction. Google Gemini turns bank-statement PDFs and receipt photos into rows the user reviews before anything is imported, with every field checked against allowlists. Sessions are JWTs in httpOnly cookies with double-submit CSRF protection, email OTP verification and account lockout.",
     images: [
       "/USCLedger.jpg"
     ],
     techStack: [
       "React",
       "TypeScript",
+      "TanStack Query",
       "Node.js",
       "Express.js",
+      "Prisma",
       "MongoDB",
-      "Sequential Reconciliation Engine",
-      "Concurrency Control",
-      "MongoDB Write Conflict Resolution (P2034)",
-      "Atomic Transactions",
-      "Precision Arithmetic",
-      "Epsilon-aware Rounding",
-      "Hierarchical Budget Allocation",
-      "Debounced Autosave (800ms)",
+      "Integer-cent Money Storage",
+      "IndexedDB Offline Queue",
+      "Idempotent Writes",
       "Frankfurter FX API",
       "Google Gemini API",
-      "Structured Prompt Engineering",
+      "JWT Cookie Sessions + CSRF",
+      "Debounced Autosave (800ms)",
       "Tailwind CSS",
+      "Playwright",
       "Git"
     ],
     links: {
       github: "https://github.com/hasnainrazaa03/intelligent-expense-tracker",
-      demo: "https://usc-ledger.vercel.app/"
-    }
+      // The Vercel deployment returns 404 (checked 2026-09-14); no live link
+      // until it is back.
+      demo: null
+    },
+    // Authored from the repository's code (client/src/App.tsx,
+    // hooks/useOfflineQueue.ts, services/api.ts, server/src/middleware/*,
+    // routes/expenses.ts, prisma/schema.prisma) and
+    // ORBIT_EXPENSE_TRACKER_MASTER.md. Earlier copy described conflict
+    // handling the code does not have; see the USC Ledger rules in claimRules.ts.
+    architecture: {
+      title: "One expense, form to database — with or without a connection",
+      summary: "An expense recorded offline waits in the browser and replays later with an id the server remembers, so a retry can never save it twice; online or not, it reaches the database as integer cents.",
+      lanes: [
+        {
+          label: "Browser",
+          why: "Currency conversion and the offline queue live here, so an expense can be recorded with no connection at all.",
+          stages: [
+            { label: "Enter the expense", detail: "A foreign amount converts to USD with Frankfurter's rate, cached for an hour", passes: "USD + original amount, currency" },
+            { label: "Online?", exit: { when: "offline", outcome: "Queued in IndexedDB with a client id; shown at once" } },
+            { label: "Send with CSRF header", detail: "Session is an httpOnly cookie; a 403 refreshes the token and retries once", passes: "JSON + cookies" },
+          ],
+        },
+        {
+          label: "Express API",
+          why: "Every write crosses the same middleware stack before a handler runs, and the handler still refuses bad values itself.",
+          stages: [
+            { label: "Rate limits", exit: { when: "over 180 per minute", outcome: "429" } },
+            { label: "CSRF double-submit check", exit: { when: "cookie ≠ header", outcome: "403" } },
+            { label: "JWT + token version", detail: "A password reset bumps the version and revokes old sessions", exit: { when: "expired or revoked", outcome: "401" }, passes: "userId" },
+            { label: "Validate", detail: "Finite amount above zero, valid date, capped text", exit: { when: "invalid", outcome: "400" } },
+            { label: "Household membership", exit: { when: "not an active member", outcome: "403" } },
+            { label: "Seen this replay id?", exit: { when: "already saved", outcome: "200 with the existing row" }, passes: "amounts in integer cents" },
+          ],
+        },
+        {
+          label: "MongoDB via Prisma",
+          why: "Money is stored as whole cents, so no floating-point value ever reaches a balance.",
+          stages: [
+            { label: "expense.create", detail: "USD cents plus the original amount and currency; the rate is not stored" },
+          ],
+        },
+      ],
+      handoffs: ["REST call to the API on Render", "Prisma client"],
+      notes: [
+        "On reconnect the queue replays one item at a time, oldest first. A permanent 4xx drops that item; a 5xx or 429 stops the flush and leaves the rest for next time.",
+        "The replay check is a lookup, not a unique index, so two identical requests arriving at the same instant could both insert. The queue sends one item at a time, which stops a tab from racing itself, but not two tabs.",
+      ],
+    },
   },
   {
     id: 5,
@@ -295,7 +385,8 @@ export const PROJECTS: Project[] = [
       "Matplotlib",
       "Git"
     ],
-    links: { github: null, demo: null }
+    links: { github: null, demo: null },
+    explorer: "thin-airfoil-lift",
   },
 {
   id: 6,

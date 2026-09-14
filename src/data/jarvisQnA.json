@@ -18,11 +18,11 @@
     },
     {
       "q": "What is USC Ledger?",
-      "a": "USC Ledger is my full-stack AI-powered financial management platform. I built it using React, Node.js, and MongoDB. The core of the system is a sequential reconciliation engine I designed to resolve MongoDB write conflicts and maintain strict transactional consistency. I also implemented precision-first financial logic to eliminate floating-point rounding errors in multi-currency tracking. On top of that, I integrated Google Gemini to generate structured financial insights and audits. It's live and something I use personally."
+      "a": "USC Ledger, since renamed Orbit, is a full-stack expense tracker I built for international students at USC: expenses, budgets and tuition installment plans, in dollars and rupees. It's React and TypeScript on the front, with Express, Prisma and MongoDB behind it. The work I'd point to is correctness: money is stored as integer cents, an offline queue replays expenses with an idempotency key so a retry can't create a duplicate, and Google Gemini turns bank-statement PDFs and receipt photos into rows the user reviews before anything is imported. It's a personal project, not a product with users."
     },
     {
       "q": "What technical challenges did you solve in USC Ledger?",
-      "a": "The biggest challenge was handling write conflicts during rapid state updates. I designed a reconciliation engine that ensures operations execute sequentially without corrupting transactional integrity. Another challenge was JavaScript floating-point errors in financial calculations — I implemented epsilon-aware rounding and controlled arithmetic to preserve precision. I also optimized performance using debounced autosave and pagination to prevent race conditions and unnecessary server load."
+      "a": "Two stand out. The first was money: amounts were stored as floating-point dollars, so I moved the schema to integer cents, converted at the API boundary, and migrated existing records with an idempotent MongoDB pipeline. Splits hand out leftover cents, so a $100 installment plan divides into 33.34, 33.33 and 33.33 and always adds back up. The second was a reliability bug. Budget and semester saves send the complete desired state and the server reconciles it. I first wrapped that in a Prisma transaction, but against Atlas over Render's network the commit acknowledgement sometimes failed after the writes had landed, so users saw an error on data that had saved. Because the client always sends the full state, the operation is idempotent, so I removed the transaction and let retries converge, with a guard so an empty list can't wipe everything."
     },
     {
       "q": "How does the AI integration work in USC Ledger?",
@@ -62,7 +62,7 @@
     },
     {
       "q": "What is Manzil Recipe Vault?",
-      "a": "Manzil Recipe Vault is a full-stack MERN application I built for collaborative recipe management. I designed a scalable REST API with indexed MongoDB queries, implemented Firebase authentication with JWT verification, and integrated Cloudinary for secure image uploads. On the frontend, I optimized performance with debounced search, pagination, and modular React architecture."
+      "a": "Manzil Recipe Vault is a recipe-sharing web app: React and TypeScript on Vercel, an Express and MongoDB API on Render, and Firebase sign-in. What's interesting is the hardening. Every protected route verifies the Firebase ID token and replaces the request body with the output of a strict Zod schema, rich text is sanitized on the server, images upload straight to Cloudinary with a server-minted signature, and importing a recipe from a link is guarded against server-side request forgery — every resolved address and every redirect hop is checked. It also has collections, follows, version history, a meal planner and a Gemini tidy-up assistant that isn't allowed to invent quantities."
     },
     {
       "q": "What is Team Antariksh?",
@@ -74,7 +74,7 @@
     },
     {
       "q": "What databases have you worked with?",
-      "a": "I've worked primarily with MongoDB and PostgreSQL. I focus heavily on schema design, indexing strategies, and maintaining transactional integrity. In projects like USC Ledger, concurrency control and write consistency were central design considerations."
+      "a": "Mostly MongoDB, through both Mongoose and Prisma, plus PostgreSQL and SQL reporting work. I care most about schema design, indexing and write correctness. In Manzil Recipe Vault, rating counters drifted under parallel requests until I moved them into single atomic MongoDB updates; in USC Ledger, money is stored as integer cents and offline replays are idempotent."
     },
     {
       "q": "What makes your systems engineering approach different?",
@@ -86,11 +86,11 @@
     },
     {
       "q": "Why did you choose MongoDB for USC Ledger instead of PostgreSQL?",
-      "a": "I chose MongoDB because the financial data in USC Ledger is hierarchical — budgets contain nested categories, sub-sectors, and transaction groupings. Document-based modeling allowed me to preserve that structure naturally without complex joins. That said, I had to design carefully around write conflicts and transactional integrity, which led me to build the reconciliation layer."
+      "a": "Honestly, it started on PostgreSQL and moved to MongoDB through Prisma early on. Prisma kept the data access typed either way. The trade-off showed up later: Prisma's MongoDB connector needs a replica set for transactions, and it's also why the project is pinned to Prisma 6, since Prisma 7 has no MongoDB driver adapter. Where I needed reliability I leaned on idempotent operations rather than transactions."
     },
     {
-      "q": "How does your reconciliation engine prevent data corruption?",
-      "a": "The core idea is enforcing sequential execution of financial updates when conflicts occur. Instead of allowing overlapping writes to mutate shared state unpredictably, I designed the system so updates are resolved deterministically. That ensures no partial updates or lost writes, especially during rapid user interactions."
+      "q": "How does USC Ledger avoid duplicate or lost writes?",
+      "a": "With idempotency rather than locking. An expense saved offline goes into an IndexedDB queue with a client-generated id; on reconnect the queue replays items one at a time with that id, and the server returns the existing row if it has already seen it. A permanent error drops just that item, while a server error or rate limit stops the flush to retry later. Budget and semester saves send the complete desired state, so repeating one converges on the same result. One honest gap: the idempotency check is a lookup rather than a unique index, so two identical requests arriving at exactly the same moment could still both insert."
     },
     {
       "q": "How did you handle floating-point precision issues in financial calculations?",

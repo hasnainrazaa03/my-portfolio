@@ -401,9 +401,55 @@ test.describe('case study architecture', () => {
   });
 
   test('projects without a diagram do not render an empty section', async ({ page }) => {
-    await page.goto('/projects/usc-ledger');
+    await page.goto('/projects/numerical-investigation-of-store-separation-from-a-rectangular-cavity');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByRole('heading', { name: /how it works/i })).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: /physics underneath/i })).toHaveCount(0);
+  });
+
+  test('both web projects draw their real request paths', async ({ page }) => {
+    await page.goto('/projects/manzil-recipe-vault');
+    await expect(page.getByRole('region', { name: 'Express API — import' })).toBeVisible();
+    await expect(page.getByText('400 blocked_address')).toBeVisible();
+
+    await page.goto('/projects/usc-ledger');
+    await expect(page.getByRole('region', { name: 'Express API' })).toBeVisible();
+    await expect(page.getByText(/Queued in IndexedDB/)).toBeVisible();
+    await expect(page.getByRole('link', { name: /live demo/i })).toHaveCount(0);
+  });
+});
+
+test.describe('lift-curve explorer', () => {
+  const naca = '/projects/numerical-investigation-of-vortex-influence-on-naca-4412-airfoil';
+
+  test('is labelled as a model, and the slider and pointer both drive the readout', async ({ page }) => {
+    await page.goto(naca);
+    await expect(page.getByText('Textbook model')).toBeVisible();
+
+    const slider = page.getByLabel('Angle of attack');
+    await slider.focus();
+    await slider.press('Home'); // −8°
+    const readout = page.getByText(/the model gives/);
+    await expect(readout).toContainText('α = −8.0°');
+    await expect(readout).toContainText('NACA 0012 cl = −0.88');
+
+    // Hovering the far right of the plot selects the top of the range.
+    const plot = page.locator('figure svg[role="img"]');
+    await plot.scrollIntoViewIfNeeded();
+    const box = await plot.boundingBox();
+    await page.mouse.move(box.x + box.width * 0.8, box.y + box.height * 0.5);
+    await expect(readout).toContainText('near or past stall');
+  });
+
+  test('stays readable on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(naca);
+    const tick = page.locator('figure svg[role="img"] text', { hasText: /^12°$/ });
+    await tick.scrollIntoViewIfNeeded();
+    const size = await tick.evaluate((el) => el.getBoundingClientRect().height);
+    // The first version rendered axis labels about 6px tall at this width.
+    expect(size).toBeGreaterThanOrEqual(9);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   });
 });
 

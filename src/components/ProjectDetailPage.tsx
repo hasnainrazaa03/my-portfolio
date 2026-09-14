@@ -5,6 +5,7 @@ import { toSlug } from '../utils/slug';
 import LazyImage from './ui/LazyImage';
 import NotFoundPage from './NotFoundPage';
 import ArchitectureFlow from './ArchitectureFlow';
+import { ARCHITECTURES } from '../data/architectures';
 import LiftCurveExplorer from './LiftCurveExplorer';
 import type { Project } from '../types/content';
 
@@ -61,6 +62,7 @@ const ProjectDetailPage = ({ slug }: ProjectDetailPageProps) => {
   }
 
   const { github, demo } = project.links ?? { github: null, demo: null };
+  const architecture = ARCHITECTURES[project.title];
 
   return (
     <main className="min-h-screen bg-white dark:bg-[#030014] text-slate-800 dark:text-slate-200">
@@ -109,12 +111,12 @@ const ProjectDetailPage = ({ slug }: ProjectDetailPageProps) => {
           </p>
         </section>
 
-        {project.architecture && (
+        {architecture && (
           <section className="mb-10">
             <h2 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-primary mb-3">
               How it works
             </h2>
-            <ArchitectureFlow diagram={project.architecture} />
+            <ArchitectureFlow diagram={architecture} />
           </section>
         )}
 

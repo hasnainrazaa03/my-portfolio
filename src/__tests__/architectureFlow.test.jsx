@@ -10,17 +10,17 @@ import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, within, cleanup } from '@testing-library/react';
 import ArchitectureFlow from '../components/ArchitectureFlow';
 import { PROJECTS } from '../constants';
-import { ProjectSchema } from '../data/contentSchema';
+import { ArchitectureSchema } from '../data/contentSchema';
+import { ARCHITECTURES } from '../data/architectures';
 
 afterEach(cleanup);
 
-const vimaan = PROJECTS.find((p) => p.title === 'Project Vimaan');
-const diagram = vimaan.architecture;
+const diagram = ARCHITECTURES['Project Vimaan'];
 
 describe('the Vimaan runtime diagram', () => {
   it('exists, and passes the content schema', () => {
     expect(diagram).toBeTruthy();
-    expect(ProjectSchema.safeParse(vimaan).success).toBe(true);
+    expect(ArchitectureSchema.safeParse(diagram).success).toBe(true);
   });
 
   it('puts every stage inside the thread that runs it', () => {
@@ -78,22 +78,30 @@ describe('the Vimaan runtime diagram', () => {
 });
 
 describe('the schema keeps diagrams diagrams', () => {
-  const base = { ...vimaan };
-
   it('rejects a box label long enough to be a paragraph', () => {
     const bad = structuredClone(diagram);
     bad.lanes[0].stages[0].label = 'A stage label that has turned into a whole sentence about the system';
-    expect(ProjectSchema.safeParse({ ...base, architecture: bad }).success).toBe(false);
+    expect(ArchitectureSchema.safeParse(bad).success).toBe(false);
   });
 
   it('requires one hand-off label per boundary between lanes', () => {
     const bad = structuredClone(diagram);
     bad.handoffs = [];
-    expect(ProjectSchema.safeParse({ ...base, architecture: bad }).success).toBe(false);
+    expect(ArchitectureSchema.safeParse(bad).success).toBe(false);
   });
 
-  it('keeps the diagram optional', () => {
-    const { architecture: _a, ...without } = vimaan;
-    expect(ProjectSchema.safeParse(without).success).toBe(true);
+  it('gives every diagram a real project, and every diagram passes', () => {
+    // Keyed by title, so a renamed project would orphan its diagram silently.
+    const titles = PROJECTS.map((p) => p.title);
+    for (const [title, d] of Object.entries(ARCHITECTURES)) {
+      expect(titles, `${title} is not a project`).toContain(title);
+      expect(ArchitectureSchema.safeParse(d).success, title).toBe(true);
+    }
+  });
+
+  it('stays out of constants.ts, which ships in the entry bundle', async () => {
+    const { readFileSync } = await import('node:fs');
+    const src = readFileSync(`${process.cwd()}/src/constants.ts`, 'utf8');
+    expect(src).not.toMatch(/\barchitecture:\s*\{/);
   });
 });

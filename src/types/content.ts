@@ -127,8 +127,6 @@ export interface Project {
   images: string[];
   techStack: string[];
   links: ProjectLinks;
-  /** Optional runtime diagram for the case-study page. */
-  architecture?: ArchitectureDiagram;
   /**
    * Optional interactive textbook model on the case-study page. Always a
    * labelled idealisation, never the project's own results.

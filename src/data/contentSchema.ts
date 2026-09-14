@@ -129,7 +129,7 @@ const ArchitectureStageSchema = z.object({
   exit: z.object({ when: z.string().min(1).max(30), outcome: z.string().min(1).max(60) }).optional(),
 });
 
-const ArchitectureSchema = z
+export const ArchitectureSchema = z
   .object({
     title: z.string().min(1).max(70),
     summary: z.string().min(1).max(240),
@@ -163,7 +163,6 @@ export const ProjectSchema = z.object({
     github: z.url().nullable(),
     demo: z.url().nullable(),
   }),
-  architecture: ArchitectureSchema.optional(),
   explorer: z.enum(['thin-airfoil-lift']).optional(),
 });
 

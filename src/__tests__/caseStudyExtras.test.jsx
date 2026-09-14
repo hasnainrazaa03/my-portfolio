@@ -13,15 +13,17 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import ProjectDetailPage from '../components/ProjectDetailPage';
 import LiftCurveExplorer from '../components/LiftCurveExplorer';
 import { PROJECTS } from '../constants';
+import { ARCHITECTURES } from '../data/architectures';
 import { toSlug } from '../utils/slug';
 
 const byTitle = (t) => PROJECTS.find((p) => p.title.startsWith(t));
+const diagramOf = (p) => ARCHITECTURES[p.title];
 
 describe('Manzil Recipe Vault diagram', () => {
   const project = byTitle('Manzil');
 
   it('screens addresses before fetching, and fetching before parsing', () => {
-    const labels = project.architecture.lanes[0].stages.map((s) => s.label);
+    const labels = diagramOf(project).lanes[0].stages.map((s) => s.label);
     const screenAt = labels.findIndex((l) => /screen addresses/i.test(l));
     const fetchAt = labels.findIndex((l) => /^fetch/i.test(l));
     const parseAt = labels.findIndex((l) => /parse/i.test(l));
@@ -31,7 +33,7 @@ describe('Manzil Recipe Vault diagram', () => {
   });
 
   it('shows that the import itself saves nothing', () => {
-    expect(project.architecture.handoffs[0]).toMatch(/nothing written/i);
+    expect(diagramOf(project).handoffs[0]).toMatch(/nothing written/i);
   });
 
   it('renders on the case-study page', () => {
@@ -45,13 +47,13 @@ describe('USC Ledger diagram and copy', () => {
   const project = byTitle('USC Ledger');
 
   it('diverts offline writes to the queue before anything is sent', () => {
-    const [browser] = project.architecture.lanes;
+    const [browser] = diagramOf(project).lanes;
     const online = browser.stages.find((s) => s.label === 'Online?');
     expect(online.exit.outcome).toMatch(/IndexedDB/);
   });
 
   it('ends at the replay check, then integer cents', () => {
-    const api = project.architecture.lanes[1].stages;
+    const api = diagramOf(project).lanes[1].stages;
     const last = api[api.length - 1];
     expect(last.exit.outcome).toMatch(/existing row/);
     expect(last.passes).toMatch(/integer cents/);

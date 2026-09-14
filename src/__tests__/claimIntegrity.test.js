@@ -16,7 +16,11 @@ import { resolve } from 'node:path';
 import { PROHIBITED_CLAIMS } from '../data/claimRules';
 import { extractPdfText } from '../../scripts/extractPdfText.js';
 
-const constantsSrc = readFileSync(resolve(process.cwd(), 'src/constants.ts'), 'utf8');
+// The diagrams live in their own module (kept out of the entry bundle), and
+// make claims just as the project copy does.
+const constantsSrc = ['src/constants.ts', 'src/data/architectures.ts']
+  .map((f) => readFileSync(resolve(process.cwd(), f), 'utf8'))
+  .join('\n');
 const pdfText = extractPdfText(resolve(process.cwd(), 'public/resume.pdf'));
 
 const report = (rule) => `${rule.reason}. Use instead: ${rule.instead}`;

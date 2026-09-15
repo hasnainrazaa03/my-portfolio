@@ -47,7 +47,7 @@ const LiftChart = ({ af, net, alphaDeg, sampleCount, totalSamples, trained }: Pr
     <figure className="rounded-xl border border-slate-200 bg-white/70 px-3 pt-2 pb-0.5 dark:border-white/10 dark:bg-white/[0.03]">
       <figcaption className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
         <span className="font-semibold">
-          Lift against angle
+          Lift coefficient against angle
           {trained && <span className="ml-2 font-normal text-primary">· prediction matches physics</span>}
         </span>
         <span className="flex items-center gap-3">

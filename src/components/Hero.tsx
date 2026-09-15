@@ -81,7 +81,7 @@ const Hero = () => {
               </span>
             </h1>
 
-            <p className="max-w-lg text-xl leading-relaxed text-slate-600 dark:text-slate-300">
+            <p className="max-w-xl text-balance text-xl leading-relaxed text-slate-600 dark:text-slate-300">
               {PERSONAL_INFO.bio}
             </p>
             

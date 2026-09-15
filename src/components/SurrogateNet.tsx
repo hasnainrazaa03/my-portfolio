@@ -76,7 +76,7 @@ const SurrogateNet = ({ snapshot, alphaDeg, phase }: Props) => {
         </g>
       </svg>
       <p className="mt-1 text-xs tabular-nums text-slate-500 dark:text-slate-400">
-        {phase === 'trained' ? `${step.toLocaleString()} steps` : `step ${step.toLocaleString()} · loss ${loss >= 0.01 ? loss.toFixed(3) : loss.toExponential(1).replace('e-', 'e−')}`}
+        {phase === 'trained' ? `${step.toLocaleString()} steps` : `step ${step.toLocaleString()} · training loss ${loss >= 0.01 ? loss.toFixed(3) : loss.toExponential(1).replace('e-', 'e−')}`}
       </p>
     </div>
   );

@@ -197,8 +197,9 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
           <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
             Physics <span className="font-normal normal-case tracking-normal">· ideal flow</span>
           </p>
-          <p className="mt-0.5 text-lg font-bold tabular-nums text-slate-900 dark:text-white">
-            Lift {clTrue.toFixed(2)}
+          <p className="mt-0.5 text-slate-900 dark:text-white">
+            <span className="text-sm font-medium">{compact ? 'Cₗ' : 'Lift coefficient'}</span>{' '}
+            <span className="text-lg font-bold tabular-nums">{clTrue.toFixed(2)}</span>
           </p>
           <p className="text-sm tabular-nums text-slate-600 dark:text-slate-300">Angle {fmtAlpha(alphaDeg)}</p>
           {nearStall && !compact && (
@@ -211,8 +212,9 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
           <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
             AI prediction <span className="font-normal normal-case tracking-normal">· surrogate</span>
           </p>
-          <p className="mt-0.5 text-lg font-bold tabular-nums text-slate-900 dark:text-white">
-            Lift {current ? clModel.toFixed(2) : '—'}
+          <p className="mt-0.5 text-slate-900 dark:text-white">
+            <span className="text-sm font-medium">{compact ? 'Predicted Cₗ' : 'Predicted coefficient'}</span>{' '}
+            <span className="text-lg font-bold tabular-nums">{current ? clModel.toFixed(2) : '—'}</span>
           </p>
           <p className="text-sm tabular-nums text-slate-600 dark:text-slate-300">Error {current ? error.toFixed(2) : '—'}</p>
         </div>
@@ -240,13 +242,13 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
           className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:border-primary hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:border-white/20 dark:text-slate-200"
         >
           <RotateCcw size={14} aria-hidden="true" />
-          Retrain
+          {currentPhase === 'trained' ? 'Retrain' : 'Restart'}
         </button>
       </div>
 
       {!compact && (
-        <details className="text-xs text-slate-500 dark:text-slate-400">
-          <summary className="cursor-pointer select-none rounded hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:hover:text-slate-200">
+        <details className="text-xs text-slate-600 dark:text-slate-300">
+          <summary className="cursor-pointer select-none rounded font-medium hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:hover:text-white">
             Why a neural network for something this simple?
           </summary>
           <p className="mt-1 leading-snug">

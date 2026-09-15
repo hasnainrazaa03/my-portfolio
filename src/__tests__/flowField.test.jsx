@@ -11,7 +11,7 @@
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, act, within } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
 import { ThemeProvider } from '../context/ThemeProvider';
 import FlowField from '../components/FlowField';
 import FlowFieldStatic from '../components/FlowFieldStatic';
@@ -60,6 +60,8 @@ describe('FlowField', () => {
     expect(screen.getByText(/ideal-flow model/)).toBeInTheDocument();
     expect(screen.getByText(/Physics/)).toBeInTheDocument();
     expect(screen.getByText(/AI prediction/)).toBeInTheDocument();
+    expect(screen.getByText('Lift coefficient')).toBeInTheDocument();
+    expect(screen.getByText('Predicted coefficient')).toBeInTheDocument();
   });
 
   it('is a slider for the angle of attack that the arrow keys pitch', () => {
@@ -82,7 +84,7 @@ describe('FlowField', () => {
 
   it('shows more lift from the physics as the angle rises', () => {
     renderWith(<FlowField />);
-    const lift = () => Number(/Lift ([\d.]+)/.exec(within(screen.getByText(/Physics/).parentElement).getByText(/^Lift /).textContent)[1]);
+    const lift = () => Number(/Lift coefficient ([\d.]+)/.exec(screen.getByText('Lift coefficient').parentElement.textContent)[1]);
     const before = lift();
     fireEvent.keyDown(screen.getByRole('slider'), { key: 'End' });
     expect(lift()).toBeGreaterThan(before);
@@ -122,6 +124,7 @@ describe('FlowField', () => {
 
   it('retrains from scratch on request', () => {
     renderWith(<FlowField />);
+    expect(screen.getByRole('button', { name: /restart/i })).toBeInTheDocument();
     frames(1600);
     expect(screen.getByText('Model trained ✓')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /retrain/i }));
@@ -170,7 +173,8 @@ describe('FlowField', () => {
     expect(screen.getByLabelText('Angle of attack')).toHaveAttribute('type', 'range');
     expect(screen.getByText(/Slide to change/)).toBeInTheDocument();
     expect(screen.queryByText('Neural network')).toBeNull();
-    expect(screen.queryByText('Lift against angle')).toBeNull();
+    expect(screen.queryByText(/Lift coefficient against angle/)).toBeNull();
+    expect(screen.getByText('Predicted Cₗ')).toBeInTheDocument();
     expect(screen.getByText(/AI prediction/)).toBeInTheDocument();
     frames(1600);
     expect(screen.getByText(/the surrogate now estimates lift instantly/)).toBeInTheDocument();

@@ -44,26 +44,36 @@ test.describe('page boot', () => {
     expect(consoleErrors.filter((e) => /ErrorBoundary/.test(e))).toEqual([]);
   });
 
-  test('survives WebGL being unavailable', async ({ browser }) => {
-    // The exact condition that took the site down: a context that cannot be
-    // created. Hero3D must fall back rather than take the page with it.
+  test('survives a canvas that cannot draw', async ({ browser }) => {
+    // The condition that once took the site down was a graphics context that
+    // could not be created, thrown from inside an effect. The hero is Canvas 2D
+    // now; with no context it must show the still picture, not an error.
     const context = await browser.newContext();
     const page = await context.newPage();
     await page.addInitScript(() => {
-      const original = HTMLCanvasElement.prototype.getContext;
-      HTMLCanvasElement.prototype.getContext = function (type: string, ...rest: unknown[]) {
-        if (typeof type === 'string' && type.includes('webgl')) return null;
-        // @ts-expect-error — passthrough for every other context type
-        return original.call(this, type, ...rest);
-      };
+      HTMLCanvasElement.prototype.getContext = () => null;
     });
 
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByText('Something went wrong.')).toHaveCount(0);
-    // The CSS orbital stands in for the 3D scene.
-    await expect(page.getByRole('img', { name: /orbital/i })).toBeVisible();
+    await expect(page.getByRole('img', { name: /streamlines of ideal flow/i })).toBeVisible();
     await context.close();
+  });
+
+  test('the hero flow picture pitches with the cursor and says what it is', async ({ page }) => {
+    await page.goto('/');
+    const slider = page.getByRole('slider', { name: /angle of attack/i });
+    await expect(slider).toBeVisible();
+    await expect(page.getByText(/Ideal flow/)).toBeVisible();
+    const box = (await slider.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.1);
+    const high = Number(await slider.getAttribute('aria-valuenow'));
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.9);
+    const low = Number(await slider.getAttribute('aria-valuenow'));
+    expect(high).toBeGreaterThan(low);
+    // Nothing threw during the animation.
+    await expect(page.getByText('Something went wrong.')).toHaveCount(0);
   });
 
   test('serves the WebP sibling for local raster images', async ({ page }) => {

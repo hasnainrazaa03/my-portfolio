@@ -31,9 +31,9 @@ describe('prefersReducedData', () => {
 });
 
 describe('Hero', () => {
-  it('gates the 3D mount on data saver, not only on the breakpoint', () => {
+  it('turns the flow picture static under data saver', () => {
     const src = readFileSync(resolve(process.cwd(), 'src/components/Hero.tsx'), 'utf8');
     expect(src).toMatch(/useDataSaver\(\)/);
-    expect(src).toMatch(/showHero3D = useMediaQuery\(MD_BREAKPOINT\) && !dataSaver/);
+    expect(src).toMatch(/<FlowField motion=\{!dataSaver\} \/>/);
   });
 });

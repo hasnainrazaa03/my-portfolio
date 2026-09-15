@@ -1,15 +1,14 @@
 import React, { useState, Suspense } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence, type Variants } from 'framer-motion';
-import { Download, Check, ArrowRight, Loader2 } from 'lucide-react';
+import { Download, Check, ArrowRight } from 'lucide-react';
 import { PERSONAL_INFO } from '../constants';
 import { scrollToSection } from '../utils/scroll';
 import SocialLinks from './SocialLinks';
 import ErrorBoundary from './ErrorBoundary';
-import Hero3DFallback from './Hero3DFallback';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useDataSaver } from '../hooks/useDataSaver';
 
-const Hero3D = React.lazy(() => import('./Hero3D'));
+const FlowField = React.lazy(() => import('./FlowField'));
 
 /**
  * Entrance for the hero text — TRANSFORM ONLY, deliberately.
@@ -36,12 +35,11 @@ const MD_BREAKPOINT = '(min-width: 768px)';
 const Hero = () => {
   const { scrollY } = useScroll();
   // PERF: the wrapper is `hidden md:block`, but CSS only hides — React still
-  // mounts, so every mobile visitor was downloading the three.js chunk
-  // (~127 KB gzip) for a canvas they could never see. Gate the mount itself.
-  // Data Saver / slow link: the 3D core is decoration with a CSS stand-in
-  // already built for the no-WebGL case, so keep the chunk off the wire.
+  // mounts, so every mobile visitor would download the chunk for a canvas
+  // they cannot see. Gate the mount itself. Under Data Saver / a slow link
+  // the picture is drawn once as an SVG instead of animated.
   const dataSaver = useDataSaver();
-  const showHero3D = useMediaQuery(MD_BREAKPOINT) && !dataSaver;
+  const showFlowField = useMediaQuery(MD_BREAKPOINT);
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
   
   const [isDownloaded, setIsDownloaded] = useState(false);
@@ -151,23 +149,19 @@ const Hero = () => {
             transition={{ duration: 1 }}
             className="hidden md:block relative h-[600px] w-full"
           >
-             {/* Local boundary: a WebGL/three failure must degrade to the CSS
-                 orbital, never bubble to the app-level boundary and blank the
-                 whole page (which is exactly what it used to do). */}
-             {showHero3D && (
-               <ErrorBoundary fallback={<Hero3DFallback />}>
-                 <Suspense fallback={
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Loader2 className="animate-spin text-primary" size={40} />
-                    </div>
-                 }>
-                    <Hero3D />
+             {/* Local boundary: a failure in the canvas must leave an empty
+                 column, never bubble to the app-level boundary and blank the
+                 whole page (which is exactly what the old 3D hero did). The
+                 boundary's default fallback is a visible error, so an empty
+                 column is passed explicitly; the chunk is small, so nothing
+                 is shown while it loads either. */}
+             {showFlowField && (
+               <ErrorBoundary fallback={<div aria-hidden="true" />}>
+                 <Suspense fallback={null}>
+                    <FlowField motion={!dataSaver} />
                  </Suspense>
                </ErrorBoundary>
              )}
-             {/* Data saver at desktop width: the column is visible, so fill
-                 it with the CSS orbital rather than leave it empty. */}
-             {!showHero3D && dataSaver && <Hero3DFallback />}
           </motion.div>
         </div>
       </div>

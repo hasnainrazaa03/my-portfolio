@@ -54,7 +54,6 @@ export default defineConfig({
           if (!id.includes('node_modules')) return;
           // Order matters: react-dom must be tested before the bare `react/`
           // match, and react-github-calendar before either.
-          if (/node_modules\/three\//.test(id)) return 'three';
           if (/node_modules\/framer-motion\//.test(id)) return 'motion';
           if (/node_modules\/(react|react-dom|scheduler)\//.test(id)) return 'react';
           // react-github-calendar is deliberately NOT named here. Its only

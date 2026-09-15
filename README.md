@@ -65,21 +65,19 @@ Result: **when every provider is down, the chat still answers from the local ban
 
 ---
 
-### 2. High-Performance 3D Visualization
+### 2. The Hero: Ideal Flow Around an Airfoil
 
-3D web experiences are notorious for destroying mobile performance and Lighthouse scores.
+The hero used to be a wireframe icosahedron with rings — a 127 KB three.js chunk that said "tech" and nothing else.
 
-**The Problem**  
-Rendering complex Three.js scenes on low-power devices causes lag, layout thrashing, and battery drain.
+**The Idea**  
+Draw the first thing an aerospace course teaches, live: potential flow around a Joukowski airfoil (`src/utils/potentialFlow.ts`). Moving the cursor pitches the airfoil, particles find the new streamlines, the flow over the top speeds up and a lift readout follows (Kutta–Joukowski). It is labelled **Ideal flow** on screen and is not a CFD result.
 
-**The Solution**
-- **Mount gating, not CSS hiding** — `Hero3D` mounts only at desktop widths (`useMediaQuery`). A `hidden md:block` wrapper only hides; React still mounts, and every phone was downloading the 127 KB three.js chunk to render nothing
-- **Data Saver** — also skipped when the browser reports Save-Data or a 2g/3g link; a CSS orbital stands in
-- **Lazy loading** — `React.lazy` + `Suspense`, inside a local error boundary so a WebGL failure degrades to the CSS fallback instead of blanking the page
-- **Interaction** — pointer parallax; clicking the core re-colours it via raycasting, with Enter/Space as the keyboard equivalent
-- **Frugal rendering** — the loop pauses offscreen and in hidden tabs, and renders one static frame under `prefers-reduced-motion`
-
-Result: **Near-instant First Contentful Paint (FCP)** with zero mobile performance penalties.
+**How**
+- **Closed-form physics, tested against theory** — far field is the freestream, the surface is a streamline, the trailing edge is finite (Kutta), lift slope ≈ 2π; a sign slip fails a test
+- **Canvas 2D, 12 KB** — particles are advected in the ζ-plane (where the airfoil is a circle they cannot enter) and only their drawn position is mapped; streaks are coloured by speed
+- **Mount gating, not CSS hiding** — mounts at desktop widths only, so phones never download it
+- **Degrades to the same picture** — under `prefers-reduced-motion`, Save-Data, or with no 2D context, a static SVG of the same streamlines is drawn instead, inside a local error boundary so nothing can blank the page
+- **Keyboard** — the picture is an ARIA slider for the angle of attack; arrow keys pitch it
 
 ---
 
@@ -120,8 +118,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 ## 🚀 Feature Overview
 
 ### 🌌 Immersive Hero Section
-- **3D Tech Core** — Rotating Icosahedron with orbital rings and particle fields (Three.js)
-- **Interactive Tilt** — Mouse-driven parallax response
+- **Flow picture** — ideal flow around an airfoil, pitched by the cursor, with a live lift readout (Canvas 2D, no WebGL)
 - **Resume Engine** — One-click resume download with instant visual feedback
 
 ### 👤 About Section
@@ -197,7 +194,6 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 |-------|------------|
 | Frontend | React 19, TypeScript, Vite 7, Tailwind CSS 3 |
 | Animations | Framer Motion, CSS keyframes |
-| 3D | Three.js (WebGL), desktop only |
 | AI chat | Anthropic Claude (primary), Google Gemini, Hugging Face — server-side chain |
 | Backend | Vercel serverless functions (Node, ESM) |
 | Data | Supabase (analytics), Upstash Redis (rate limits) |
@@ -387,7 +383,7 @@ my-portfolio/
 
 This portfolio is built like a **mission control dashboard**:
 - Motion-driven, not decorative
-- 3D used only where it adds meaning
+- Visuals that say something: the hero draws the physics behind the aerospace background
 - Every animation communicates state, intent, or hierarchy
 
 It's designed to feel less like a website — and more like **a system**.
@@ -430,7 +426,7 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) (or `.well-known/security.
 
 **Built:** streaming chat with source chips and curated career knowledge; project case studies with per-route heads, generated social cards and a real 404; ATS résumé view; job-description comparison (`/fit`); installable offline support; the career arc chart; Vimaan's runtime diagram.
 
-**Also built:** a daily production health check with deploy-freshness; chunk-load recovery so one unfetchable section cannot take the page down; zero npm advisories (`@vercel/node` replaced by local types); private visitor insights; live GitHub answers and case-study links in the chat; "How it works" diagrams for Manzil and Orbit; the NACA 4412 lift-curve explorer; JSON-LD per case study.
+**Also built:** the hero flow picture (three.js removed, 127 KB → 12 KB); a daily production health check with deploy-freshness; chunk-load recovery so one unfetchable section cannot take the page down; zero npm advisories (`@vercel/node` replaced by local types); private visitor insights; live GitHub answers and case-study links in the chat; "How it works" diagrams for Manzil and Orbit; the NACA 4412 lift-curve explorer; JSON-LD per case study.
 
 **Corrected claims:** Orbit's (then USC Ledger) "atomic transactions", "P2034 write-conflict resolution" and a race-preventing "reconciliation engine" (none exist in its code) and a dead demo link; Manzil described as "collaborative" (recipes are owner-only). Earlier: a "10x throughput" figure the evidence could not support, Vimaan's "inter-process communication" (a thread and a queue in one process) and INT8 presented as a speed gain (it was for memory). `claimRules.ts` now fails CI if any return.
 
@@ -447,8 +443,8 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) (or `.well-known/security.
 - IPs are now SHA-256 hashed with a per-deploy salt before any storage
 
 **Performance**
-- Vite `manualChunks` splits `three`, `framer-motion`, `@supabase/supabase-js`, and `react-github-calendar` into separate cacheable chunks
-- `Hero3D` respects `prefers-reduced-motion`, pauses rAF when offscreen via `IntersectionObserver`, and caps DPR at 1.5
+- Vite `manualChunks` splits `framer-motion`, `@supabase/supabase-js`, and `react-github-calendar` into separate cacheable chunks
+- The hero flow picture respects `prefers-reduced-motion`, pauses rAF when offscreen via `IntersectionObserver`, and caps DPR at 1.5
 - `SpaceBackground` skips its rAF loop entirely under reduced-motion
 - `useActiveSection` consolidated to a single module-level scroll listener shared by all consumers
 

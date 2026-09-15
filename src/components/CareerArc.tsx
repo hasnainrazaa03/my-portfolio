@@ -12,6 +12,9 @@ import {
   type ArcRow,
 } from '../utils/careerArc';
 import { Route } from 'lucide-react';
+import { motion } from 'framer-motion';
+import LazyImage from './ui/LazyImage';
+import { useReducedMotion } from '../hooks/useReducedMotion';
 import type { FocusArea } from '../types/content';
 
 /**
@@ -49,9 +52,34 @@ function focusOrder(rows: ArcRow[]): FocusArea[] {
 
 
 const colour = (focus: FocusArea) => `var(${FOCUS[focus].cssVar})`;
+/** The field's colour at low alpha, for glows and pill borders. */
+const tint = (focus: FocusArea, pct: number) => `color-mix(in srgb, var(${FOCUS[focus].cssVar}) ${pct}%, transparent)`;
+
+/** The organisation's mark beside its row, as the Flight Log draws it. */
+const Mark = ({ src, name }: { src?: string; name: string }) => (
+  <span className="flex h-7 w-7 shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-white p-1 dark:border-white/15 dark:bg-[#0F172A]">
+    {src ? (
+      <LazyImage
+        src={src}
+        alt=""
+        width={20}
+        height={20}
+        className="h-full w-full object-contain"
+        fallback={<span className="text-[9px] font-bold text-primary">{name.slice(0, 2)}</span>}
+      />
+    ) : (
+      <span className="text-[9px] font-bold text-primary">{name.slice(0, 2)}</span>
+    )}
+  </span>
+);
 
 const CareerArc = ({ now }: Props) => {
   const arc = useMemo(() => buildCareerArc(now ?? new Date()), [now]);
+  const reduced = useReducedMotion();
+  // Bars grow from their start date the first time the chart is seen. One
+  // observer on the chart, not one per bar: a bar that starts at zero width
+  // is a zero-area target, and per-element observers left some bars unseen.
+  const [revealed, setRevealed] = useState(false);
   const order = useMemo(() => focusOrder(arc.rows), [arc]);
   const [view, setView] = useState<'chart' | 'table'>('chart');
   const [tip, setTip] = useState<{ id: string; pinned: boolean } | null>(null);
@@ -98,6 +126,26 @@ const CareerArc = ({ now }: Props) => {
     };
   }, [tip, close]);
 
+  useEffect(() => {
+    if (revealed || view !== 'chart') return;
+    const el = chartRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setRevealed(true);
+      return;
+    }
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setRevealed(true);
+          io.disconnect();
+        }
+      },
+      { threshold: 0.15 },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [revealed, view]);
+
   const nowPct = axisPercent(arc, arc.now);
   const gridlines = arc.years.map((y) => axisPercent(arc, y * 12));
 
@@ -135,20 +183,21 @@ const CareerArc = ({ now }: Props) => {
 
       {/* Legend: always present for more than one series. Swatches carry the
           colour; the text beside them stays in ink. */}
-      <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-2 list-none p-0" aria-label="Fields">
+      <ul className="mt-5 flex flex-wrap gap-2 list-none p-0" aria-label="Fields">
         {order.map((f) => (
-          <li key={f} className="flex items-center gap-2 text-sm">
-            <span aria-hidden="true" className="inline-block h-2.5 w-4 rounded-sm" style={{ background: colour(f) }} />
-            <span className="font-medium text-slate-800 dark:text-slate-100">{FOCUS[f].label}</span>
-            <span className="text-slate-500 dark:text-slate-400 tabular-nums">{durationLabel(arc.totals[f])}</span>
+          <li
+            key={f}
+            className="flex items-center gap-2 rounded-full border px-3 py-1 text-xs"
+            style={{ borderColor: tint(f, 45), background: tint(f, 10) }}
+          >
+            <span aria-hidden="true" className="inline-block h-2 w-2 rounded-full" style={{ background: colour(f) }} />
+            <span className="font-bold text-slate-800 dark:text-slate-100">{FOCUS[f].label}</span>
+            <span className="text-slate-600 dark:text-slate-300 tabular-nums">{durationLabel(arc.totals[f])}</span>
           </li>
         ))}
         {arc.rows.some((r) => r.projected) && (
-          <li className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400">
-            <span
-              aria-hidden="true"
-              className="inline-block h-2.5 w-4 rounded-sm bg-slate-400 opacity-35 dark:bg-slate-300"
-            />
+          <li className="flex items-center gap-2 rounded-full border border-slate-300 px-3 py-1 text-xs text-slate-600 dark:border-white/15 dark:text-slate-300">
+            <span aria-hidden="true" className="inline-block h-2 w-4 rounded-sm bg-slate-400 opacity-35 dark:bg-slate-300" />
             Still to come
           </li>
         )}
@@ -193,11 +242,34 @@ const CareerArc = ({ now }: Props) => {
       ) : (
         <div
           ref={chartRef}
-          className="relative mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#0f0d1f] sm:p-5"
+          className="relative mt-6 overflow-hidden rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#0f0d1f] sm:p-5"
           onMouseLeave={() => tip && !tip.pinned && close()}
         >
+          {/* A faint teal glow behind the plot, like the hero's; the data sits on top. */}
+          <div aria-hidden="true" className="pointer-events-none absolute -left-20 -top-24 h-72 w-72 rounded-full bg-primary/10 blur-[90px]" />
+          {/* Year bands, gridlines and the Now line, once, over the full plot
+              height (sm+: the label column is a fixed 14rem; on phones labels
+              sit above bars and each row keeps its own lines). */}
+          <div aria-hidden="true" className="pointer-events-none absolute inset-y-4 right-4 left-[calc(1rem+14rem)] hidden sm:block sm:inset-y-5 sm:right-5 sm:left-[calc(1.25rem+14rem)]">
+            {arc.years.slice(0, -1).map((y, i) =>
+              i % 2 ? null : (
+                <span
+                  key={`band-${y}`}
+                  className="absolute inset-y-0 bg-slate-900/[0.03] dark:bg-white/[0.025]"
+                  style={{ left: `${axisPercent(arc, y * 12)}%`, width: `${axisPercent(arc, (y + 1) * 12) - axisPercent(arc, y * 12)}%` }}
+                />
+              ),
+            )}
+            {gridlines.map((g) => (
+              <span key={g} className="absolute inset-y-0 w-px bg-slate-200 dark:bg-white/10" style={{ left: `${g}%` }} />
+            ))}
+            <span
+              className="absolute inset-y-0 border-l border-dashed border-primary/80 shadow-[0_0_12px_rgba(45,212,191,0.5)]"
+              style={{ left: `${nowPct}%` }}
+            />
+          </div>
           {/* Year axis. Odd years drop out on narrow screens so labels never collide. */}
-          <div className="sm:grid sm:grid-cols-[11rem_1fr]" aria-hidden="true">
+          <div className="sm:grid sm:grid-cols-[14rem_1fr]" aria-hidden="true">
             <div className="hidden sm:block" />
             <div className="relative h-5 text-[11px] text-slate-500 dark:text-slate-400 tabular-nums">
               {arc.years.slice(0, -1).map((y, i) => (
@@ -221,31 +293,34 @@ const CareerArc = ({ now }: Props) => {
                   {group.label}
                 </h4>
                 <ul className="list-none p-0">
-                  {rows.map((row) => {
+                  {rows.map((row, rowIndex) => {
                     const left = axisPercent(arc, row.start);
                     const width = Math.max(axisPercent(arc, row.end + 1) - left, 0.8);
                     const solidShare = ((row.solidEnd - row.start + 1) / (row.end - row.start + 1)) * 100;
                     const isActive = tip?.id === row.id;
                     return (
-                      <li key={row.id} className="sm:grid sm:grid-cols-[11rem_1fr]">
-                        <div className="min-w-0 pt-2 pr-3 sm:py-1.5">
-                          <p className="text-sm font-medium leading-tight text-slate-900 dark:text-white" title={row.title}>
-                            {shortName(row.title)}
-                          </p>
-                          <p className="text-xs leading-tight text-slate-500 dark:text-slate-400">{row.subtitle}</p>
+                      <li key={row.id} className="sm:grid sm:grid-cols-[14rem_1fr]">
+                        <div className="flex min-w-0 items-center gap-2.5 pt-2 pr-3 sm:py-1.5">
+                          <Mark src={row.logo} name={shortName(row.title)} />
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold leading-tight text-slate-900 dark:text-white" title={row.title}>
+                              {shortName(row.title)}
+                            </p>
+                            <p className="truncate text-xs leading-tight text-slate-500 dark:text-slate-400">{row.subtitle}</p>
+                          </div>
                         </div>
                         <div className="relative min-h-9 self-stretch">
                           {gridlines.map((g) => (
                             <span
                               key={g}
                               aria-hidden="true"
-                              className="absolute inset-y-0 w-px bg-slate-200 dark:bg-white/10"
+                              className="absolute inset-y-0 w-px bg-slate-200 dark:bg-white/10 sm:hidden"
                               style={{ left: `${g}%` }}
                             />
                           ))}
                           <span
                             aria-hidden="true"
-                            className="absolute inset-y-0 border-l border-dashed border-primary/70"
+                            className="absolute inset-y-0 border-l border-dashed border-primary/70 sm:hidden"
                             style={{ left: `${nowPct}%` }}
                           />
                           {/* The hit target is the full row height (36px), well
@@ -264,16 +339,26 @@ const CareerArc = ({ now }: Props) => {
                             className="group absolute inset-y-0 rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                             style={{ left: `${left}%`, width: `${width}%` }}
                           >
-                            <span
-                              className={`absolute inset-x-0 top-1/2 flex h-4 -translate-y-1/2 overflow-hidden rounded-md transition-[filter,box-shadow] ${
-                                isActive ? 'brightness-110 shadow-[0_0_14px_rgba(45,212,191,0.35)]' : 'group-hover:brightness-110'
+                            {/* Grows from its start date on first sight, like the
+                                Flight Log's line below; instant under reduced motion. */}
+                            <motion.span
+                              initial={false}
+                              animate={{ scaleX: reduced || revealed ? 1 : 0 }}
+                              transition={reduced ? { duration: 0 } : { duration: 0.7, delay: 0.05 * rowIndex, ease: 'easeOut' }}
+                              className={`absolute inset-x-0 top-1/2 flex h-4 overflow-hidden rounded-full transition-[filter] ${
+                                isActive ? 'brightness-125' : 'group-hover:brightness-110'
                               }`}
+                              style={{
+                                originX: 0,
+                                y: '-50%',
+                                boxShadow: `0 0 ${isActive ? 18 : 10}px ${tint(row.focus, isActive ? 60 : 35)}`,
+                              }}
                             >
                               <span className="h-full" style={{ width: `${solidShare}%`, background: colour(row.focus) }} />
                               {row.projected && (
                                 <span className="h-full flex-1 opacity-35" style={{ background: colour(row.focus) }} />
                               )}
-                            </span>
+                            </motion.span>
                           </button>
                         </div>
                       </li>
@@ -284,7 +369,7 @@ const CareerArc = ({ now }: Props) => {
             );
           })}
 
-          <div className="sm:grid sm:grid-cols-[11rem_1fr]" aria-hidden="true">
+          <div className="sm:grid sm:grid-cols-[14rem_1fr]" aria-hidden="true">
             <div className="hidden sm:block" />
             <div className="relative h-6 text-[11px] font-bold text-primary">
               <span

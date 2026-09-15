@@ -75,13 +75,16 @@ const GitHubSection = () => {
           />
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Stretch, so the feed runs exactly as tall as the two stacked cards beside it. */}
+        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 lg:items-stretch">
           
-          <div className="w-full order-2 lg:order-1 flex justify-center lg:block">
+          {/* The row is as tall as the right column; the feed fills it absolutely so
+              its own content never sets the height (it scrolls instead). */}
+          <div className="order-2 flex w-full justify-center lg:relative lg:order-1 lg:block lg:h-full lg:min-h-[480px]">
             <GitHubFeed />
           </div>
 
-          <div className="w-full order-1 lg:order-2 space-y-6 lg:col-span-2">
+          <div className="order-1 flex w-full flex-col gap-6 lg:order-2 lg:col-span-2">
             
             <motion.div 
               initial={{ opacity: 0, x: 20 }}

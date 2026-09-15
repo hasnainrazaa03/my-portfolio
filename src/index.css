@@ -160,6 +160,27 @@ body {
   @apply bg-teal-600;
 }
 
+/* Scrolling panels inside cards (the commit feed, the chat transcript): a
+   thin thumb on a transparent track. The global scrollbar's dark track was
+   showing as a black stripe down the feed. */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(45, 212, 191, 0.45) transparent;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 8px 0;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  @apply bg-primary/40 rounded-full;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  @apply bg-primary/70;
+}
+
 /* --- COMPONENT SPECIFIC: THIN HORIZONTAL SCROLLBAR --- */
 .thin-scrollbar-x {
   scrollbar-width: thin;

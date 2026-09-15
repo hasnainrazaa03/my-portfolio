@@ -127,7 +127,7 @@ const GitHubFeed = () => {
   return (
     <div
       ref={containerRef}
-      className="flex h-[500px] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] dark:border-white/10 dark:bg-white/5"
+      className="flex h-[500px] w-full max-w-md flex-col overflow-hidden rounded-2xl lg:absolute lg:inset-0 lg:h-auto lg:max-w-none border border-slate-200 bg-white transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] dark:border-white/10 dark:bg-white/5"
     >
       <div className="z-10 border-b border-slate-200 bg-white/50 p-6 pb-4 backdrop-blur-sm dark:border-white/10 dark:bg-[#0F172A]/50">
         <div className="flex items-center justify-between">

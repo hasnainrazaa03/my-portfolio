@@ -47,6 +47,8 @@ export interface ArcRow {
   title: string;
   /** Role or degree. */
   subtitle: string;
+  /** The organisation's mark, as the Flight Log shows it. */
+  logo?: string;
   focus: FocusArea;
   /** The period exactly as the site writes it, for the table and screen readers. */
   periodText: string;
@@ -83,6 +85,7 @@ export function buildCareerArc(nowDate: Date = new Date()): CareerArc {
     subtitle: string,
     focus: FocusArea,
     periodText: string,
+    logo?: string,
   ): ArcRow => {
     const parsed = parsePeriod(periodText);
     // The content schema rejects unparseable periods, so reaching this is a
@@ -95,6 +98,7 @@ export function buildCareerArc(nowDate: Date = new Date()): CareerArc {
       kind,
       title,
       subtitle,
+      logo,
       focus,
       periodText,
       start: parsed.start,
@@ -106,9 +110,9 @@ export function buildCareerArc(nowDate: Date = new Date()): CareerArc {
     };
   };
 
-  const work = EXPERIENCE.map((e) => toRow(`role-${e.id}`, 'work', e.company, e.role, e.focus, e.period));
+  const work = EXPERIENCE.map((e) => toRow(`role-${e.id}`, 'work', e.company, e.role, e.focus, e.period, e.logo));
   const study = EDUCATION.filter((ed) => ed.focus).map((ed) =>
-    toRow(`study-${ed.id}`, 'study', ed.school, ed.degree, ed.focus as FocusArea, ed.period),
+    toRow(`study-${ed.id}`, 'study', ed.school, ed.degree, ed.focus as FocusArea, ed.period, ed.image),
   );
   const rows = [...work, ...study].sort((a, b) => a.start - b.start || a.end - b.end);
 

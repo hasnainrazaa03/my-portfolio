@@ -100,8 +100,8 @@ export const ARCHITECTURES: Readonly<Record<string, ArchitectureDiagram>> = {
   // hooks/useOfflineQueue.ts, services/api.ts, server/src/middleware/*,
   // routes/expenses.ts, prisma/schema.prisma) and
   // ORBIT_EXPENSE_TRACKER_MASTER.md. Earlier copy described conflict
-  // handling the code does not have; see the USC Ledger rules in claimRules.ts.
-  'USC Ledger': {
+  // handling the code does not have; see the Orbit rules in claimRules.ts.
+  'Orbit Expense Tracker': {
     title: "One expense, form to database — with or without a connection",
     summary: "An expense recorded offline waits in the browser and replays later with an id the server remembers, so a retry can never save it twice; online or not, it reaches the database as integer cents.",
     lanes: [

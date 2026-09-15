@@ -169,7 +169,7 @@ export default function App() {
   }
   const projectSlug = parseProjectPath(path);
   if (projectSlug) {
-    // Only the lowercase, unescaped form exists as a file, so /projects/USC-Ledger
+    // Only the lowercase, unescaped form exists as a file, so /projects/Orbit-Expense-Tracker
     // is served by the 404 shell — the reader would see the full case study at a
     // URL that returned 404 to everything else. Send them to the real one.
     const canonical = canonicalProjectPath(path);

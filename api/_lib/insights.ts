@@ -10,7 +10,7 @@ import { deriveSources, type SourceLink } from './sourceLinks.js';
  * Computed HERE, not in the browser. The previous viewer received up to 1,000
  * raw rows (replies up to 4,000 characters each, plus hashed IPs it never
  * used) and classified them with hard-coded word lists that had gone stale:
- * no PeakRoutine, no Sunbase, no USC Ledger. Aggregating server-side sends a
+ * no PeakRoutine, no Sunbase, no Orbit (then USC Ledger). Aggregating server-side sends a
  * small payload, keeps hashed IPs out of the browser, redacts contact details
  * visitors typed before they leave the server, and classifies topics with the
  * same `deriveSources` the chat uses for its "Read more" chips, so the two
@@ -77,7 +77,7 @@ export const MENTIONS: ReadonlyArray<{ label: string; patterns: RegExp[]; covers
   { label: 'Team Antariksh', patterns: [/\bantariksh\b/i], covers: ['Team Antariksh'] },
   { label: 'Project Vimaan', patterns: [/\bvimaan\b/i, /\bx-?plane\b/i, /\bco-?pilot\b/i], covers: ['Project Vimaan'] },
   { label: 'Manzil Recipe Vault', patterns: [/\bmanzil\b/i, /\brecipe\b/i], covers: ['Manzil Recipe Vault'] },
-  { label: 'USC Ledger', patterns: [/\busc ledger\b/i, /\bexpense tracker\b/i, /\bledger\b/i], covers: ['USC Ledger'] },
+  { label: 'Orbit Expense Tracker', patterns: [/\borbit expense tracker\b/i, /\borbit app\b/i, /\busc ledger\b/i, /\bexpense tracker\b/i, /\bledger\b/i], covers: ['Orbit Expense Tracker'] },
   { label: 'NACA 4412 vortex study', patterns: [/\bnaca\b/i, /\bairfoil\b/i, /\bvortex\b/i], covers: ['Numerical Investigation of Vortex Influence on NACA 4412 Airfoil'] },
   { label: 'Brain tumor segmentation', patterns: [/\bbrats\b/i, /\bbrain tumou?r\b/i, /\bvision transformer\b/i], covers: ['Brain Tumor Segmentation (BraTS 2021 - Vision Transformer)'] },
   { label: 'RVSAT-1', patterns: [/\brvsat\b/i, /\bcubesat\b/i, /\bsatellite\b/i], covers: ['RVSAT-1 (Team Antariksh)'] },

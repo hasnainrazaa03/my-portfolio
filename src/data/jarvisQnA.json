@@ -17,15 +17,15 @@
       "a": "I'm Mohammad Hasnain Raza, currently pursuing my MS in Computer Science at USC with a 3.67 GPA. My background is a mix of systems engineering, AI, and aerospace. I enjoy building end-to-end systems — whether that's a financial platform with concurrency control, a medical image segmentation model, or a voice-controlled NLU pipeline integrated into a flight simulator. I care a lot about correctness, performance, and clean system design."
     },
     {
-      "q": "What is USC Ledger?",
-      "a": "USC Ledger, since renamed Orbit, is a full-stack expense tracker I built for international students at USC: expenses, budgets and tuition installment plans, in dollars and rupees. It's React and TypeScript on the front, with Express, Prisma and MongoDB behind it. The work I'd point to is correctness: money is stored as integer cents, an offline queue replays expenses with an idempotency key so a retry can't create a duplicate, and Google Gemini turns bank-statement PDFs and receipt photos into rows the user reviews before anything is imported. It's a personal project, not a product with users."
+      "q": "What is Orbit Expense Tracker?",
+      "a": "Orbit, which started out as USC Ledger, is a full-stack expense tracker I built for international students at USC: expenses, budgets and tuition installment plans, in dollars and rupees. It's React and TypeScript on the front, with Express, Prisma and MongoDB behind it. The work I'd point to is correctness: money is stored as integer cents, an offline queue replays expenses with an idempotency key so a retry can't create a duplicate, and Google Gemini turns bank-statement PDFs and receipt photos into rows the user reviews before anything is imported. It's a personal project, not a product with users."
     },
     {
-      "q": "What technical challenges did you solve in USC Ledger?",
+      "q": "What technical challenges did you solve in Orbit?",
       "a": "Two stand out. The first was money: amounts were stored as floating-point dollars, so I moved the schema to integer cents, converted at the API boundary, and migrated existing records with an idempotent MongoDB pipeline. Splits hand out leftover cents, so a $100 installment plan divides into 33.34, 33.33 and 33.33 and always adds back up. The second was a reliability bug. Budget and semester saves send the complete desired state and the server reconciles it. I first wrapped that in a Prisma transaction, but against Atlas over Render's network the commit acknowledgement sometimes failed after the writes had landed, so users saw an error on data that had saved. Because the client always sends the full state, the operation is idempotent, so I removed the transaction and let retries converge, with a guard so an empty list can't wipe everything."
     },
     {
-      "q": "How does the AI integration work in USC Ledger?",
+      "q": "How does the AI integration work in Orbit?",
       "a": "I built a structured prompt engineering layer on top of Google Gemini. Instead of sending raw transactions, I created a financial summarization layer that condenses structured budget data before passing it to the model. This prevents context overflow and ensures the model produces actionable financial insights instead of generic responses."
     },
     {
@@ -74,7 +74,7 @@
     },
     {
       "q": "What databases have you worked with?",
-      "a": "Mostly MongoDB, through both Mongoose and Prisma, plus PostgreSQL and SQL reporting work. I care most about schema design, indexing and write correctness. In Manzil Recipe Vault, rating counters drifted under parallel requests until I moved them into single atomic MongoDB updates; in USC Ledger, money is stored as integer cents and offline replays are idempotent."
+      "a": "Mostly MongoDB, through both Mongoose and Prisma, plus PostgreSQL and SQL reporting work. I care most about schema design, indexing and write correctness. In Manzil Recipe Vault, rating counters drifted under parallel requests until I moved them into single atomic MongoDB updates; in Orbit, money is stored as integer cents and offline replays are idempotent."
     },
     {
       "q": "What makes your systems engineering approach different?",
@@ -85,11 +85,11 @@
       "a": "I'm interested in building high-performance AI systems that operate reliably in real-world conditions. That could be applied ML, distributed systems, backend architecture, or research-heavy AI applications. I enjoy bridging theoretical understanding with production systems."
     },
     {
-      "q": "Why did you choose MongoDB for USC Ledger instead of PostgreSQL?",
+      "q": "Why did you choose MongoDB for Orbit instead of PostgreSQL?",
       "a": "Honestly, it started on PostgreSQL and moved to MongoDB through Prisma early on. Prisma kept the data access typed either way. The trade-off showed up later: Prisma's MongoDB connector needs a replica set for transactions, and it's also why the project is pinned to Prisma 6, since Prisma 7 has no MongoDB driver adapter. Where I needed reliability I leaned on idempotent operations rather than transactions."
     },
     {
-      "q": "How does USC Ledger avoid duplicate or lost writes?",
+      "q": "How does Orbit avoid duplicate or lost writes?",
       "a": "With idempotency rather than locking. An expense saved offline goes into an IndexedDB queue with a client-generated id; on reconnect the queue replays items one at a time with that id, and the server returns the existing row if it has already seen it. A permanent error drops just that item, while a server error or rate limit stops the flush to retry later. Budget and semester saves send the complete desired state, so repeating one converges on the same result. One honest gap: the idempotency check is a lookup rather than a unique index, so two identical requests arriving at exactly the same moment could still both insert."
     },
     {
@@ -97,7 +97,7 @@
       "a": "JavaScript floating-point arithmetic can introduce subtle rounding errors, which is unacceptable in financial systems. I implemented controlled arithmetic with epsilon-aware rounding and avoided unsafe cumulative operations. I treated financial values as precision-critical data rather than casual numeric variables."
     },
     {
-      "q": "What would you improve in USC Ledger if you scaled it to thousands of users?",
+      "q": "What would you improve in Orbit if you scaled it to thousands of users?",
       "a": "I'd introduce stronger transactional guarantees, potentially explore PostgreSQL for stricter ACID compliance, and add distributed caching. I’d also move AI inference to a queue-based asynchronous pipeline to isolate model latency from core financial operations."
     },
     {

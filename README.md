@@ -137,7 +137,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 ### 💼 Projects
 - **9 Projects** — AI/ML, Full-Stack Web, and Aerospace categories with thumbnail cards
 - **Case studies** — `/projects/<slug>` pages with their own heads, social cards and schema.org JSON-LD (`SoftwareSourceCode` or `CreativeWork`, plus breadcrumbs)
-- **How it works** — runtime diagrams for Vimaan, Manzil Recipe Vault and USC Ledger, each authored from the project's code or master document
+- **How it works** — runtime diagrams for Vimaan, Manzil Recipe Vault and Orbit Expense Tracker, each authored from the project's code or master document
 - **Lift-curve explorer** — the NACA 4412 study carries an interactive thin-airfoil-theory plot, labelled as a textbook model rather than the study's CFD results
 - **Filter Tabs** — Category-based filtering with `useMemo` optimization
 - **Modal View** — Image carousel, full description, tech stack badges, GitHub/demo links
@@ -430,9 +430,9 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) (or `.well-known/security.
 
 **Built:** streaming chat with source chips and curated career knowledge; project case studies with per-route heads, generated social cards and a real 404; ATS résumé view; job-description comparison (`/fit`); installable offline support; the career arc chart; Vimaan's runtime diagram.
 
-**Also built:** a daily production health check with deploy-freshness; chunk-load recovery so one unfetchable section cannot take the page down; zero npm advisories (`@vercel/node` replaced by local types); private visitor insights; live GitHub answers and case-study links in the chat; "How it works" diagrams for Manzil and USC Ledger; the NACA 4412 lift-curve explorer; JSON-LD per case study.
+**Also built:** a daily production health check with deploy-freshness; chunk-load recovery so one unfetchable section cannot take the page down; zero npm advisories (`@vercel/node` replaced by local types); private visitor insights; live GitHub answers and case-study links in the chat; "How it works" diagrams for Manzil and Orbit; the NACA 4412 lift-curve explorer; JSON-LD per case study.
 
-**Corrected claims:** USC Ledger's "atomic transactions", "P2034 write-conflict resolution" and a race-preventing "reconciliation engine" (none exist in its code) and a dead demo link; Manzil described as "collaborative" (recipes are owner-only). Earlier: a "10x throughput" figure the evidence could not support, Vimaan's "inter-process communication" (a thread and a queue in one process) and INT8 presented as a speed gain (it was for memory). `claimRules.ts` now fails CI if any return.
+**Corrected claims:** Orbit's (then USC Ledger) "atomic transactions", "P2034 write-conflict resolution" and a race-preventing "reconciliation engine" (none exist in its code) and a dead demo link; Manzil described as "collaborative" (recipes are owner-only). Earlier: a "10x throughput" figure the evidence could not support, Vimaan's "inter-process communication" (a thread and a queue in one process) and INT8 presented as a speed gain (it was for memory). `claimRules.ts` now fails CI if any return.
 
 ### 2026-05 — Audit Remediation (v2.1)
 

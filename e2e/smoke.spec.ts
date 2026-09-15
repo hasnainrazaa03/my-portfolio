@@ -230,7 +230,7 @@ test.describe('social cards', () => {
   test('a project with real product artwork keeps it', async ({ request }) => {
     const html = await (await request.get('/projects/peakroutine-ai-health-and-wellness-platform')).text();
     const url = html.match(/<meta property="og:image" content="([^"]+)"/)?.[1];
-    expect(url).toContain('/peakroutine-hero.png');
+    expect(url).toContain('/peakroutine-app.jpg');
     expect((await request.get(new URL(url!).pathname)).status()).toBe(200);
   });
 });
@@ -247,14 +247,22 @@ test.describe('social cards', () => {
  */
 test.describe('non-canonical project URLs', () => {
   test('a wrong-case URL lands on the real one', async ({ page }) => {
-    await page.goto('/projects/USC-Ledger');
-    await expect(page).toHaveURL(/\/projects\/usc-ledger$/);
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(/USC Ledger/i);
+    await page.goto('/projects/Orbit-Expense-Tracker');
+    await expect(page).toHaveURL(/\/projects\/orbit-expense-tracker$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/Orbit Expense Tracker/i);
   });
 
   test('a percent-escaped URL resolves to the project, not to not-found', async ({ page }) => {
-    await page.goto('/projects/usc%2Dledger');
-    await expect(page.getByRole('heading', { level: 1 })).toContainText(/USC Ledger/i);
+    await page.goto('/projects/orbit%2Dexpense-tracker');
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/Orbit Expense Tracker/i);
+  });
+
+  test('the old USC Ledger URL lands on Orbit', async ({ page }) => {
+    // A Vercel redirect, so only the real host has it; vite preview does not.
+    test.skip(!process.env.E2E_BASE_URL, 'redirects exist only on the deployed host');
+    await page.goto('/projects/usc-ledger');
+    await expect(page).toHaveURL(/\/projects\/orbit-expense-tracker$/);
+    await expect(page.getByRole('heading', { level: 1 })).toContainText(/Orbit Expense Tracker/i);
   });
 });
 
@@ -436,7 +444,7 @@ test.describe('case study architecture', () => {
     await expect(page.getByRole('region', { name: 'Express API — import' })).toBeVisible();
     await expect(page.getByText('400 blocked_address')).toBeVisible();
 
-    await page.goto('/projects/usc-ledger');
+    await page.goto('/projects/orbit-expense-tracker');
     await expect(page.getByRole('region', { name: 'Express API' })).toBeVisible();
     await expect(page.getByText(/Queued in IndexedDB/)).toBeVisible();
     await expect(page.getByRole('link', { name: /live demo/i })).toHaveCount(0);

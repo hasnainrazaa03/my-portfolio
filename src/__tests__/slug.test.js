@@ -24,7 +24,7 @@ describe('toSlug', () => {
     ['Project Vimaan', 'project-vimaan'],
     ['Numerical Investigation of Store Separation from a Rectangular Cavity', 'numerical-investigation-of-store-separation-from-a-rectangular-cavity'],
     ['Manzil Recipe Vault', 'manzil-recipe-vault'],
-    ['USC Ledger', 'usc-ledger'],
+    ['Orbit Expense Tracker', 'orbit-expense-tracker'],
     ['Numerical Investigation of Vortex Influence on NACA 4412 Airfoil', 'numerical-investigation-of-vortex-influence-on-naca-4412-airfoil'],
     ['Brain Tumor Segmentation (BraTS 2021 - Vision Transformer)', 'brain-tumor-segmentation-brats-2021-vision-transformer'],
     ['RVSAT-1 (Team Antariksh)', 'rvsat-1-team-antariksh'],
@@ -38,7 +38,7 @@ describe('toSlug', () => {
     const pinned = new Set([
       'peakroutine-ai-health-and-wellness-platform', 'project-vimaan',
       'numerical-investigation-of-store-separation-from-a-rectangular-cavity',
-      'manzil-recipe-vault', 'usc-ledger',
+      'manzil-recipe-vault', 'orbit-expense-tracker',
       'numerical-investigation-of-vortex-influence-on-naca-4412-airfoil',
       'brain-tumor-segmentation-brats-2021-vision-transformer',
       'rvsat-1-team-antariksh', 'resolv-1-team-antariksh',
@@ -85,7 +85,7 @@ describe('every real project', () => {
 
 describe('parseProjectPath', () => {
   it('accepts a trailing slash, as the rest of the routing does', () => {
-    expect(parseProjectPath('/projects/usc-ledger/')).toBe('usc-ledger');
+    expect(parseProjectPath('/projects/orbit-expense-tracker/')).toBe('orbit-expense-tracker');
   });
 
   it('rejects non-project paths', () => {
@@ -95,7 +95,7 @@ describe('parseProjectPath', () => {
   });
 
   it('lowercases so a shared link with odd casing still resolves', () => {
-    expect(parseProjectPath('/projects/USC-Ledger')).toBe('usc-ledger');
+    expect(parseProjectPath('/projects/Orbit-Expense-Tracker')).toBe('orbit-expense-tracker');
   });
 });
 
@@ -109,7 +109,7 @@ describe('non-canonical project URLs', () => {
    * rendered "that project doesn't exist" by the app.
    */
   it('decodes percent-escapes the host has already normalised away', () => {
-    expect(parseProjectPath('/projects/usc%2Dledger')).toBe('usc-ledger');
+    expect(parseProjectPath('/projects/orbit%2Dexpense-tracker')).toBe('orbit-expense-tracker');
     expect(parseProjectPath('/projects/project%20vimaan')).toBe('project vimaan');
   });
 
@@ -119,9 +119,9 @@ describe('non-canonical project URLs', () => {
   });
 
   it('reports the canonical path for a URL that is not one', () => {
-    expect(canonicalProjectPath('/projects/USC-Ledger')).toBe('/projects/usc-ledger');
-    expect(canonicalProjectPath('/projects/usc%2Dledger')).toBe('/projects/usc-ledger');
-    expect(canonicalProjectPath('/projects/usc-ledger/')).toBe('/projects/usc-ledger');
+    expect(canonicalProjectPath('/projects/Orbit-Expense-Tracker')).toBe('/projects/orbit-expense-tracker');
+    expect(canonicalProjectPath('/projects/orbit%2Dexpense-tracker')).toBe('/projects/orbit-expense-tracker');
+    expect(canonicalProjectPath('/projects/orbit-expense-tracker/')).toBe('/projects/orbit-expense-tracker');
   });
 
   it('reports null when the URL already IS canonical, so there is no redirect loop', () => {
@@ -134,5 +134,19 @@ describe('non-canonical project URLs', () => {
     for (const p of ['/', '/resume', '/projects', '/projects/a/b']) {
       expect(canonicalProjectPath(p), p).toBeNull();
     }
+  });
+});
+
+describe('renamed projects', () => {
+  /**
+   * USC Ledger was renamed Orbit Expense Tracker, which changed its slug. The
+   * old URL has been shared and indexed, so it must keep landing somewhere real.
+   */
+  it('redirects the old USC Ledger URL permanently to the Orbit case study', async () => {
+    const { readFileSync } = await import('node:fs');
+    const vercel = JSON.parse(readFileSync(`${process.cwd()}/vercel.json`, 'utf8'));
+    const rule = vercel.redirects.find((r) => r.source === '/projects/usc-ledger');
+    expect(rule).toMatchObject({ destination: '/projects/orbit-expense-tracker', permanent: true });
+    expect(PROJECTS.map((p) => toSlug(p.title))).toContain('orbit-expense-tracker');
   });
 });

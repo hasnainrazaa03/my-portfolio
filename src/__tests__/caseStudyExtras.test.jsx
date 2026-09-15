@@ -43,8 +43,8 @@ describe('Manzil Recipe Vault diagram', () => {
   });
 });
 
-describe('USC Ledger diagram and copy', () => {
-  const project = byTitle('USC Ledger');
+describe('Orbit Expense Tracker diagram and copy', () => {
+  const project = byTitle('Orbit Expense Tracker');
 
   it('diverts offline writes to the queue before anything is sent', () => {
     const [browser] = diagramOf(project).lanes;

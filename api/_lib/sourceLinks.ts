@@ -136,8 +136,8 @@ export const SOURCE_SECTION_IDS: readonly string[] = SECTIONS.map((s) => s.id);
  *
  * Keyed by the project's exact title so a renamed project fails the test that
  * resolves every entry, instead of producing a link to a slug that no longer
- * exists. Patterns are specific on purpose: "orbit" would match every CubeSat
- * answer, so USC Ledger's later name is left out.
+ * exists. Patterns are specific on purpose: a bare "orbit" would match every
+ * CubeSat answer, so Orbit is matched only as "Orbit Expense Tracker" or "Orbit app".
  */
 const CASE_STUDY_NAMES: readonly { title: string; label: string; patterns: readonly RegExp[] }[] = [
   { title: 'Project Vimaan', label: 'Vimaan', patterns: [/\bvimaan\b/] },
@@ -150,7 +150,12 @@ const CASE_STUDY_NAMES: readonly { title: string; label: string; patterns: reado
   { title: 'RVSAT-1 (Team Antariksh)', label: 'RVSAT-1', patterns: [/\brvsat\b/, /\bcubesat\b/] },
   { title: 'ReSOLV-1 (Team Antariksh)', label: 'ReSOLV-1', patterns: [/\bresolv\b/, /\bsounding rockets?\b/] },
   { title: 'Manzil Recipe Vault', label: 'Manzil Recipe Vault', patterns: [/\bmanzil\b/, /\brecipe vault\b/] },
-  { title: 'USC Ledger', label: 'USC Ledger', patterns: [/\busc ledger\b/, /\bexpense tracker\b/] },
+  {
+    title: 'Orbit Expense Tracker',
+    label: 'Orbit',
+    // Its old name still reaches the right page.
+    patterns: [/\borbit expense tracker\b/, /\borbit app\b/, /\busc ledger\b/, /\bexpense tracker\b/],
+  },
   {
     title: 'Numerical Investigation of Store Separation from a Rectangular Cavity',
     label: 'Store separation',

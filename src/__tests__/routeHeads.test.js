@@ -223,7 +223,7 @@ describe('renderRouteHead()', () => {
 
 describe('social image selection', () => {
   it('reads PNG and JPEG sizes from the header', () => {
-    expect(imageSize(readFileSync(resolve(root, 'public/peakroutine-hero.png')))).toEqual({ width: 1200, height: 630 });
+    expect(imageSize(readFileSync(resolve(root, 'public/peakroutine-app.jpg')))).toEqual({ width: 1600, height: 640 });
     expect(imageSize(readFileSync(resolve(root, 'public/Xplane.jpg')))).toEqual({ width: 1600, height: 444 });
     expect(imageSize(Buffer.from('not an image at all, really not'))).toBeNull();
   });
@@ -263,7 +263,7 @@ describe('social image selection', () => {
   it('still prefers real artwork over the generated card', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'route-heads-real-'));
     mkdirSync(join(outDir, 'og'));
-    writeFileSync(join(outDir, 'real.png'), readFileSync(resolve(root, 'public/peakroutine-hero.png')));
+    writeFileSync(join(outDir, 'real.png'), readFileSync(resolve(root, 'public/peakroutine-app.jpg')));
     writeFileSync(join(outDir, 'og/p.jpg'), readFileSync(resolve(root, 'public/og/project-vimaan.jpg')));
     const got = resolveCardImage(outDir, SITE_ORIGIN, {
       path: '/p', title: 'P', image: '/real.png', generatedCard: '/og/p.jpg',
@@ -272,7 +272,7 @@ describe('social image selection', () => {
   });
 
   it('imageWorksAsCard answers for a real file, a missing one, and nothing at all', () => {
-    expect(imageWorksAsCard(resolve(root, 'public'), '/peakroutine-hero.png')).toBe(true);
+    expect(imageWorksAsCard(resolve(root, 'public'), '/peakroutine-app.jpg')).toBe(true);
     expect(imageWorksAsCard(resolve(root, 'public'), '/RVSAT.png')).toBe(false); // 331x383 portrait
     expect(imageWorksAsCard(resolve(root, 'public'), '/does-not-exist.png')).toBe(false);
     expect(imageWorksAsCard(resolve(root, 'public'), undefined)).toBe(false);
@@ -281,12 +281,12 @@ describe('social image selection', () => {
   it('resolves against the build output, falling back when the file is missing', () => {
     const outDir = mkdtempSync(join(tmpdir(), 'route-heads-'));
     expect(resolveCardImage(outDir, SITE_ORIGIN, { path: '/p', image: '/missing.png' })).toBeUndefined();
-    writeFileSync(join(outDir, 'card.png'), readFileSync(resolve(root, 'public/peakroutine-hero.png')));
-    expect(resolveCardImage(outDir, SITE_ORIGIN, { path: '/p', title: 'P', image: '/card.png', imageAlt: 'P shot' })).toEqual({
-      url: `${SITE_ORIGIN}/card.png`,
+    writeFileSync(join(outDir, 'card.jpg'), readFileSync(resolve(root, 'public/peakroutine-app.jpg')));
+    expect(resolveCardImage(outDir, SITE_ORIGIN, { path: '/p', title: 'P', image: '/card.jpg', imageAlt: 'P shot' })).toEqual({
+      url: `${SITE_ORIGIN}/card.jpg`,
       alt: 'P shot',
-      width: 1200,
-      height: 630,
+      width: 1600,
+      height: 640,
     });
   });
 });

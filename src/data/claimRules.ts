@@ -84,7 +84,7 @@ export const PROHIBITED_CLAIMS: readonly ClaimRule[] = [
     reason: 'the microphone-to-command path has never been measured end to end',
     instead: 'describe the architecture, not a latency',
   },
-  // ── USC Ledger / Orbit (ORBIT_EXPENSE_TRACKER_MASTER.md; code wins over README)
+  // ── Orbit Expense Tracker, formerly USC Ledger (ORBIT_EXPENSE_TRACKER_MASTER.md; code wins over README)
   {
     pattern: /\bP2034\b/i,
     reason: 'the Prisma write-conflict code appears only in the README narrative; nothing in the code handles or retries it',

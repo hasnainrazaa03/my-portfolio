@@ -104,7 +104,7 @@ export const PROJECTS: Project[] = [
     status: "In Progress",
     description: "An AI health platform that scores sleep, movement and nutrition from wearable biometrics and coaches against each user's own baseline.",
     longDescription: "PeakRoutine turns raw wearable biometrics into something a person can act on. I built the LLM layer — natural-language meal logging, vision-based photo recognition of meals, and six coaching personas that are grounded in the user's own history rather than generic advice. The analytics underneath are the part I care most about: 7 acute pattern detectors and 8 chronic risk-trajectory models that score against rolling per-user baselines instead of population thresholds, because a resting heart rate that is unremarkable for one person is a real signal for another. Deviations are flagged with Z-score anomaly detection and CUSUM change-point detection. Feeding all of that is a 7-provider wearable ingestion platform with Svix HMAC-verified webhooks, event deduplication and idempotent upserts, so a replayed or out-of-order webhook cannot corrupt a baseline. I also owned the Android bring-up to Health Connect and Samsung Health. It reached #4 Product of the Day on Product Hunt.",
-    images: ["/peakroutine-hero.png"],
+    images: ["/peakroutine-app.jpg"],
     techStack: ["Claude", "FastAPI", "Spring Boot", "Python", "Health Connect", "Svix", "Android"],
     links: { github: null, demo: "https://www.peakroutinehealth.com/" }
   },
@@ -175,7 +175,7 @@ export const PROJECTS: Project[] = [
     description: "A recipe-sharing web app with a hardened API: strict schemas on every route, server-side sanitization, and a recipe import guarded against request forgery.",
     longDescription: "Manzil Recipe Vault is a recipe-sharing web app: a React and TypeScript front end on Vercel, an Express and MongoDB API on Render, and Firebase sign-in. The API owns data and authorization. Every protected route runs a rate limiter, verifies the Firebase ID token with firebase-admin, and replaces the request body with the output of a strict Zod schema, so fields the form never sends cannot reach the database and the author always comes from the verified token. Rich text written in TipTap is sanitized on the server against a tag allowlist, and again with DOMPurify when it is shown. Images go straight from the browser to Cloudinary with a signature the API mints for the user's folder and allowed formats. Importing a recipe from a link needed the most care, because a server that fetches user-supplied URLs can be pointed at internal addresses: the fetcher refuses any private, loopback, link-local or reserved address, re-checks every redirect hop, and caps time, size and redirects. Rating and comment counters update in single atomic MongoDB writes, which fixed counters that drifted under parallel requests. It also has collections, follows, recipe version history, a meal planner, debounced search with filters, and a Gemini tidy-up assistant that is not allowed to invent quantities.",
     images: [
-      "/ManzilDash.jpg"
+      "/manzil-recipe-vault.jpg"
     ],
     techStack: [
       "React",
@@ -204,13 +204,13 @@ export const PROJECTS: Project[] = [
   },
   {
     id: 4,
-    title: "USC Ledger",
+    title: "Orbit Expense Tracker",
     category: "Full-Stack Web",
     status: "Personal project",
     description: "A full-stack expense tracker for international students, with integer-cent money storage, an offline queue with idempotent replay, and Gemini-assisted statement import.",
-    longDescription: "USC Ledger, since renamed Orbit, is an expense tracker I built for international students at USC: expenses, budgets and tuition installment plans, in dollars and rupees. It is React and TypeScript on the front, with Express, Prisma and MongoDB behind it. Money correctness came first. Amounts are stored as integer cents; existing records were migrated from floating-point dollars with an idempotent pipeline; and splits hand out leftover cents, so an installment plan always adds back up. Foreign amounts convert to USD in the browser with Frankfurter exchange rates, and each record keeps its original amount and currency. Expenses entered offline wait in an IndexedDB queue and replay on reconnect with an idempotency key, so a retry returns the existing row instead of a duplicate. Budget and semester saves send the complete desired state for the server to reconcile. They first ran inside a database transaction, but on Atlas over Render's network the commit acknowledgement sometimes failed after the writes had landed, so I made the operation idempotent and removed the transaction. Google Gemini turns bank-statement PDFs and receipt photos into rows the user reviews before anything is imported, with every field checked against allowlists. Sessions are JWTs in httpOnly cookies with double-submit CSRF protection, email OTP verification and account lockout.",
+    longDescription: "Orbit (formerly USC Ledger) is an expense tracker I built for international students at USC: expenses, budgets and tuition installment plans, in dollars and rupees. It is React and TypeScript on the front, with Express, Prisma and MongoDB behind it. Money correctness came first. Amounts are stored as integer cents; existing records were migrated from floating-point dollars with an idempotent pipeline; and splits hand out leftover cents, so an installment plan always adds back up. Foreign amounts convert to USD in the browser with Frankfurter exchange rates, and each record keeps its original amount and currency. Expenses entered offline wait in an IndexedDB queue and replay on reconnect with an idempotency key, so a retry returns the existing row instead of a duplicate. Budget and semester saves send the complete desired state for the server to reconcile. They first ran inside a database transaction, but on Atlas over Render's network the commit acknowledgement sometimes failed after the writes had landed, so I made the operation idempotent and removed the transaction. Google Gemini turns bank-statement PDFs and receipt photos into rows the user reviews before anything is imported, with every field checked against allowlists. Sessions are JWTs in httpOnly cookies with double-submit CSRF protection, email OTP verification and account lockout.",
     images: [
-      "/USCLedger.jpg"
+      "/orbit-expense-tracker.jpg"
     ],
     techStack: [
       "React",

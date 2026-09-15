@@ -7,6 +7,16 @@
       "source": "/404",
       "destination": "/",
       "permanent": false
+    },
+    {
+      "source": "/projects/usc-ledger",
+      "destination": "/projects/orbit-expense-tracker",
+      "permanent": true
+    },
+    {
+      "source": "/projects/USC-Ledger",
+      "destination": "/projects/orbit-expense-tracker",
+      "permanent": true
     }
   ],
   "headers": [

@@ -35,7 +35,7 @@ export interface RouteHead {
    * answers 200 rather than falling to the 404 shell.
    */
   noindex?: boolean;
-  /** Public path of a candidate social image ("/peakroutine-hero.png"); the build decides if it is usable. */
+  /** Public path of a candidate social image ("/peakroutine-app.jpg"); the build decides if it is usable. */
   image?: string;
   /**
    * Public path of the card generated for this route

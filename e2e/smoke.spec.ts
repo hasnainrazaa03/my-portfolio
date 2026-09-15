@@ -61,29 +61,30 @@ test.describe('page boot', () => {
     await context.close();
   });
 
-  test('the hero flow picture pitches with the cursor and says what it is', async ({ page }) => {
+  test('the hero experiment says what it is and pitches when dragged', async ({ page }) => {
     await page.goto('/');
-    const slider = page.getByRole('slider', { name: /angle of attack/i });
+    await expect(page.getByRole('heading', { name: 'Teach a neural network to predict lift' })).toBeVisible();
+    const slider = page.getByRole('slider', { name: /angle of attack of the airfoil/i });
     await expect(slider).toBeVisible();
-    await expect(page.getByText(/Ideal flow/)).toBeVisible();
+    const before = Number(await slider.getAttribute('aria-valuenow'));
     const box = (await slider.boundingBox())!;
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.1);
-    const high = Number(await slider.getAttribute('aria-valuenow'));
-    await page.mouse.move(box.x + box.width / 2, box.y + box.height * 0.9);
-    const low = Number(await slider.getAttribute('aria-valuenow'));
-    expect(high).toBeGreaterThan(low);
-    // Nothing threw during the animation.
+    await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.6);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width * 0.35, box.y + box.height * 0.2, { steps: 8 });
+    await page.mouse.up();
+    const after = Number(await slider.getAttribute('aria-valuenow'));
+    expect(after).toBeGreaterThan(before);
+    await expect(page.getByText(`Angle ${after.toFixed(1)}°`)).toBeVisible();
     await expect(page.getByText('Something went wrong.')).toHaveCount(0);
   });
 
   test('the surrogate network learns the lift curve in the browser', async ({ page }) => {
     await page.goto('/');
-    await expect(page.getByText('Surrogate model')).toBeVisible();
-    // Trains one gradient step per frame; a few hundred steps is enough.
-    await expect(page.getByText(/converged/)).toBeVisible({ timeout: 40_000 });
-    const line = await page.getByText(/ĉl/).innerText();
-    const [, pred, truth] = /ĉl (-?[\d.]+) · truth (-?[\d.]+)/.exec(line)!;
-    expect(Math.abs(Number(pred) - Number(truth))).toBeLessThan(0.06);
+    await expect(page.getByText(/Reading samples from the physics|Learning by gradient descent/)).toBeVisible();
+    // One gradient step per frame; a few hundred steps is enough.
+    await expect(page.getByText(/the surrogate now estimates lift instantly/)).toBeVisible({ timeout: 40_000 });
+    const error = Number(/Error ([\d.]+)/.exec(await page.getByText(/^Error /).innerText())![1]);
+    expect(error).toBeLessThan(0.06);
   });
 
   test('serves the WebP sibling for local raster images', async ({ page }) => {

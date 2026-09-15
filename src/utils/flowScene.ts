@@ -13,7 +13,7 @@ export const ALPHA_MIN = -6;
 export const ALPHA_MAX = 16;
 export const ALPHA_DEFAULT = 4;
 /** World window in units of a: the airfoil spans x ∈ [−2, 2]. */
-export const VIEW = { left: -4.4, right: 5.6, halfHeight: 3.3 };
+export const VIEW = { left: -4.2, right: 6.8, halfHeight: 3.0 };
 export const STREAMLINES = 26;
 
 export const rad = (d: number): number => (d * Math.PI) / 180;

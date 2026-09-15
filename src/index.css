@@ -56,6 +56,9 @@
   /* Single-series mark on the insights page. teal-600: validated with the
      dataviz checker at 3.74:1 on a white card. */
   --viz-accent: #0d9488;
+  /* The hero's lift chart: physics is --arc-ai, the model is this violet.
+     Checked as a pair on both surfaces (reference palette slot 7). */
+  --viz-model: #4a3aa7;
 }
 
 .dark {
@@ -70,7 +73,16 @@
 
   /* 5.11:1 on the dark card surface (#0f0d1f). */
   --viz-accent: #0d9488;
+  --viz-model: #9085e9;
 }
+
+/* One gentle pulse when the hero's network finishes training. */
+@keyframes net-pulse {
+  0% { filter: drop-shadow(0 0 0 rgba(45, 212, 191, 0)); }
+  40% { filter: drop-shadow(0 0 12px rgba(45, 212, 191, 0.9)); }
+  100% { filter: drop-shadow(0 0 0 rgba(45, 212, 191, 0)); }
+}
+.net-pulse { animation: net-pulse 1.4s ease-out 1; }
 
 html {
   transition: background-color 0.3s ease, color 0.3s ease;

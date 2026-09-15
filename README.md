@@ -70,15 +70,19 @@ Result: **when every provider is down, the chat still answers from the local ban
 The hero used to be a wireframe icosahedron with rings — a 127 KB three.js chunk that said "tech" and nothing else.
 
 **The Idea**  
-Draw the first thing an aerospace course teaches, live: potential flow around a Joukowski airfoil (`src/utils/potentialFlow.ts`). Moving the cursor pitches the airfoil, particles find the new streamlines, the flow over the top speeds up and a lift readout follows (Kutta–Joukowski). It is labelled **Ideal flow** on screen and is not a CFD result.
+One interaction that tells the whole story: *move the airfoil, generate physics, watch AI learn.* The picture is potential flow around a Joukowski airfoil (`src/utils/potentialFlow.ts`), drawn live from its closed form; dragging pitches it, the streamlines follow, and Kutta–Joukowski gives the lift. Beside it a six-unit neural network learns α → lift from that physics by gradient descent, in the visitor's browser. It is labelled an **ideal-flow model** on screen and is not a CFD result.
+
+**The story, as shown**  
+A heading says what to do ("Teach a neural network to predict lift · Drag the airfoil to change its angle"). Two cards give the two answers — Physics: lift and angle; AI prediction: lift and error — and a small chart shows the model's line moving onto the physics' line. Training runs in three visible phases: samples appear and leave the trailing edge for the network, then *Learning…* one gradient step per frame (about ten seconds), then *Model trained ✓* with one gentle pulse. Retrain starts over from a new seed. At the top of the range the physics card says a real wing would be near stall, which the ideal model does not know.
 
 **How**
 - **Closed-form physics, tested against theory** — far field is the freestream, the surface is a streamline, the trailing edge is finite (Kutta), lift slope ≈ 2π; a sign slip fails a test
 - **Canvas 2D, 12 KB** — particles are advected in the ζ-plane (where the airfoil is a circle they cannot enter) and only their drawn position is mapped; streaks are coloured by speed
 - **Mount gating, not CSS hiding** — mounts at desktop widths only, so phones never download it
 - **Degrades to the same picture** — under `prefers-reduced-motion`, Save-Data, or with no 2D context, a static SVG of the same streamlines is drawn instead, inside a local error boundary so nothing can blank the page
-- **Keyboard** — the picture is an ARIA slider for the angle of attack; arrow keys pitch it
-- **…and the other half of the story** — beside the flow, a six-unit neural network (`src/utils/surrogate.ts`, plain arrays, no dependency) learns α → cl from that physics by gradient descent, live, while the visitor watches the loss fall; every edge is a weight and every hidden node lights with its activation for the chosen angle. Aerospace makes the truth, the model learns it. Tests assert convergence from every seed it can start from
+- **Keyboard and touch** — the picture is an ARIA slider for the angle of attack (drag, arrow keys, Home/End); phones get a simplified version with a range input and the two answers, no diagram or chart
+- **The network** — `src/utils/surrogate.ts` is plain arrays, no dependency, deterministic from a seed; every edge in the diagram is a weight and every hidden node lights with its activation for the chosen angle. Tests assert convergence from every seed it can start from
+- **Still modes show the finished state** — under `prefers-reduced-motion`, Save-Data, or with no 2D context, the model is trained synchronously and the visitor sees the trained result with a slider, not a spinner
 
 ---
 
@@ -119,7 +123,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 ## 🚀 Feature Overview
 
 ### 🌌 Immersive Hero Section
-- **Flow picture** — ideal flow around an airfoil, pitched by the cursor, with a live lift readout (Canvas 2D, no WebGL), and a small neural network learning the lift curve from it in the browser
+- **Live aerospace × AI experiment** — drag an airfoil in ideal flow; a small neural network learns the lift curve from it in the browser, with the physics and the prediction side by side (Canvas 2D, no WebGL)
 - **Resume Engine** — One-click resume download with instant visual feedback
 
 ### 👤 About Section

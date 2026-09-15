@@ -39,7 +39,7 @@ const Hero = () => {
   // they cannot see. Gate the mount itself. Under Data Saver / a slow link
   // the picture is drawn once as an SVG instead of animated.
   const dataSaver = useDataSaver();
-  const showFlowField = useMediaQuery(MD_BREAKPOINT);
+  const isDesktop = useMediaQuery(MD_BREAKPOINT);
   const y1 = useTransform(scrollY, [0, 500], [0, 200]);
   
   const [isDownloaded, setIsDownloaded] = useState(false);
@@ -62,7 +62,7 @@ const Hero = () => {
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] -z-10" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full z-10">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
+        <div className="grid items-center gap-12 md:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
           
           <motion.div 
             variants={heroEntrance}
@@ -71,25 +71,19 @@ const Hero = () => {
             className="space-y-6 relative z-20"
           >
             <span className="inline-block px-4 py-1 rounded-full bg-slate-200/50 dark:bg-white/10 border border-slate-300 dark:border-white/20 text-primary font-bold text-sm tracking-wide backdrop-blur-sm">
-              Launch Sequence Initiated
+              {PERSONAL_INFO.tagline}
             </span>
             
-            <h1 className="text-5xl md:text-7xl font-bold text-slate-900 dark:text-white leading-tight">
-              {PERSONAL_INFO.title.split('|')[0]} <br/>
+            <h1 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-white leading-tight">
+              {PERSONAL_INFO.title.split('|')[0]}{' '}
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-blue-600 to-purple-700 dark:via-blue-400 dark:to-purple-500">
                 {PERSONAL_INFO.title.split('|')[1]}
               </span>
             </h1>
 
-            <div className="max-w-lg space-y-2">
-              <p className="text-xl font-medium text-slate-600 dark:text-slate-300">
-                {PERSONAL_INFO.tagline}
-              </p>
-              
-              <p className="text-2xl md:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary via-purple-700 to-primary dark:via-purple-400 animate-gradient-x pb-1">
-                {PERSONAL_INFO.bio.split('.')[0]}
-              </p>
-            </div>
+            <p className="max-w-lg text-xl leading-relaxed text-slate-600 dark:text-slate-300">
+              {PERSONAL_INFO.bio}
+            </p>
             
             <div className="flex flex-col sm:flex-row gap-4 pt-4">
               <motion.button 
@@ -124,7 +118,7 @@ const Hero = () => {
                     )}
                   </AnimatePresence>
                 </div>
-                <span>{isDownloaded ? "Downloaded!" : "Download Resume"}</span>
+                <span>{isDownloaded ? "Downloaded!" : "Download Résumé"}</span>
               </motion.button>
 
               <button 
@@ -132,7 +126,7 @@ const Hero = () => {
                 onClick={() => scrollToSection('projects')}
                 className="group flex items-center justify-center gap-2 px-8 py-4 border border-slate-300 dark:border-white/30 text-slate-700 dark:text-white font-bold rounded-xl hover:bg-slate-100 dark:hover:bg-white/10 transition-all cursor-pointer backdrop-blur-sm w-full sm:w-auto"
               >
-                View Mission Log
+                View My Work
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
@@ -140,6 +134,17 @@ const Hero = () => {
             <div className="pt-6">
               <SocialLinks />
             </div>
+
+            {/* Phones: the same experiment, simplified, under the introduction. */}
+            {!isDesktop && (
+              <div className="pt-10 md:hidden">
+                <ErrorBoundary fallback={<div aria-hidden="true" />}>
+                  <Suspense fallback={null}>
+                    <FlowField compact motion={!dataSaver} />
+                  </Suspense>
+                </ErrorBoundary>
+              </div>
+            )}
           </motion.div>
 
           <motion.div 
@@ -147,7 +152,7 @@ const Hero = () => {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1 }}
-            className="hidden md:block relative h-[600px] w-full"
+            className="hidden md:block relative w-full"
           >
              {/* Local boundary: a failure in the canvas must leave an empty
                  column, never bubble to the app-level boundary and blank the
@@ -155,7 +160,7 @@ const Hero = () => {
                  boundary's default fallback is a visible error, so an empty
                  column is passed explicitly; the chunk is small, so nothing
                  is shown while it loads either. */}
-             {showFlowField && (
+             {isDesktop && (
                <ErrorBoundary fallback={<div aria-hidden="true" />}>
                  <Suspense fallback={null}>
                     <FlowField motion={!dataSaver} />

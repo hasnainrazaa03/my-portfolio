@@ -19,9 +19,10 @@ export const CONFIG: SiteConfig = {
 
 export const PERSONAL_INFO: PersonalInfo = {
   name: "Hasnain Raza",
-  title: "Hi | I'm Hasnain...",
-  tagline: "Ready for takeoff?",
-  bio: "We're about to launch into my journey!",
+  // Hero copy. `title` splits on "|" into the plain part and the gradient part.
+  title: "Hi, I'm|Hasnain.",
+  tagline: "Aerospace → AI/ML · M.S. Computer Science, USC",
+  bio: "I build the systems around models: data pipelines, training and evaluation, and the services that ship them.",
   bioHeadline: "Lucknow native. Orbiting between code, tea, and whatever rabbit hole currently has gravitational pull.",
   bioStory: "I'm the kind of person who finds debugging weirdly satisfying and spends three hours perfecting a CSS animation that no one will notice. The way you do anything is the way you do everything, so whether I'm building ML models, brewing the perfect cup of tea in true Lucknow style, or falling into a 2 AM reel rabbit hole, I'm doing it with full attention. I oscillate between deep focus and beautiful chaos. I game, I read, I build, I scroll. But whatever I'm doing, I'm doing it right.",
   email: "razam@usc.edu",

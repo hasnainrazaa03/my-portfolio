@@ -54,6 +54,7 @@ const errorOf = () => Number(/Error (-?[\d.]+)/.exec(screen.getByText(/^Error /)
 describe('FlowField', () => {
   it('says what it is, in words a visitor can act on', () => {
     renderWith(<FlowField />);
+    expect(screen.getByText(/Why a neural network for something this simple/)).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Teach a neural network to predict lift' })).toBeInTheDocument();
     expect(screen.getByText(/Drag the airfoil to change its angle/)).toBeInTheDocument();
     expect(screen.getByText(/ideal-flow model/)).toBeInTheDocument();
@@ -97,13 +98,11 @@ describe('FlowField', () => {
   it('tells the story in three phases, then stops training', () => {
     renderWith(<FlowField />);
     expect(screen.getByText(/Reading samples from the physics/)).toBeInTheDocument();
-    expect(screen.getByText('Reading the physics…')).toBeInTheDocument();
     frames(100); // past the 1.4 s sampling phase
     expect(screen.getByText(/Learning by gradient descent/)).toBeInTheDocument();
-    expect(screen.getByText('Learning…')).toBeInTheDocument();
     frames(1500);
     expect(screen.getByText(/the surrogate now estimates lift instantly/)).toBeInTheDocument();
-    expect(screen.getByText('Model trained ✓')).toBeInTheDocument();
+    expect(screen.getByText(/prediction matches physics/)).toBeInTheDocument();
     expect(errorOf()).toBeLessThan(0.05);
     // Converged: the training loop has let go of the frame queue.
     const steps = screen.getByText(/steps$/).textContent;
@@ -126,7 +125,8 @@ describe('FlowField', () => {
     frames(1600);
     expect(screen.getByText('Model trained ✓')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /retrain/i }));
-    expect(screen.getByText('Reading the physics…')).toBeInTheDocument();
+    expect(screen.getByText(/Reading samples from the physics/)).toBeInTheDocument();
+    expect(screen.queryByText(/prediction matches physics/)).toBeNull();
     frames(1600);
     expect(screen.getByText('Model trained ✓')).toBeInTheDocument();
   });

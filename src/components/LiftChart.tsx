@@ -11,6 +11,8 @@ import { ALPHA_MAX, ALPHA_MIN, rad } from '../utils/flowScene';
  *
  * Two series, so a legend (in the header row, in text colour with swatches)
  * and no value labels: the metric cards beside the chart carry the numbers.
+ * The model's line is dashed so that, once the two coincide, both remain
+ * visible instead of one hiding the other.
  */
 
 interface Props {
@@ -20,16 +22,17 @@ interface Props {
   /** How many of the training samples to show as dots (grows during sampling). */
   sampleCount: number;
   totalSamples: number;
+  trained: boolean;
 }
 
-const W = 480;
-const H = 96;
-const M = { left: 8, right: 8, top: 8, bottom: 18 };
+const W = 560;
+const H = 72;
+const M = { left: 8, right: 8, top: 6, bottom: 16 };
 const CL_MIN = -0.5;
 const CL_MAX = 2.6;
 const POINTS = 48;
 
-const LiftChart = ({ af, net, alphaDeg, sampleCount, totalSamples }: Props) => {
+const LiftChart = ({ af, net, alphaDeg, sampleCount, totalSamples, trained }: Props) => {
   const sx = (deg: number) => M.left + ((deg - ALPHA_MIN) / (ALPHA_MAX - ALPHA_MIN)) * (W - M.left - M.right);
   const sy = (cl: number) => M.top + (1 - (cl - CL_MIN) / (CL_MAX - CL_MIN)) * (H - M.top - M.bottom);
   const degs = useMemo(() => Array.from({ length: POINTS }, (_, i) => ALPHA_MIN + (i / (POINTS - 1)) * (ALPHA_MAX - ALPHA_MIN)), []);
@@ -41,16 +44,19 @@ const LiftChart = ({ af, net, alphaDeg, sampleCount, totalSamples }: Props) => {
   const shown = Math.round((sampleCount / totalSamples) * POINTS);
 
   return (
-    <figure className="rounded-xl border border-slate-200 bg-white/70 px-3 pt-2 pb-1 dark:border-white/10 dark:bg-white/[0.03]">
+    <figure className="rounded-xl border border-slate-200 bg-white/70 px-3 pt-2 pb-0.5 dark:border-white/10 dark:bg-white/[0.03]">
       <figcaption className="flex items-center justify-between text-xs text-slate-600 dark:text-slate-300">
-        <span className="font-semibold">Lift against angle</span>
+        <span className="font-semibold">
+          Lift against angle
+          {trained && <span className="ml-2 font-normal text-primary">· prediction matches physics</span>}
+        </span>
         <span className="flex items-center gap-3">
           <span className="flex items-center gap-1.5">
             <span aria-hidden="true" className="inline-block h-0.5 w-4 rounded" style={{ background: 'var(--arc-ai)' }} />
             physics
           </span>
           <span className="flex items-center gap-1.5">
-            <span aria-hidden="true" className="inline-block h-0.5 w-4 rounded" style={{ background: 'var(--viz-model)' }} />
+            <span aria-hidden="true" className="inline-block h-0.5 w-4 rounded" style={{ background: 'repeating-linear-gradient(90deg, var(--viz-model) 0 4px, transparent 4px 7px)' }} />
             model
           </span>
         </span>
@@ -68,7 +74,9 @@ const LiftChart = ({ af, net, alphaDeg, sampleCount, totalSamples }: Props) => {
           <text x={W - M.right} y={H - 4} textAnchor="end">16°</text>
         </g>
         <polyline points={pts(truth)} fill="none" stroke="var(--arc-ai)" strokeWidth="2" strokeLinejoin="round" />
-        <polyline points={pts(model)} fill="none" stroke="var(--viz-model)" strokeWidth="2" strokeLinejoin="round" />
+        <polyline points={pts(model)} fill="none" stroke="var(--viz-model)" strokeWidth="2" strokeLinejoin="round" strokeDasharray="6 4" />
+        {/* The chosen angle, tied to its axis value. */}
+        <line x1={sx(alphaDeg)} x2={sx(alphaDeg)} y1={sy(Math.max(clTrue, clModel))} y2={H - M.bottom + 2} stroke="currentColor" strokeOpacity="0.45" strokeDasharray="2 3" />
         {degs.slice(0, shown).map((d, i) => (
           <circle key={d} cx={sx(d)} cy={sy(truth[i])} r="1.8" fill="var(--arc-ai)" fillOpacity="0.9" />
         ))}

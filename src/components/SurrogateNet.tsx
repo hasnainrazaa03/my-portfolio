@@ -9,8 +9,9 @@ import { forward, normaliseAlpha, type Net } from '../utils/surrogate';
  * One input (angle), six tanh units, one output (lift). Every edge is a
  * weight, thicker for larger; every hidden node lights with its activation
  * for the angle the visitor has chosen, so pitching the airfoil visibly
- * changes what the network computes. The status line is the only text: what
- * phase training is in. The numbers live in the metric cards beside it.
+ * changes what the network computes. The only text is the step and loss;
+ * the phase and the numbers live in the cards and status row beside it, so
+ * nothing is said twice.
  */
 
 export type Phase = 'sampling' | 'learning' | 'trained';
@@ -28,26 +29,20 @@ interface Props {
 }
 
 const W = 170;
-const H = 196;
+const H = 176;
 const X_IN = 24;
 const X_HID = 85;
 const X_OUT = 146;
 
-const STATUS: Record<Phase, string> = {
-  sampling: 'Reading the physics…',
-  learning: 'Learning…',
-  trained: 'Model trained ✓',
-};
-
 const SurrogateNet = ({ snapshot, alphaDeg, phase }: Props) => {
   const { net, loss, step } = snapshot;
   const { h } = forward(net, normaliseAlpha(alphaDeg));
-  const hy = (j: number) => 22 + (j * (H - 60)) / (net.hidden - 1);
+  const hy = (j: number) => 18 + (j * (H - 56)) / (net.hidden - 1);
   const stroke = (w: number) => Math.min(3.2, 0.5 + Math.abs(w) * 1.1);
   const edgeOpacity = (w: number) => 0.2 + Math.min(0.6, Math.abs(w) * 0.25);
 
   return (
-    <div className="rounded-xl border border-slate-200/80 bg-white/80 p-3 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-[#0b0a1a]/75">
+    <div className="rounded-xl border border-slate-200/80 bg-white/85 p-3 shadow-lg backdrop-blur-md dark:border-white/10 dark:bg-[#0b0a1a]/80">
       <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">Neural network</p>
       <svg
         viewBox={`0 0 ${W} ${H}`}
@@ -80,10 +75,7 @@ const SurrogateNet = ({ snapshot, alphaDeg, phase }: Props) => {
           <text x={X_OUT} y={H - 8}>cl</text>
         </g>
       </svg>
-      <p className="mt-1 text-sm font-semibold text-slate-800 dark:text-slate-100" aria-live="polite">
-        {STATUS[phase]}
-      </p>
-      <p className="text-xs tabular-nums text-slate-500 dark:text-slate-400">
+      <p className="mt-1 text-xs tabular-nums text-slate-500 dark:text-slate-400">
         {phase === 'trained' ? `${step.toLocaleString()} steps` : `step ${step.toLocaleString()} · loss ${loss >= 0.01 ? loss.toFixed(3) : loss.toExponential(1).replace('e-', 'e−')}`}
       </p>
     </div>

@@ -15,10 +15,11 @@ import { ALPHA_MAX, ALPHA_MIN, VIEW, rad, scene } from '../utils/flowScene';
  * where the airfoil is a circle they cannot enter; only their drawn position
  * is mapped.
  *
- * While `emitting`, bright points leave the trailing edge for the right edge
- * of the picture, where the network panel sits: the physics handing its
- * samples to the model. It is a visual for the sampling phase, not the data
- * path itself, which is a plain array in FlowField.
+ * Bright points leave the trailing edge for the right edge of the picture,
+ * where the network panel sits — densely while the physics is being sampled,
+ * sparsely while the model learns, not at all once it is trained: the
+ * physics handing its samples to the model. It is a visual for the phases,
+ * not the data path itself, which is a plain array in FlowField.
  *
  * Interaction: drag anywhere on the picture to pitch (vertical distance maps
  * to angle), arrow keys, Home and End when focused. The element is an ARIA
@@ -35,7 +36,8 @@ interface Props {
   alphaDeg: number;
   onAlphaChange: (deg: number) => void;
   isDark: boolean;
-  emitting: boolean;
+  /** Milliseconds between sample points leaving the trailing edge; 0 for none. */
+  emitEveryMs: number;
   draggable: boolean;
   /** The 2D context could not be created; the caller shows the still picture. */
   onUnavailable: () => void;
@@ -52,7 +54,6 @@ const FAST_DARK = [45, 212, 191];
 const FAST_LIGHT = [15, 118, 110];
 const MODEL_DARK = 'rgba(144,133,233,';
 const MODEL_LIGHT = 'rgba(74,58,167,';
-const PULSE_EVERY_MS = 90;
 const PULSE_LIFE_MS = 900;
 
 function speedColour(s: number, fast: number[]): string {
@@ -85,23 +86,27 @@ interface Pulse {
 
 const clampAlpha = (a: number) => Math.min(ALPHA_MAX, Math.max(ALPHA_MIN, Math.round(a * 2) / 2));
 
-const FlowCanvas = ({ af, alphaDeg, onAlphaChange, isDark, emitting, draggable, onUnavailable, ariaDescribedBy, className = '' }: Props) => {
+const FlowCanvas = ({ af, alphaDeg, onAlphaChange, isDark, emitEveryMs, draggable, onUnavailable, ariaDescribedBy, className = '' }: Props) => {
   const wrapRef = useRef<HTMLDivElement>(null);
   const baseRef = useRef<HTMLCanvasElement>(null);
   const partRef = useRef<HTMLCanvasElement>(null);
   const [hovering, setHovering] = useState(false);
   const [dragging, setDragging] = useState(false);
+  // The drag hint shows on the first hover and goes for good after the first drag.
+  const [inside, setInside] = useState(false);
+  const [dragged, setDragged] = useState(false);
+  const [hintAt, setHintAt] = useState({ x: 0, y: 0 });
   // The loops read these through refs so a change never restarts them.
   const alphaRef = useRef(alphaDeg);
-  const emittingRef = useRef(emitting);
+  const emitRef = useRef(emitEveryMs);
   const bboxRef = useRef({ x0: 0, x1: 0, y0: 0, y1: 0 });
   const dragRef = useRef<{ y: number; alpha: number } | null>(null);
   useEffect(() => {
     alphaRef.current = alphaDeg;
   }, [alphaDeg]);
   useEffect(() => {
-    emittingRef.current = emitting;
-  }, [emitting]);
+    emitRef.current = emitEveryMs;
+  }, [emitEveryMs]);
 
   // Base layer.
   useEffect(() => {
@@ -256,7 +261,7 @@ const FlowCanvas = ({ af, alphaDeg, onAlphaChange, isDark, emitting, draggable, 
       }
 
       // Samples leaving the trailing edge for the model.
-      if (emittingRef.current && now - lastPulse > PULSE_EVERY_MS) {
+      if (emitRef.current > 0 && now - lastPulse > emitRef.current) {
         lastPulse = now;
         const te = toView(alpha, { re: 2 * af.a, im: 0 });
         pulses.push({ born: now, y0: cy - te.im * scale });
@@ -310,6 +315,7 @@ const FlowCanvas = ({ af, alphaDeg, onAlphaChange, isDark, emitting, draggable, 
     e.currentTarget.setPointerCapture(e.pointerId);
     dragRef.current = { y: e.clientY, alpha: alphaRef.current };
     setDragging(true);
+    setDragged(true);
     e.currentTarget.focus({ preventScroll: true });
   };
   const onPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
@@ -341,6 +347,7 @@ const FlowCanvas = ({ af, alphaDeg, onAlphaChange, isDark, emitting, draggable, 
   };
 
   const cursor = !draggable ? '' : dragging ? 'cursor-grabbing' : hovering ? 'cursor-grab' : 'cursor-ns-resize';
+  const showHint = draggable && inside && !dragged;
 
   return (
     <div
@@ -358,8 +365,14 @@ const FlowCanvas = ({ af, alphaDeg, onAlphaChange, isDark, emitting, draggable, 
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
+      onPointerEnter={() => {
+        const b = bboxRef.current;
+        setHintAt({ x: (b.x0 + b.x1) / 2, y: b.y0 });
+        setInside(true);
+      }}
       onPointerLeave={(e) => {
         endDrag(e);
+        setInside(false);
         if (hovering) setHovering(false);
       }}
       onKeyDown={onKeyDown}
@@ -368,6 +381,16 @@ const FlowCanvas = ({ af, alphaDeg, onAlphaChange, isDark, emitting, draggable, 
         <canvas ref={baseRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
         <canvas ref={partRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
       </div>
+      {showHint && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute flex -translate-x-1/2 -translate-y-full items-center gap-1.5 rounded-md bg-slate-900/85 px-2.5 py-1 text-xs font-medium text-white shadow-lg dark:bg-white/90 dark:text-slate-900"
+          style={{ left: hintAt.x, top: hintAt.y - 10 }}
+        >
+          <svg width="10" height="16" viewBox="0 0 10 16" fill="currentColor"><path d="M5 0l4 5H1zM5 16l4-5H1z" /></svg>
+          Drag to change angle
+        </div>
+      )}
     </div>
   );
 };

@@ -148,37 +148,43 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
     </div>
   );
 
+  // Sample points leaving the trailing edge: dense while sampling, a trickle
+  // while learning, none once trained.
+  const emitEveryMs = phase === 'sampling' ? 90 : phase === 'learning' ? 420 : 0;
+
   return (
-    <div className="flex flex-col gap-4">
+    <div
+      className={`flex flex-col gap-3 rounded-2xl border border-slate-200/70 bg-white/40 p-4 dark:border-white/10 dark:bg-white/[0.02] ${compact ? '' : 'md:p-4'}`}
+    >
       <header>
         <p className="text-[11px] font-semibold uppercase tracking-widest text-primary">Live aerospace × AI experiment</p>
-        <h2 className={`mt-1 font-bold text-slate-900 dark:text-white ${compact ? 'text-xl' : 'text-2xl'}`}>
-          Teach a neural network to predict lift
-        </h2>
-        <p id={hintId} className="mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+        <h2 className="mt-0.5 text-lg font-semibold text-slate-900 dark:text-white">Teach a neural network to predict lift</h2>
+        <p id={hintId} className="mt-0.5 text-sm leading-snug text-slate-600 dark:text-slate-300">
           {animate && !compact ? 'Drag the airfoil to change its angle.' : 'Slide to change the airfoil’s angle.'} An ideal-flow model works out the lift, and a
           small neural network learns it live in your browser.
         </p>
       </header>
 
-      <div className={`relative ${compact ? 'h-[220px]' : 'h-[290px]'}`}>
+      {/* The picture ends where the network panel begins, so the panel reads
+          as the second stage rather than a badge over the flow. */}
+      <div className={`relative ${compact ? 'h-[210px]' : 'h-[220px]'}`}>
         {animate ? (
           <FlowCanvas
             af={af}
             alphaDeg={alphaDeg}
             onAlphaChange={setAlphaDeg}
             isDark={isDark}
-            emitting={phase === 'sampling'}
+            emitEveryMs={emitEveryMs}
             draggable={!compact}
             onUnavailable={onUnavailable}
             ariaDescribedBy={hintId}
-            className="absolute inset-0"
+            className={`absolute inset-y-0 left-0 ${compact ? 'right-0' : 'right-[172px]'}`}
           />
         ) : (
-          <FlowFieldStatic alphaDeg={alphaDeg} className="absolute inset-0 !min-h-0" />
+          <FlowFieldStatic alphaDeg={alphaDeg} className={`absolute inset-y-0 left-0 !min-h-0 ${compact ? 'right-0' : 'right-[172px]'}`} />
         )}
         {!compact && current && (
-          <div className="pointer-events-none absolute right-0 top-1/2 w-[190px] -translate-y-1/2">
+          <div className="pointer-events-none absolute right-0 top-1/2 w-[172px] -translate-y-1/2">
             <SurrogateNet snapshot={current} alphaDeg={alphaDeg} phase={currentPhase} />
           </div>
         )}
@@ -187,11 +193,11 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
       {(compact || !animate) && slider}
 
       <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl border border-slate-200 bg-white/70 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="rounded-xl border border-slate-200 bg-white/70 px-4 py-2.5 dark:border-white/10 dark:bg-white/[0.03]">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
             Physics <span className="font-normal normal-case tracking-normal">· ideal flow</span>
           </p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-slate-900 dark:text-white">
+          <p className="mt-0.5 text-lg font-bold tabular-nums text-slate-900 dark:text-white">
             Lift {clTrue.toFixed(2)}
           </p>
           <p className="text-sm tabular-nums text-slate-600 dark:text-slate-300">Angle {fmtAlpha(alphaDeg)}</p>
@@ -201,26 +207,32 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
             </p>
           )}
         </div>
-        <div className="rounded-xl border border-slate-200 bg-white/70 px-4 py-3 dark:border-white/10 dark:bg-white/[0.03]">
+        <div className="rounded-xl border border-slate-200 bg-white/70 px-4 py-2.5 dark:border-white/10 dark:bg-white/[0.03]">
           <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500 dark:text-slate-400">
             AI prediction <span className="font-normal normal-case tracking-normal">· surrogate</span>
           </p>
-          <p className="mt-1 text-lg font-bold tabular-nums text-slate-900 dark:text-white">
+          <p className="mt-0.5 text-lg font-bold tabular-nums text-slate-900 dark:text-white">
             Lift {current ? clModel.toFixed(2) : '—'}
           </p>
           <p className="text-sm tabular-nums text-slate-600 dark:text-slate-300">Error {current ? error.toFixed(2) : '—'}</p>
         </div>
       </div>
 
-      {!compact && current && <LiftChart af={af} net={current.net} alphaDeg={alphaDeg} sampleCount={samples} totalSamples={set.length} />}
+      {!compact && current && (
+        <LiftChart af={af} net={current.net} alphaDeg={alphaDeg} sampleCount={samples} totalSamples={set.length} trained={currentPhase === 'trained'} />
+      )}
 
       <div className="flex items-center justify-between gap-3">
-        <p className="text-sm text-slate-600 dark:text-slate-300" aria-live="polite">
-          {currentPhase === 'trained'
-            ? 'Model trained ✓ — the surrogate now estimates lift instantly.'
-            : currentPhase === 'learning'
-              ? 'Learning by gradient descent…'
-              : 'Reading samples from the physics…'}
+        <p className="text-sm text-slate-700 dark:text-slate-200" aria-live="polite">
+          {currentPhase === 'trained' ? (
+            <>
+              <span className="font-semibold">Model trained ✓</span> — the surrogate now estimates lift instantly.
+            </>
+          ) : currentPhase === 'learning' ? (
+            'Learning by gradient descent…'
+          ) : (
+            'Reading samples from the physics…'
+          )}
         </p>
         <button
           type="button"
@@ -231,6 +243,18 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
           Retrain
         </button>
       </div>
+
+      {!compact && (
+        <details className="text-xs text-slate-500 dark:text-slate-400">
+          <summary className="cursor-pointer select-none rounded hover:text-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary dark:hover:text-slate-200">
+            Why a neural network for something this simple?
+          </summary>
+          <p className="mt-1 leading-snug">
+            The relationship is intentionally simple enough to train live in a browser. Aerospace surrogate models use the same
+            idea to stand in for simulations that take hours.
+          </p>
+        </details>
+      )}
     </div>
   );
 };

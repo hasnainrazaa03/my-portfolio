@@ -3,6 +3,8 @@ import { useTheme } from '../context/ThemeContext';
 import { advect, joukowski, liftCoefficient, fromView, toView, toZ, toZeta, velocityAtZeta, type Complex } from '../utils/potentialFlow';
 import { ALPHA_DEFAULT, ALPHA_MAX, ALPHA_MIN, VIEW, rad, scene } from '../utils/flowScene';
 import FlowFieldStatic from './FlowFieldStatic';
+import SurrogateNet, { type NetSnapshot } from './SurrogateNet';
+import { createNet, trainStep, trainingSet, type Net } from '../utils/surrogate';
 
 /**
  * FlowField — the hero visual: ideal flow around an airfoil, live.
@@ -16,6 +18,12 @@ import FlowFieldStatic from './FlowFieldStatic';
  *
  * It is an ideal-flow model and is labelled as one on screen. Nothing here
  * is a CFD result (see potentialFlow.ts).
+ *
+ * The right-hand side completes the story. A small neural network learns
+ * the lift curve from that physics by gradient descent, live, while the
+ * visitor watches its error fall (surrogate.ts). Physics on the left makes
+ * the truth; the model on the right learns it; the flow streaks run from
+ * one into the other.
  *
  * Rendering: Canvas 2D, two layers. The base layer holds the airfoil and a
  * fan of faint streamlines, redrawn only when the angle or the size changes.
@@ -32,6 +40,11 @@ import FlowFieldStatic from './FlowFieldStatic';
  */
 
 const MAX_PARTICLES = 2600;
+/** Mean squared error at which training stops and the readout says so. */
+const CONVERGED = 1e-4;
+/** One gradient step per frame: about ten seconds to converge at 60 Hz, slow enough to watch. */
+const STEPS_PER_FRAME = 1;
+const cloneNet = (n: Net): Net => ({ ...n, w1: [...n.w1], b1: [...n.b1], w2: [...n.w2], vw1: [...n.vw1], vb1: [...n.vb1], vw2: [...n.vw2] });
 const EDGE_MASK = 'radial-gradient(ellipse 62% 58% at 50% 50%, black 55%, transparent 100%)';
 const DPR_CAP = 1.5;
 
@@ -79,6 +92,9 @@ const FlowField = ({ motion = true }: Props) => {
   const [alphaDeg, setAlphaDeg] = useState(ALPHA_DEFAULT);
   const [fallback, setFallback] = useState(false);
   const [hover, setHover] = useState(false);
+  // The surrogate: a new seed retrains from scratch.
+  const [seed, setSeed] = useState(1);
+  const [snapshot, setSnapshot] = useState<NetSnapshot | null>(null);
   const wrapRef = useRef<HTMLDivElement>(null);
   const baseRef = useRef<HTMLCanvasElement>(null);
   const partRef = useRef<HTMLCanvasElement>(null);
@@ -259,6 +275,38 @@ const FlowField = ({ motion = true }: Props) => {
     };
   }, [af, isDark, animate]);
 
+  // Training. Its own loop so the particle loop stays about drawing; both
+  // pause in a hidden tab. Publishes a copy of the weights a few times a
+  // second, and once more when it converges, then stops.
+  useEffect(() => {
+    if (!animate) return;
+    const net = createNet(seed);
+    const set = trainingSet((deg) => liftCoefficient(af, rad(deg)));
+    let step = 0;
+    let loss = Infinity;
+    let rafId = 0;
+    const publish = (converged: boolean) => setSnapshot({ net: cloneNet(net), loss, step, converged });
+    publish(false);
+    const tick = () => {
+      if (document.hidden) {
+        rafId = requestAnimationFrame(tick);
+        return;
+      }
+      for (let i = 0; i < STEPS_PER_FRAME; i++) {
+        loss = trainStep(net, set);
+        step += 1;
+      }
+      if (loss <= CONVERGED) {
+        publish(true);
+        return;
+      }
+      if (step % 8 === 0) publish(false);
+      rafId = requestAnimationFrame(tick);
+    };
+    rafId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafId);
+  }, [af, animate, seed]);
+
   if (!animate) return <FlowFieldStatic alphaDeg={alphaDeg} />;
 
   /** Cursor height → angle: top of the box is nose-up. */
@@ -281,31 +329,43 @@ const FlowField = ({ motion = true }: Props) => {
   return (
     <div
       ref={wrapRef}
-      className="relative h-full min-h-[400px] w-full cursor-crosshair select-none rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      role="slider"
-      tabIndex={0}
-      aria-label="Angle of attack of the airfoil in the flow picture"
-      aria-valuemin={ALPHA_MIN}
-      aria-valuemax={ALPHA_MAX}
-      aria-valuenow={alphaDeg}
-      aria-valuetext={`${alphaDeg} degrees, lift coefficient ${cl.toFixed(2)}`}
-      aria-describedby={hintId}
+      className="relative h-full min-h-[400px] w-full cursor-crosshair select-none"
       onPointerMove={onPointer}
       onPointerDown={onPointer}
       onPointerEnter={() => setHover(true)}
       onPointerLeave={() => setHover(false)}
-      onKeyDown={onKey}
       style={{ touchAction: 'pan-y' }}
     >
-      {/* The canvases are a hard rectangle; a mask fades their edges into the page. */}
-      <div className="absolute inset-0" style={{ maskImage: EDGE_MASK, WebkitMaskImage: EDGE_MASK }}>
-        <canvas ref={baseRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
-        <canvas ref={partRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
+      {/* The slider is the picture itself. The readouts and the model sit
+          beside it as siblings, so a button never ends up inside a widget. */}
+      <div
+        className="absolute inset-0 rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+        role="slider"
+        tabIndex={0}
+        aria-label="Angle of attack of the airfoil in the flow picture"
+        aria-valuemin={ALPHA_MIN}
+        aria-valuemax={ALPHA_MAX}
+        aria-valuenow={alphaDeg}
+        aria-valuetext={`${alphaDeg} degrees, lift coefficient ${cl.toFixed(2)}`}
+        aria-describedby={hintId}
+        onKeyDown={onKey}
+      >
+        {/* The canvases are a hard rectangle; a mask fades their edges into the page. */}
+        <div className="absolute inset-0" style={{ maskImage: EDGE_MASK, WebkitMaskImage: EDGE_MASK }}>
+          <canvas ref={baseRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
+          <canvas ref={partRef} aria-hidden="true" className="absolute inset-0 h-full w-full" />
+        </div>
       </div>
+
+      {snapshot && (
+        <div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2">
+          <SurrogateNet snapshot={snapshot} alphaDeg={alphaDeg} truth={cl} onRetrain={() => setSeed((n) => n + 1)} />
+        </div>
+      )}
 
       <div className="pointer-events-none absolute bottom-3 left-3 flex flex-col gap-1.5">
         <p className="rounded-md bg-white/70 px-2.5 py-1.5 font-mono text-[11px] leading-tight text-slate-700 backdrop-blur dark:bg-black/40 dark:text-slate-200">
-          <span className="font-semibold">Ideal flow</span> · α{' '}
+          <span className="font-semibold">Ideal flow</span> · physics · α{' '}
           <span className="tabular-nums">{alphaDeg < 0 ? '−' : ''}{Math.abs(alphaDeg).toFixed(1)}°</span> · cl{' '}
           <span className="tabular-nums">{cl.toFixed(2)}</span>
         </p>

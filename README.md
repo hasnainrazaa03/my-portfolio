@@ -78,6 +78,7 @@ Draw the first thing an aerospace course teaches, live: potential flow around a 
 - **Mount gating, not CSS hiding** — mounts at desktop widths only, so phones never download it
 - **Degrades to the same picture** — under `prefers-reduced-motion`, Save-Data, or with no 2D context, a static SVG of the same streamlines is drawn instead, inside a local error boundary so nothing can blank the page
 - **Keyboard** — the picture is an ARIA slider for the angle of attack; arrow keys pitch it
+- **…and the other half of the story** — beside the flow, a six-unit neural network (`src/utils/surrogate.ts`, plain arrays, no dependency) learns α → cl from that physics by gradient descent, live, while the visitor watches the loss fall; every edge is a weight and every hidden node lights with its activation for the chosen angle. Aerospace makes the truth, the model learns it. Tests assert convergence from every seed it can start from
 
 ---
 
@@ -118,7 +119,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 ## 🚀 Feature Overview
 
 ### 🌌 Immersive Hero Section
-- **Flow picture** — ideal flow around an airfoil, pitched by the cursor, with a live lift readout (Canvas 2D, no WebGL)
+- **Flow picture** — ideal flow around an airfoil, pitched by the cursor, with a live lift readout (Canvas 2D, no WebGL), and a small neural network learning the lift curve from it in the browser
 - **Resume Engine** — One-click resume download with instant visual feedback
 
 ### 👤 About Section
@@ -426,7 +427,7 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) (or `.well-known/security.
 
 **Built:** streaming chat with source chips and curated career knowledge; project case studies with per-route heads, generated social cards and a real 404; ATS résumé view; job-description comparison (`/fit`); installable offline support; the career arc chart; Vimaan's runtime diagram.
 
-**Also built:** the hero flow picture (three.js removed, 127 KB → 12 KB); a daily production health check with deploy-freshness; chunk-load recovery so one unfetchable section cannot take the page down; zero npm advisories (`@vercel/node` replaced by local types); private visitor insights; live GitHub answers and case-study links in the chat; "How it works" diagrams for Manzil and Orbit; the NACA 4412 lift-curve explorer; JSON-LD per case study.
+**Also built:** the hero flow picture with a live-trained surrogate network (three.js removed, 127 KB → 16 KB); a daily production health check with deploy-freshness; chunk-load recovery so one unfetchable section cannot take the page down; zero npm advisories (`@vercel/node` replaced by local types); private visitor insights; live GitHub answers and case-study links in the chat; "How it works" diagrams for Manzil and Orbit; the NACA 4412 lift-curve explorer; JSON-LD per case study.
 
 **Corrected claims:** Orbit's (then USC Ledger) "atomic transactions", "P2034 write-conflict resolution" and a race-preventing "reconciliation engine" (none exist in its code) and a dead demo link; Manzil described as "collaborative" (recipes are owner-only). Earlier: a "10x throughput" figure the evidence could not support, Vimaan's "inter-process communication" (a thread and a queue in one process) and INT8 presented as a speed gain (it was for memory). `claimRules.ts` now fails CI if any return.
 

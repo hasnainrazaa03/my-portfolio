@@ -76,6 +76,16 @@ test.describe('page boot', () => {
     await expect(page.getByText('Something went wrong.')).toHaveCount(0);
   });
 
+  test('the surrogate network learns the lift curve in the browser', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByText('Surrogate model')).toBeVisible();
+    // Trains one gradient step per frame; a few hundred steps is enough.
+    await expect(page.getByText(/converged/)).toBeVisible({ timeout: 40_000 });
+    const line = await page.getByText(/ĉl/).innerText();
+    const [, pred, truth] = /ĉl (-?[\d.]+) · truth (-?[\d.]+)/.exec(line)!;
+    expect(Math.abs(Number(pred) - Number(truth))).toBeLessThan(0.06);
+  });
+
   test('serves the WebP sibling for local raster images', async ({ page }) => {
     const requested: string[] = [];
     page.on('request', (r) => requested.push(r.url()));

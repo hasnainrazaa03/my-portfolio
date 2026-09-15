@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Github, ExternalLink, Code, Star, GitCommit } from 'lucide-react';
 import { GitHubCalendar } from 'react-github-calendar';
@@ -8,9 +8,43 @@ import SectionHeading from './ui/SectionHeading';
 import { fadeInUp } from '../animations';
 import { useTheme } from '../context/ThemeContext';
 
+/**
+ * The calendar is 53 columns wide. Size the blocks to the card so the whole
+ * year shows without scrolling; below the size where a block stops reading
+ * as a block, keep a fixed size and scroll — starting from the recent end,
+ * which is the end a visitor came to see. (An rtl scroll container opens
+ * scrolled to its end; the calendar inside is set back to ltr.)
+ */
+const WEEKS = 53;
+const MIN_BLOCK = 8;
+const LABEL_GUTTER = 36;
+
+function useCalendarSize(ref: React.RefObject<HTMLDivElement | null>) {
+  const [size, setSize] = useState({ block: 12, margin: 4, fits: true });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const measure = () => {
+      const width = el.clientWidth;
+      if (!width) return;
+      const margin = width > 640 ? 4 : 3;
+      const block = Math.floor((width - LABEL_GUTTER) / WEEKS) - margin;
+      if (block >= MIN_BLOCK) setSize({ block: Math.min(block, 13), margin, fits: true });
+      else setSize({ block: 10, margin: 3, fits: false });
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [ref]);
+  return size;
+}
+
 const GitHubSection = () => {
   const { isDark } = useTheme();
   const username = PERSONAL_INFO.socials.github.split('/').pop() ?? '';
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const size = useCalendarSize(calendarRef);
 
   const explicitTheme = {
     light: ['#e2e8f0', '#99f6e4', '#5eead4', '#2dd4bf', '#115e59'],
@@ -75,22 +109,25 @@ const GitHubSection = () => {
                 </a>
               </div>
 
-              <div className="flex justify-start sm:justify-center w-full overflow-x-auto pb-4 thin-scrollbar-x">
-                <div className="min-w-[700px] pr-4"> 
-                  <GitHubCalendar 
+              <div
+                ref={calendarRef}
+                dir={size.fits ? 'ltr' : 'rtl'}
+                className={`w-full ${size.fits ? 'overflow-hidden' : 'overflow-x-auto pb-4 thin-scrollbar-x'}`}
+              >
+                <div dir="ltr" className={size.fits ? '' : 'inline-block pr-4'}>
+                  <GitHubCalendar
                     username={username}
                     colorScheme={isDark ? 'dark' : 'light'}
                     theme={explicitTheme}
-                    fontSize={14}
-                    blockSize={13} 
-                    blockMargin={4}
+                    fontSize={size.block >= 11 ? 14 : 12}
+                    blockSize={size.block}
+                    blockMargin={size.margin}
                     blockRadius={3}
                     labels={{
                       totalCount: '{{count}} contributions shown',
                     }}
                     style={{
                       color: isDark ? '#ffffff' : '#0f172a',
-                      margin: '0 auto',
                     }}
                   />
                 </div>

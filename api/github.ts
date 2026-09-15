@@ -15,12 +15,22 @@ import type { VercelRequest, VercelResponse } from './_lib/vercel.js';
  *   - Only the configured `GITHUB_USERNAME` (or fallback) is queried.
  *   - We strip GitHub's `actor` payload before responding (no need to leak
  *     internal IDs / gravatar URLs to clients).
+ *
+ * Why the response also carries `recent`: GitHub's public event payloads no
+ * longer include commit messages or pull-request titles (checked against
+ * production, 2026-09), so the events alone rendered as "Pushed 1 commits ·
+ * No message". The feed now shows real commits, from the repos and commits
+ * endpoints via githubActivity.ts, over a 30-day window.
  */
+
+/** The activity feed's window: wider than the chat's, so a quiet week still shows something. */
+const FEED_WINDOW = { repoDays: 30, commitDays: 30, maxRepos: 4, maxCommits: 6 };
 
 import { applyCors } from './_lib/cors.js';
 import { createDurableLimiter, getClientIp } from './_lib/rateLimit.js';
 import { randomUUID } from 'node:crypto';
 import { captureServerError, flushSentry } from './_lib/sentry.js';
+import { getRecentWork, type RecentWork } from './_lib/githubActivity.js';
 
 const DEFAULT_USERNAME = 'hasnainrazaa03';
 const CACHE_TTL_MS = 60_000; // 1 minute
@@ -51,6 +61,7 @@ type StrippedEvent = ReturnType<typeof stripPayload>;
 
 interface CacheEntry {
   data: StrippedEvent[];
+  recent: RecentWork;
   expiresAt: number;
 }
 
@@ -142,15 +153,16 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (cached && cached.expiresAt > now) {
     res.setHeader('x-cache', 'HIT');
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
-    return res.status(200).json({ events: cached.data, requestId, cached: true });
+    return res.status(200).json({ events: cached.data, recent: cached.recent, requestId, cached: true });
   }
 
   try {
-    const events = await fetchEventsFromGitHub(username);
-    cache.set(username, { data: events, expiresAt: now + CACHE_TTL_MS });
+    // getRecentWork never throws; it reports failure in `ok` and has its own cache.
+    const [events, recent] = await Promise.all([fetchEventsFromGitHub(username), getRecentWork({ now, ...FEED_WINDOW })]);
+    cache.set(username, { data: events, recent, expiresAt: now + CACHE_TTL_MS });
     res.setHeader('x-cache', 'MISS');
     res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=120');
-    return res.status(200).json({ events, requestId, cached: false });
+    return res.status(200).json({ events, recent, requestId, cached: false });
   } catch (err) {
     console.error(
       `[github][${requestId}] fetch failed:`,
@@ -159,7 +171,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Serve a stale cache rather than failing the UI, if we have one.
     if (cached) {
       res.setHeader('x-cache', 'STALE');
-      return res.status(200).json({ events: cached.data, requestId, cached: true, stale: true });
+      return res.status(200).json({ events: cached.data, recent: cached.recent, requestId, cached: true, stale: true });
     }
     // Only worth reporting when there was no stale cache to fall back on —
     // a served-stale response is a working degradation, not an incident.

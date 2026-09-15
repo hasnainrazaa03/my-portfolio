@@ -74,7 +74,7 @@ function fakeGitHub({ repos, commits = {}, failRepos = false }) {
   });
 }
 
-const commit = (date, message) => ({ commit: { message, committer: { date } } });
+const commit = (date, message, sha = 'abc1234') => ({ sha, html_url: `https://github.com/x/r/commit/${sha}`, commit: { message, committer: { date } } });
 
 describe('getRecentWork', () => {
   beforeEach(() => clearRecentWorkCache());
@@ -97,10 +97,11 @@ describe('getRecentWork', () => {
     const work = await getRecentWork({ now: NOW, fetchImpl });
     expect(work.ok).toBe(true);
     expect(work.repos.map((r) => r.name)).toEqual(['my-portfolio', 'HireCraft', 'b']);
-    expect(work.repos[0].commits).toEqual([
+    expect(work.repos[0].commits.map(({ date, message }) => ({ date, message }))).toEqual([
       { date: '2026-09-14', message: 'feat(seo): structured data' },
       { date: '2026-09-13', message: 'fix: chunk recovery' },
     ]);
+    expect(work.repos[0].commits[0]).toMatchObject({ sha: 'abc1234', url: 'https://github.com/x/r/commit/abc1234', at: daysAgo(0) });
     expect(work.repos[1].commits).toEqual([]);
   });
 
@@ -140,6 +141,20 @@ describe('getRecentWork', () => {
     const hanging = vi.fn((_url, { signal }) => new Promise((_, reject) => signal.addEventListener('abort', () => reject(signal.reason))));
     const work = await getRecentWork({ now: NOW, fetchImpl: hanging, timeoutMs: 20 });
     expect(work.ok).toBe(false);
+  });
+
+  it('takes a wider window for the feed, cached separately from the chat', async () => {
+    const fetchImpl = fakeGitHub({
+      repos: [{ name: 'quiet', pushed_at: daysAgo(20) }],
+      commits: { quiet: [commit(daysAgo(20), 'older work')] },
+    });
+    const chat = await getRecentWork({ now: NOW, fetchImpl });
+    expect(chat.repos).toEqual([]); // 20 days ago is outside the chat's 14
+    const feed = await getRecentWork({ now: NOW, fetchImpl, repoDays: 30, commitDays: 30 });
+    expect(feed.repos.map((r) => r.name)).toEqual(['quiet']);
+    expect(feed.repos[0].commits[0].message).toBe('older work');
+    const since = new URL(fetchImpl.mock.calls.find(([u]) => u.includes('/commits'))[0]).searchParams.get('since');
+    expect(since).toBe(daysAgo(30));
   });
 
   it('serves a cached answer for ten minutes', async () => {

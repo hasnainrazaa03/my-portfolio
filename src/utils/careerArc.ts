@@ -151,3 +151,25 @@ export function describeRow(row: ArcRow): string {
 }
 
 export { durationLabel, formatMonth };
+
+/**
+ * "Defence Research and Development Organisation (DRDO)" -> "DRDO";
+ * "University of Southern California" -> "USC"; "RV College of Engineering"
+ * -> "RVCE" (an all-caps word is already an abbreviation and is kept whole).
+ * A row label has one line;
+ * a wrapped institution name pushed its row taller than every other and
+ * made the chart look broken. The full name stays in the bar's accessible
+ * name, the tooltip, the table and the title attribute.
+ */
+export function shortName(title: string): string {
+  const acronym = /\(([A-Z][A-Za-z0-9.&]{1,10})\)\s*$/.exec(title);
+  if (acronym) return acronym[1];
+  if (title.length <= 20) return title;
+  const initials = title
+    .split(/\s+/)
+    .filter((w) => !/^(of|and|the|for|de|du)$/i.test(w))
+    .map((w) => (/^[A-Z]{2,}$/.test(w) ? w : w[0]))
+    .join('')
+    .toUpperCase();
+  return initials.length >= 2 ? initials : title;
+}

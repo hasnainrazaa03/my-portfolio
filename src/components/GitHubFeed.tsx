@@ -1,175 +1,101 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GitCommit, GitPullRequest, Star, GitBranch, Disc, ExternalLink, Loader2, AlertCircle, Github } from 'lucide-react';
+import { toFeedItems, timeAgo, type FeedItem, type GitHubEvent, type RecentWork } from '../utils/githubFeed';
 import { PERSONAL_INFO } from '../constants';
 
-interface GitHubEvent {
-  id: string;
-  type: string;
-  created_at: string;
-  repo?: { name: string } | null;
-  payload?: {
-    action?: string;
-    ref?: string;
-    ref_type?: string;
-    commits?: { message: string }[];
-    pull_request?: { title?: string };
-  };
-}
+/**
+ * GitHubFeed — recent commits, with their messages.
+ *
+ * The feed used to render GitHub's public events, and read "Pushed 1 commits
+ * · No message" all the way down: GitHub stopped including commit messages
+ * and pull-request titles in public event payloads. /api/github now also
+ * returns `recent` — the repositories pushed in the last 30 days and their
+ * commits, from the repos and commits endpoints — and that is what the feed
+ * shows. The events are kept only as a fallback for a quiet month, rendered
+ * without the words the payload no longer carries.
+ */
 
-const ActivityItem = ({ event, index }: { event: GitHubEvent; index: number }) => {
-  const timeAgo = (dateString: string) => {
-    const seconds = Math.floor((new Date().getTime() - new Date(dateString).getTime()) / 1000);
-    let interval = seconds / 31536000;
-    if (interval > 1) return Math.floor(interval) + "y ago";
-    interval = seconds / 2592000;
-    if (interval > 1) return Math.floor(interval) + "mo ago";
-    interval = seconds / 86400;
-    if (interval > 1) return Math.floor(interval) + "d ago";
-    interval = seconds / 3600;
-    if (interval > 1) return Math.floor(interval) + "h ago";
-    interval = seconds / 60;
-    if (interval > 1) return Math.floor(interval) + "m ago";
-    return Math.floor(seconds) + "s ago";
-  };
+const USERNAME = PERSONAL_INFO.socials.github.split('/').pop() ?? '';
 
-  const getEventInfo = (event: GitHubEvent) => {
-    switch (event.type) {
-      case 'PushEvent':
-        return {
-          icon: GitCommit,
-          color: 'text-emerald-400',
-          bg: 'bg-emerald-400/10',
-          action: `Pushed ${event.payload?.commits?.length || 1} commit${event.payload?.commits?.length !== 1 ? 's' : ''}`,
-          target: event.payload?.commits?.[0]?.message || 'No message'
-        };
-      case 'PullRequestEvent':
-        return {
-          icon: GitPullRequest,
-          color: 'text-purple-400',
-          bg: 'bg-purple-400/10',
-          action: `${event.payload?.action === 'opened' ? 'Opened' : 'Closed'} PR`,
-          target: event.payload?.pull_request?.title
-        };
-      case 'WatchEvent':
-        return {
-          icon: Star,
-          color: 'text-amber-400',
-          bg: 'bg-amber-400/10',
-          action: 'Starred repository',
-          target: null
-        };
-      case 'CreateEvent':
-        return {
-          icon: GitBranch,
-          color: 'text-blue-400',
-          bg: 'bg-blue-400/10',
-          action: `Created ${event.payload?.ref_type}`,
-          target: event.payload?.ref || event.repo?.name
-        };
-      default:
-        return {
-          icon: Disc,
-          color: 'text-slate-600 dark:text-slate-300',
-          bg: 'bg-slate-400/10',
-          action: 'Performed action',
-          target: event.type
-        };
-    }
-  };
+const STYLE: Record<FeedItem['kind'], { icon: typeof GitCommit; colour: string; bg: string }> = {
+  commit: { icon: GitCommit, colour: 'text-primary', bg: 'bg-primary/10' },
+  pr: { icon: GitPullRequest, colour: 'text-purple-400', bg: 'bg-purple-400/10' },
+  star: { icon: Star, colour: 'text-amber-400', bg: 'bg-amber-400/10' },
+  create: { icon: GitBranch, colour: 'text-blue-400', bg: 'bg-blue-400/10' },
+  other: { icon: Disc, colour: 'text-slate-600 dark:text-slate-300', bg: 'bg-slate-400/10' },
+};
 
-  const info = getEventInfo(event);
-  const repoName = event.repo?.name ? event.repo.name.replace(`${PERSONAL_INFO.socials.github.split('/').pop()}/`, '') : 'repo';
-
+const ActivityItem = ({ item, index }: { item: FeedItem; index: number }) => {
+  const { icon: Icon, colour, bg } = STYLE[item.kind];
   return (
     <motion.a
-      href={`https://github.com/${event.repo?.name}`}
+      href={item.href}
       target="_blank"
       rel="noopener noreferrer"
       initial={{ opacity: 0, x: -20 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.1 }}
-      className="flex items-start gap-4 p-4 rounded-xl hover:bg-slate-100 dark:hover:bg-white/5 transition-colors group border border-transparent hover:border-slate-200 dark:hover:border-white/10"
+      transition={{ delay: Math.min(index, 8) * 0.06 }}
+      className="flex items-start gap-3 rounded-xl border border-transparent p-3 transition-colors hover:border-slate-200 hover:bg-slate-100 dark:hover:border-white/10 dark:hover:bg-white/5 group"
     >
-      <div className={`p-2 rounded-lg ${info.bg} ${info.color} mt-1 shrink-0`}>
-        <info.icon size={18} />
+      <div className={`mt-0.5 shrink-0 rounded-lg p-2 ${bg} ${colour}`}>
+        <Icon size={16} />
       </div>
-      
-      <div className="flex-1 min-w-0">
-        <div className="flex justify-between items-start gap-2">
-          <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
-            {info.action}
-          </p>
-          <span className="text-xs text-slate-600 dark:text-slate-300 whitespace-nowrap font-mono">
-            {timeAgo(event.created_at)}
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-semibold leading-snug text-slate-900 dark:text-white line-clamp-2">{item.title}</p>
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+          <span className="rounded-full border border-transparent bg-slate-200 px-2 py-0.5 font-medium text-slate-700 dark:border-white/10 dark:bg-white/10 dark:text-slate-200">
+            {item.repo}
           </span>
-        </div>
-        
-        {info.target && (
-          <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 line-clamp-1 italic font-medium">
-            "{info.target}"
-          </p>
-        )}
-        
-        <div className="flex items-center gap-2 mt-2">
-          <span className="text-xs px-2 py-0.5 rounded-full bg-slate-200 dark:bg-white/10 text-slate-600 dark:text-slate-200 font-medium border border-transparent dark:border-white/10">
-            {repoName}
-          </span>
+          {item.detail && <span className="font-mono">{item.detail}</span>}
+          <span className="font-mono tabular-nums">{timeAgo(item.at)}</span>
         </div>
       </div>
-
-      <ExternalLink size={14} className="text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mt-1" />
+      <ExternalLink size={14} className="mt-1 text-slate-400 opacity-0 transition-opacity group-hover:opacity-100" />
     </motion.a>
   );
 };
 
 const GitHubFeed = () => {
-  const [activities, setActivities] = useState<GitHubEvent[]>([]);
+  const [items, setItems] = useState<FeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const isVisibleRef = useRef(false);
-  // The IntersectionObserver callback below closes over the FIRST render's
-  // `activities` ([]), so "fetch on first sight" fired on every re-entry into
-  // view — burning the unauthenticated 60/h GitHub quota in dev. Track it in
-  // a ref instead. `seq` drops a slow earlier response that lands after a
-  // newer one; `hasData` keeps the list when a refetch fails.
+  // The IntersectionObserver callback closes over the first render, so "fetch
+  // on first sight" is tracked in a ref. `seq` drops a slow earlier response
+  // that lands after a newer one; `hasData` keeps the list when a refetch fails.
   const fetchedOnceRef = useRef(false);
   const seqRef = useRef(0);
   const hasDataRef = useRef(false);
   useEffect(() => {
-    hasDataRef.current = activities.length > 0;
-  }, [activities]);
+    hasDataRef.current = items.length > 0;
+  }, [items]);
 
-  const fetchGitHubActivity = async () => {
+  const load = async () => {
     const seq = ++seqRef.current;
     try {
       setLoading(true);
-      // Prefer the server proxy: cached + token-authenticated + privacy-safe.
-      // Falls back to direct GitHub (60 req/h limit) only if the proxy 404s
-      // (e.g. running `npm run dev` without `vercel dev`).
-      let events;
+      // The server proxy is cached, token-authenticated and carries the
+      // commits. Direct GitHub (60 req/h, events only) is the dev fallback
+      // for `npm run dev` without the functions.
+      let next: FeedItem[];
       const proxy = await fetch('/api/github').catch(() => null);
       if (proxy && proxy.ok) {
-        const body = await proxy.json();
-        events = body.events || [];
+        const body = (await proxy.json()) as { events?: GitHubEvent[]; recent?: RecentWork };
+        next = toFeedItems(body.recent, body.events ?? []);
       } else {
-        const username = PERSONAL_INFO.socials.github.split('/').pop();
-        const direct = await fetch(`https://api.github.com/users/${username}/events/public`);
+        const direct = await fetch(`https://api.github.com/users/${USERNAME}/events/public`);
         if (!direct.ok) throw new Error('Failed to fetch');
-        const data: GitHubEvent[] = await direct.json();
-        events = data
-          .filter((e) => ['PushEvent', 'PullRequestEvent', 'CreateEvent', 'WatchEvent'].includes(e.type))
-          .slice(0, 10);
+        const data = (await direct.json()) as GitHubEvent[];
+        next = toFeedItems(undefined, data.filter((e) => ['PushEvent', 'PullRequestEvent', 'CreateEvent', 'WatchEvent'].includes(e.type)));
       }
-
-      if (seq !== seqRef.current) return; // a newer request already applied
-      setActivities(events);
+      if (seq !== seqRef.current) return;
+      setItems(next);
       setError(false);
     } catch (err) {
-      console.error("GitHub API Error:", err);
+      console.error('GitHub API Error:', err);
       if (seq !== seqRef.current) return;
-      // A failed REFRESH must not replace a list the visitor is reading.
       if (!hasDataRef.current) setError(true);
     } finally {
       setLoading(false);
@@ -177,78 +103,70 @@ const GitHubFeed = () => {
   };
 
   useEffect(() => {
-    // Only poll when the feed is visible on screen.
     const observer = new IntersectionObserver(
       ([entry]) => {
         isVisibleRef.current = entry.isIntersecting;
-        // Fetch immediately when entering viewport for the first time.
         if (entry.isIntersecting && !fetchedOnceRef.current) {
           fetchedOnceRef.current = true;
-          fetchGitHubActivity();
+          load();
         }
       },
-      { threshold: 0.1 }
+      { threshold: 0.1 },
     );
-
     if (containerRef.current) observer.observe(containerRef.current);
-
     const interval = setInterval(() => {
-      if (isVisibleRef.current) fetchGitHubActivity();
+      if (isVisibleRef.current) load();
     }, 5 * 60 * 1000);
-
     return () => {
       observer.disconnect();
       clearInterval(interval);
     };
-    // Mount-only by design: the callback reads refs, not state, so there is
-    // nothing stale to re-subscribe for, and re-running would tear down the
-    // observer and the poll interval.
+    // Mount-only by design: the callback reads refs, not state.
   }, []);
 
   return (
-    <div ref={containerRef} className="rounded-2xl border border-slate-200 dark:border-white/10 max-w-md w-full overflow-hidden flex flex-col h-[500px] bg-white dark:bg-white/5 hover:border-primary/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)]">
-      <div className="p-6 pb-4 border-b border-slate-200 dark:border-white/10 bg-white/50 dark:bg-[#0F172A]/50 backdrop-blur-sm z-10">
+    <div
+      ref={containerRef}
+      className="flex h-[500px] w-full max-w-md flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] dark:border-white/10 dark:bg-white/5"
+    >
+      <div className="z-10 border-b border-slate-200 bg-white/50 p-6 pb-4 backdrop-blur-sm dark:border-white/10 dark:bg-[#0F172A]/50">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Github className="text-slate-900 dark:text-white" size={20} />
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Recent Activity</h3>
+            <h3 className="text-xl font-bold text-slate-900 dark:text-white">Recent Commits</h3>
           </div>
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
             </span>
-            <span className="text-xs text-slate-600 dark:text-slate-200 uppercase tracking-wider font-bold">Live</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-200">Live</span>
           </div>
         </div>
+        <p className="mt-1 text-sm font-medium text-slate-500 dark:text-white/80">Public repositories, last 30 days</p>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar p-2 space-y-1">
-        {loading && activities.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-slate-600 dark:text-slate-400 gap-2">
+      <div className="custom-scrollbar flex-1 space-y-1 overflow-y-auto p-2">
+        {loading && items.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-slate-600 dark:text-slate-400">
             <Loader2 className="animate-spin" size={24} />
             <span className="text-xs">Connecting to GitHub...</span>
           </div>
         ) : error ? (
-          <div className="flex flex-col items-center justify-center h-full text-red-400 gap-2 text-center">
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-center text-red-400">
             <AlertCircle size={24} />
             <span className="text-sm">Unable to load feed.</span>
-            <button 
-              onClick={fetchGitHubActivity}
-              className="mt-2 text-xs text-primary underline hover:text-teal-400"
-            >
+            <button type="button" onClick={load} className="mt-2 text-xs text-primary underline hover:text-teal-400">
               Retry
             </button>
           </div>
         ) : (
-          <AnimatePresence mode='popLayout'>
-             {activities.length > 0 ? (
-                activities.map((event, index) => (
-                  <ActivityItem key={event.id} event={event} index={index} />
-                ))
-             ) : (
-               <div className="text-center py-10 text-slate-500 text-sm">No recent public activity found.</div>
-             )}
+          <AnimatePresence mode="popLayout">
+            {items.length > 0 ? (
+              items.map((item, index) => <ActivityItem key={item.id} item={item} index={index} />)
+            ) : (
+              <div className="py-10 text-center text-sm text-slate-500">No public commits in the last 30 days.</div>
+            )}
           </AnimatePresence>
         )}
       </div>

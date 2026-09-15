@@ -5,7 +5,7 @@
  * from constants.ts, independently of the code under test.
  */
 import { describe, it, expect } from 'vitest';
-import { buildCareerArc, axisPercent, describeRow, endLabel, FOCUS } from '../utils/careerArc';
+import { buildCareerArc, axisPercent, describeRow, endLabel, FOCUS, shortName } from '../utils/careerArc';
 import { toMonthIndex } from '../utils/period';
 import { EXPERIENCE, EDUCATION } from '../constants';
 import { EducationSchema, ExperienceSchema } from '../data/contentSchema';
@@ -125,5 +125,14 @@ describe('the schema guards the data the chart depends on', () => {
     const { focus: _f, ...offArc } = school;
     expect(EducationSchema.safeParse({ ...offArc, period: '2015 - 2017' }).success).toBe(true);
     expect(EducationSchema.safeParse({ ...school, period: '2015 - 2017' }).success).toBe(false);
+  });
+});
+
+describe('shortName', () => {
+  it('keeps short names, takes a parenthesised acronym, and abbreviates long ones', () => {
+    expect(shortName('Team Antariksh')).toBe('Team Antariksh');
+    expect(shortName('Defence Research and Development Organisation (DRDO)')).toBe('DRDO');
+    expect(shortName('University of Southern California')).toBe('USC');
+    expect(shortName('RV College of Engineering')).toBe('RVCE');
   });
 });

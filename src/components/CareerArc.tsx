@@ -7,9 +7,11 @@ import {
   endLabel,
   FOCUS,
   formatMonth,
+  shortName,
   type ArcKind,
   type ArcRow,
 } from '../utils/careerArc';
+import { Route } from 'lucide-react';
 import type { FocusArea } from '../types/content';
 
 /**
@@ -45,11 +47,6 @@ function focusOrder(rows: ArcRow[]): FocusArea[] {
   return seen;
 }
 
-/** "Defence Research and Development Organisation (DRDO)" -> "DRDO". */
-function shortName(title: string): string {
-  const acronym = /\(([A-Z][A-Za-z0-9.&]{1,10})\)\s*$/.exec(title);
-  return acronym ? acronym[1] : title;
-}
 
 const colour = (focus: FocusArea) => `var(${FOCUS[focus].cssVar})`;
 
@@ -106,15 +103,19 @@ const CareerArc = ({ now }: Props) => {
 
   return (
     <>
-    {/* OPAQUE, deliberately. The first version used the site's translucent
-        card (bg-white/5) and the animated starfield showed through the plot — one
-        star sat exactly on the Now line and read as a data point. #0f0d1f is also
-        the surface the palette was validated against. */}
-    <figure className="mb-16 rounded-2xl border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0f0d1f] p-5 sm:p-8">
+    {/* The card is the site's card. The PLOT inside it is opaque, deliberately:
+        the first version drew bars over the translucent card and the animated
+        starfield showed through — one star sat exactly on the Now line and read
+        as a data point. #0f0d1f is also the surface the palette was validated
+        against. */}
+    <figure className="mb-16 rounded-2xl border border-slate-200 bg-white p-6 transition-all duration-300 hover:border-primary/30 hover:shadow-[0_0_30px_rgba(45,212,191,0.1)] dark:border-white/10 dark:bg-white/5 sm:p-8">
       <figcaption className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <h3 className="text-lg font-bold text-slate-900 dark:text-white">The arc, to scale</h3>
-          <p className="mt-1 max-w-xl text-sm text-slate-600 dark:text-slate-400">
+          <h3 className="flex items-center gap-2 text-xl font-bold text-slate-900 dark:text-white">
+            <Route className="text-primary" size={20} aria-hidden="true" />
+            The arc, to scale
+          </h3>
+          <p className="mt-1 max-w-xl text-sm font-medium text-slate-500 dark:text-white/80">
             Every role and degree since {arc.years[0]}, placed by date and coloured by the field the work
             was in. Totals count overlapping time once.
           </p>
@@ -126,7 +127,7 @@ const CareerArc = ({ now }: Props) => {
             setView((v) => (v === 'chart' ? 'table' : 'chart'));
           }}
           aria-pressed={view === 'table'}
-          className="shrink-0 rounded-lg border border-slate-300 dark:border-white/15 px-3 py-1.5 text-xs font-medium text-slate-700 dark:text-slate-200 hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+          className="shrink-0 rounded-lg border border-primary/20 bg-primary/10 px-4 py-2 text-sm font-bold text-primary transition-colors hover:text-teal-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
         >
           {view === 'chart' ? 'View as table' : 'View as chart'}
         </button>
@@ -190,7 +191,11 @@ const CareerArc = ({ now }: Props) => {
           </table>
         </div>
       ) : (
-        <div ref={chartRef} className="relative mt-6" onMouseLeave={() => tip && !tip.pinned && close()}>
+        <div
+          ref={chartRef}
+          className="relative mt-6 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-white/10 dark:bg-[#0f0d1f] sm:p-5"
+          onMouseLeave={() => tip && !tip.pinned && close()}
+        >
           {/* Year axis. Odd years drop out on narrow screens so labels never collide. */}
           <div className="sm:grid sm:grid-cols-[11rem_1fr]" aria-hidden="true">
             <div className="hidden sm:block" />
@@ -240,7 +245,7 @@ const CareerArc = ({ now }: Props) => {
                           ))}
                           <span
                             aria-hidden="true"
-                            className="absolute inset-y-0 w-px bg-slate-500/70 dark:bg-slate-400/60"
+                            className="absolute inset-y-0 border-l border-dashed border-primary/70"
                             style={{ left: `${nowPct}%` }}
                           />
                           {/* The hit target is the full row height (36px), well
@@ -260,8 +265,8 @@ const CareerArc = ({ now }: Props) => {
                             style={{ left: `${left}%`, width: `${width}%` }}
                           >
                             <span
-                              className={`absolute inset-x-0 top-1/2 flex h-3.5 -translate-y-1/2 overflow-hidden rounded transition-[filter] ${
-                                isActive ? 'brightness-110' : 'group-hover:brightness-110'
+                              className={`absolute inset-x-0 top-1/2 flex h-4 -translate-y-1/2 overflow-hidden rounded-md transition-[filter,box-shadow] ${
+                                isActive ? 'brightness-110 shadow-[0_0_14px_rgba(45,212,191,0.35)]' : 'group-hover:brightness-110'
                               }`}
                             >
                               <span className="h-full" style={{ width: `${solidShare}%`, background: colour(row.focus) }} />
@@ -281,8 +286,11 @@ const CareerArc = ({ now }: Props) => {
 
           <div className="sm:grid sm:grid-cols-[11rem_1fr]" aria-hidden="true">
             <div className="hidden sm:block" />
-            <div className="relative h-5 text-[11px] font-medium text-slate-700 dark:text-slate-300">
-              <span className="absolute top-1 -translate-x-1/2 whitespace-nowrap" style={{ left: `${nowPct}%` }}>
+            <div className="relative h-6 text-[11px] font-bold text-primary">
+              <span
+                className="absolute top-1 -translate-x-1/2 whitespace-nowrap rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 leading-none"
+                style={{ left: `${nowPct}%` }}
+              >
                 Now
               </span>
             </div>

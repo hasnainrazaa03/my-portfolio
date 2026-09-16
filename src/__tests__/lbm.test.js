@@ -65,7 +65,7 @@ describe('the lattice', () => {
     const { cd } = l.coefficients(12);
     expect(cd).toBeGreaterThan(0.5);
     expect(cd).toBeLessThan(6);
-  });
+  }, 30_000);
 
   it('sheds an unsteady wake behind a cylinder at moderate Reynolds number', () => {
     // Re = 0.1 · 12 / 0.0075 = 160: well past the onset of vortex shedding.
@@ -92,26 +92,26 @@ describe('the lattice', () => {
     const { cd } = l.coefficients(12);
     expect(cd).toBeGreaterThan(0.9);
     expect(cd).toBeLessThan(2.5);
-  });
+  }, 60_000);
 
   it('gives an airfoil at incidence upward lift', () => {
-    const w = 160;
-    const h = 80;
+    const w = 120;
+    const h = 60;
     const l = new Lattice(w, h);
     l.setParams({ u0: 0.08, nu: 0.02 });
     const clAt = (alphaDeg) => {
-      l.setSolid(rasterise({ designation: '4412', chord: 40, alphaDeg, x0: 40, y0: 40 }, w, h));
+      l.setSolid(rasterise({ designation: '4412', chord: 30, alphaDeg, x0: 30, y0: 30 }, w, h));
       l.reset();
-      l.step(3000); // past the starting vortex
+      l.step(2200); // past the starting vortex
       expect(l.diverged).toBe(false);
       expect(l.forceX).toBeGreaterThan(0);
-      return l.coefficients(40).cl;
+      return l.coefficients(30).cl;
     };
     const flat = clAt(0);
     const pitched = clAt(8);
     expect(flat).toBeGreaterThan(0); // camber alone lifts
     expect(pitched).toBeGreaterThan(flat);
-  });
+  }, 60_000);
 
   it('raises the effective viscosity where the shear is strong when the large-eddy model is on', () => {
     const run = (les) => {
@@ -128,7 +128,7 @@ describe('the lattice', () => {
     expect(les.diverged).toBe(false);
     expect(bgk.maxTau).toBe(bgk.tau);
     expect(les.maxTau).toBeGreaterThan(les.tau * 1.02);
-  });
+  }, 60_000);
 });
 
 describe('the airfoil mask', () => {

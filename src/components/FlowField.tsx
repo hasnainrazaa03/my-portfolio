@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
-import { RotateCcw } from 'lucide-react';
+import { Brain, MoveVertical, Play, RotateCcw, Wind } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
 import { joukowski, liftCoefficient } from '../utils/potentialFlow';
 import { ALPHA_DEFAULT, ALPHA_MAX, ALPHA_MIN, rad } from '../utils/flowScene';
@@ -24,6 +24,11 @@ import SurrogateNet, { type NetSnapshot, type Phase } from './SurrogateNet';
  * angle held for a moment becomes a training point, and the model fits
  * those. The ideal curve stays on the chart as a faint reference, and the
  * gap past 12° is the stall the ideal model cannot see.
+ *
+ * Nothing runs until the visitor presses Start: before that the card shows
+ * a still preview behind a soft blur with three lines of instructions, so a
+ * visitor who only wants to read the page pays nothing for the particles,
+ * the training loop or the solver.
  *
  * Modes. `compact` (phones) keeps the airfoil, a range input to pitch it and
  * the two answers, and drops the diagram and chart. With `motion` off
@@ -71,6 +76,7 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
   const af = useMemo(() => joukowski(), []);
   const idealSet = useMemo(() => trainingSet((deg) => liftCoefficient(af, rad(deg))), [af]);
   const [alphaDeg, setAlphaDeg] = useState(ALPHA_DEFAULT);
+  const [started, setStarted] = useState(false);
   const [mode, setMode] = useState<Mode>('ideal');
   const [reynolds, setReynolds] = useState(1000);
   const [les, setLes] = useState(false);
@@ -80,7 +86,8 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
   const [workerUnavailable, setWorkerUnavailable] = useState(false);
   const [phase, setPhase] = useState<Phase>('sampling');
   const [sampleCount, setSampleCount] = useState(0);
-  const [snapshot, setSnapshot] = useState<NetSnapshot | null>(null);
+  // An untrained net from the first render, so the blurred preview is a complete card.
+  const [snapshot, setSnapshot] = useState<NetSnapshot | null>(() => ({ net: createNet(1), loss: Infinity, step: 0 }));
   const [solver, setSolver] = useState<SolverStats | null>(null);
   const [measured, setMeasured] = useState<Record<string, number>>({});
   const hintId = useId();
@@ -91,7 +98,9 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
 
   const reducedMotion = typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   const animate = motion && !reducedMotion && !canvasUnavailable;
-  const viscous = animate && mode === 'viscous' && !workerUnavailable;
+  /** Animating AND started: the only state in which anything runs. */
+  const live = animate && started;
+  const viscous = live && mode === 'viscous' && !workerUnavailable;
   const onUnavailable = useCallback(() => setCanvasUnavailable(true), []);
   const onWorkerUnavailable = useCallback(() => setWorkerUnavailable(true), []);
 
@@ -126,7 +135,7 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
   // Live training. Runs for the life of the mode; idles once converged until
   // the training set changes (a new measurement), then learns again.
   useEffect(() => {
-    if (!animate) return;
+    if (!live) return;
     const net = createNet(seed);
     let step = 0;
     let loss = Infinity;
@@ -176,7 +185,7 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
     };
     rafId = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(rafId);
-  }, [animate, seed, mode]);
+  }, [live, seed, mode]);
 
   const switchMode = (next: Mode) => {
     if (next === mode) return;
@@ -247,7 +256,7 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
               : 'An ideal-flow model works out the lift, and a small neural network learns it live in your browser.'}
           </p>
         </div>
-        {animate && (
+        {live && (
           <div role="group" aria-label="Physics" className="flex shrink-0 rounded-lg border border-slate-300 p-0.5 text-xs font-medium dark:border-white/20">
             {(['ideal', 'viscous'] as const).map((m) => (
               <button
@@ -266,6 +275,12 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
         )}
       </header>
 
+      {/* Everything below the header blurs until Start; the overlay sits over it. */}
+      <div className="relative">
+      <div
+        className={`flex flex-col gap-3 ${animate && !started ? 'pointer-events-none select-none blur-[3px] opacity-60' : ''} motion-safe:transition-[filter,opacity] motion-safe:duration-500`}
+        aria-hidden={animate && !started ? true : undefined}
+      >
       <div className={`relative ${compact ? 'h-[210px]' : 'h-[220px]'}`}>
         {viscous ? (
           <ViscousCanvas
@@ -282,7 +297,7 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
             ariaDescribedBy={hintId}
             className={`absolute inset-y-0 left-0 ${compact ? 'right-0' : 'right-[172px]'}`}
           />
-        ) : animate ? (
+        ) : live ? (
           <FlowCanvas
             af={af}
             alphaDeg={alphaDeg}
@@ -313,7 +328,7 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
         </p>
       )}
 
-      {(compact || !animate) && angleSlider}
+      {(!animate || (compact && started)) && angleSlider}
 
       <div className="grid grid-cols-2 gap-3">
         <div className="rounded-xl border border-slate-200 bg-white/70 px-4 py-2.5 dark:border-white/10 dark:bg-white/[0.03]">
@@ -435,6 +450,44 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
           )}
         </details>
       )}
+      </div>
+
+      {animate && !started && (
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white/90 p-5 text-center shadow-xl backdrop-blur-md dark:border-white/15 dark:bg-[#0b0a1a]/90">
+            <p className="text-[11px] font-semibold uppercase tracking-widest text-primary">Interactive · runs in your browser</p>
+            <h3 className="mt-1 text-xl font-bold text-slate-900 dark:text-white">Try the experiment</h3>
+            <ol className="mt-4 space-y-2.5 text-left text-sm text-slate-700 dark:text-slate-200 list-none p-0">
+              {(
+                [
+                  [MoveVertical, 'Drag the airfoil to change its angle of attack.'],
+                  [Wind, 'The physics works out the lift — ideal flow, or a viscous solver with a turbulence model.'],
+                  [Brain, 'A small neural network learns the lift curve as you go.'],
+                ] as const
+              ).map(([Icon, text], i) => (
+                <li key={text} className="flex items-start gap-3">
+                  <span className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <Icon size={13} aria-hidden="true" />
+                  </span>
+                  <span>
+                    <span className="sr-only">Step {i + 1}: </span>
+                    {text}
+                  </span>
+                </li>
+              ))}
+            </ol>
+            <button
+              type="button"
+              onClick={() => setStarted(true)}
+              className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-primary to-blue-600 px-5 py-2.5 font-bold text-white shadow-[0_0_20px_rgba(45,212,191,0.3)] transition-shadow hover:shadow-[0_0_30px_rgba(45,212,191,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#0b0a1a]"
+            >
+              <Play size={16} aria-hidden="true" /> Start the experiment
+            </button>
+            <p className="mt-2 text-[11px] text-slate-500 dark:text-slate-400">Nothing runs until you press start.</p>
+          </div>
+        </div>
+      )}
+      </div>
     </div>
   );
 };

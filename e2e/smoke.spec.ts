@@ -57,6 +57,8 @@ test.describe('page boot', () => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
     await expect(page.getByText('Something went wrong.')).toHaveCount(0);
+    // The canvas is only asked for after Start; with no context, the still picture stands in.
+    await page.getByRole('button', { name: /start the experiment/i }).click();
     await expect(page.getByRole('img', { name: /streamlines of ideal flow/i })).toBeVisible();
     await context.close();
   });
@@ -64,6 +66,7 @@ test.describe('page boot', () => {
   test('the hero experiment says what it is and pitches when dragged', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Teach a neural network to predict lift' })).toBeVisible();
+    await page.getByRole('button', { name: /start the experiment/i }).click();
     const slider = page.getByRole('slider', { name: /angle of attack of the airfoil/i });
     await expect(slider).toBeVisible();
     const before = Number(await slider.getAttribute('aria-valuenow'));
@@ -80,10 +83,12 @@ test.describe('page boot', () => {
 
   test('the surrogate network learns the lift curve in the browser', async ({ page }) => {
     await page.goto('/');
+    await page.getByRole('button', { name: /start the experiment/i }).click();
     await expect(page.getByText(/Reading samples from the physics|Learning by gradient descent/)).toBeVisible();
     // One gradient step per frame; a few hundred steps is enough.
     await expect(page.getByText(/the surrogate now estimates lift instantly/)).toBeVisible({ timeout: 40_000 });
-    const error = Number(/Error ([\d.]+)/.exec(await page.getByText(/^Error /).innerText())![1]);
+    // Scoped to the hero: the chat widget, which mounts on idle, can also show a line starting "Error".
+    const error = Number(/Error ([\d.]+)/.exec(await page.locator('#hero').getByText(/^Error /).innerText())![1]);
     expect(error).toBeLessThan(0.06);
   });
 
@@ -570,6 +575,7 @@ test.describe('hero viscous flow', () => {
     // Each held angle needs ~800 solver steps (a couple of seconds); three of them start the learning.
     test.setTimeout(150_000);
     await page.goto('/');
+    await page.getByRole('button', { name: /start the experiment/i }).click();
     await page.getByRole('button', { name: 'Viscous flow' }).click();
     await expect(page.getByText(/Physics · lattice-Boltzmann/)).toBeVisible();
     const slider = page.getByRole('slider', { name: /angle of attack of the airfoil/i });

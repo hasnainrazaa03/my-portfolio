@@ -253,7 +253,10 @@ const FlowField = ({ motion = true, compact = false }: Props) => {
           </summary>
           <p className="mt-1 leading-snug">
             The relationship is intentionally simple enough to train live in a browser. Aerospace surrogate models use the same
-            idea to stand in for simulations that take hours.
+            idea to stand in for simulations that take hours.{' '}
+            <a href="/lab/flow" className="font-medium text-primary underline-offset-2 hover:underline">
+              See the flow with viscosity, separation and vortices →
+            </a>
           </p>
         </details>
       )}

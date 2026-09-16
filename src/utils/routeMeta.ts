@@ -137,6 +137,12 @@ export function routeHeads(): RouteHead[] {
       noindex: true,
     },
     {
+      path: '/lab/flow',
+      title: `Flow solver | ${name}`,
+      description: 'A lattice-Boltzmann flow solver around a NACA 4412 airfoil, running in your browser: change the speed, viscosity and angle and watch the flow separate and shed vortices.',
+      type: 'website',
+    },
+    {
       path: '/privacy',
       title: `Privacy Notice | ${name}`,
       // The page's own TL;DR, verbatim — a description must not promise more than the page says.

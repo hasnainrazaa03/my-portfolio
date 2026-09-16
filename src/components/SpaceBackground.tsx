@@ -11,7 +11,7 @@ const SpaceBackground = () => {
     // A 2d context is near-universally available, but `getContext` still
     // returns null in sandboxed/headless contexts — and this component renders
     // full-screen under only the app-level error boundary, so an unguarded
-    // throw here blanks the entire site (same failure mode Hero3D had).
+    // throw here blanks the entire site (the failure mode the old three.js hero had).
     // Degrade to no starfield instead; the CSS background still renders.
     const canvasEl = canvasRef.current;
     if (!canvasEl) return;

@@ -65,9 +65,11 @@ Result: **when every provider is down, the chat still answers from the local ban
 
 ---
 
-### 2. The Hero: Ideal Flow Around an Airfoil
+### 2. The Hero: Flow Around an Airfoil, and a Network That Learns It
 
 The hero used to be a wireframe icosahedron with rings — a 127 KB three.js chunk that said "tech" and nothing else.
+
+Nothing in it runs until the visitor presses **Start**: the card first shows a still preview behind a soft blur with three lines of instructions, so a visitor who only wants to read the page pays nothing for particles, training or the solver.
 
 **The Idea**  
 One interaction that tells the whole story: *move the airfoil, generate physics, watch AI learn.* The picture is potential flow around a Joukowski airfoil (`src/utils/potentialFlow.ts`), drawn live from its closed form; dragging pitches it, the streamlines follow, and Kutta–Joukowski gives the lift. Beside it a six-unit neural network learns α → lift from that physics by gradient descent, in the visitor's browser. It is labelled an **ideal-flow model** on screen and is not a CFD result.
@@ -78,11 +80,14 @@ A heading says what to do ("Teach a neural network to predict lift · Drag the a
 **How**
 - **Closed-form physics, tested against theory** — far field is the freestream, the surface is a streamline, the trailing edge is finite (Kutta), lift slope ≈ 2π; a sign slip fails a test
 - **Canvas 2D, 12 KB** — particles are advected in the ζ-plane (where the airfoil is a circle they cannot enter) and only their drawn position is mapped; streaks are coloured by speed
-- **Mount gating, not CSS hiding** — mounts at desktop widths only, so phones never download it
+- **Mount gating, not CSS hiding** — the full experiment mounts at desktop widths only; phones mount the compact version, which never creates a canvas or a Worker
 - **Degrades to the same picture** — under `prefers-reduced-motion`, Save-Data, or with no 2D context, a static SVG of the same streamlines is drawn instead, inside a local error boundary so nothing can blank the page
 - **Keyboard and touch** — the picture is an ARIA slider for the angle of attack (drag, arrow keys, Home/End); phones get a simplified version with a range input and the two answers, no diagram or chart
 - **The network** — `src/utils/surrogate.ts` is plain arrays, no dependency, deterministic from a seed; every edge in the diagram is a weight and every hidden node lights with its activation for the chosen angle. Tests assert convergence from every seed it can start from
 - **Still modes show the finished state** — under `prefers-reduced-motion`, Save-Data, or with no 2D context, the model is trained synchronously and the visitor sees the trained result with a slider, not a spinner
+
+**Viscous flow — the physics the ideal model cannot see**  
+A segmented control switches the same card to a D2Q9 lattice-Boltzmann solver (`src/lab/flow`: BGK collision, half-way bounce-back, momentum-exchange forces, a Smagorinsky sub-grid model for the turbulent settings) around a NACA 4412 — the section from the CFD study on this site — on a 256×104 lattice in a Web Worker, painted as vorticity. Reynolds number (20–5000) and angle are set by slider, number or drag; separation and vortex shedding appear on screen, and drag is reported beside lift. The network now learns from *measurements*: once the solver has held an angle for 800 steps, that angle's lift becomes a training point, so the model's curve is built from what the solver actually produced, and the ideal curve stays on the chart as a faint reference — the gap past 12° is the stall. If a setting diverges the solver restarts itself and says which knob to turn. Frames are transferred buffers, not copies; the Worker stops when the tab is hidden or the card leaves the viewport; the solver has its own unit tests (equilibrium, uniform stream, cylinder drag, shedding at Re 160, camber lift, LES effect).
 
 ---
 
@@ -92,8 +97,8 @@ A heading says what to do ("Teach a neural network to predict lift · Drag the a
 Calling the GitHub API from the browser spends a 60-requests-per-hour anonymous quota shared by every visitor behind the same network, and fails loudly when it runs out.
 
 **The Solution**
-- **Cached proxy** — `/api/github` fetches events server-side (with `GITHUB_TOKEN` when set), caches them, and serves the last good copy if GitHub is unavailable
-- **Contribution calendar** — the last year via `react-github-calendar`, coloured in the site's teal ramp for both themes
+- **Cached proxy** — `/api/github` fetches events server-side (with `GITHUB_TOKEN` when set), caches them, and serves the last good copy if GitHub is unavailable. It also returns the repositories pushed in the last 30 days with their commits, because public event payloads no longer carry commit messages — so "Recent Commits" shows real commit lines with links, not "pushed to main"
+- **Contribution calendar** — the last year via `react-github-calendar`, coloured in the site's teal ramp for both themes; blocks are sized to the card so the year fits without horizontal scrolling, and when it cannot fit the strip opens at the most recent weeks
 - **Live chat answers** — a question about recent work ("what is he building this week?") makes the chat fetch the public repositories pushed in the last 14 days and their commits from the last 7 (`api/_lib/githubActivity.ts`), passed to the model as delimited data in the visitor's turn so the cached system prompt never changes. The events feed is not used for this: GitHub's public event payloads no longer carry commit messages
 
 ---
@@ -123,7 +128,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 ## 🚀 Feature Overview
 
 ### 🌌 Immersive Hero Section
-- **Live aerospace × AI experiment** — drag an airfoil in ideal flow, or switch to viscous flow: a D2Q9 lattice-Boltzmann solver in a Web Worker (`src/lab/flow`) with a Smagorinsky turbulence model, Reynolds-number and angle controls, separation and vortex shedding on screen, and a small neural network that learns the lift curve from whichever physics is running — in viscous mode from the lift the solver measures at each angle you hold
+- **Live aerospace × AI experiment** — drag an airfoil in ideal flow, or switch to viscous flow: a D2Q9 lattice-Boltzmann solver in a Web Worker (`src/lab/flow`) with a Smagorinsky turbulence model, Reynolds-number and angle controls, separation and vortex shedding on screen, and a small neural network that learns the lift curve from whichever physics is running — in viscous mode from the lift the solver measures at each angle you hold. Gated behind a Start button: nothing runs until asked
 - **Resume Engine** — One-click resume download with instant visual feedback
 
 ### 👤 About Section
@@ -374,6 +379,7 @@ my-portfolio/
 │   └── checkBundleSize.js · checkDeps.js · buildCareerKnowledge.js
 ├── src/
 │   ├── components/             # Sections, chat/, resume/, case-study pages, charts
+│   ├── lab/flow/               # Lattice-Boltzmann solver + NACA rasteriser + its Web Worker
 │   ├── hooks/ · services/ · utils/ · context/
 │   ├── data/                   # Content schema, claim rules, generated knowledge + Q&A
 │   ├── __tests__/              # Vitest suites

@@ -92,10 +92,21 @@ const ViscousCanvas = ({ alphaDeg, onAlphaChange, reynolds, les, isDark, draggab
       view: 'vorticity',
       theme: isDark ? 'dark' : 'light',
     } satisfies InMessage);
+    // The solver only advances while the card is on screen: a frame request is
+    // what drives it, so withholding requests while scrolled away (or in a
+    // hidden tab) stops the Worker's work as well as the paint.
+    let visible = true;
+    const observer =
+      typeof IntersectionObserver !== 'undefined' && canvas
+        ? new IntersectionObserver(([entry]) => {
+            visible = entry.isIntersecting;
+          })
+        : null;
+    if (canvas) observer?.observe(canvas);
     let raf = 0;
     const loop = () => {
       raf = requestAnimationFrame(loop);
-      if (document.hidden || !runningRef.current || pendingRef.current) return;
+      if (!visible || document.hidden || !runningRef.current || pendingRef.current) return;
       pendingRef.current = true;
       const buffer = bufferRef.current;
       bufferRef.current = null;
@@ -104,6 +115,7 @@ const ViscousCanvas = ({ alphaDeg, onAlphaChange, reynolds, les, isDark, draggab
     raf = requestAnimationFrame(loop);
     return () => {
       cancelAnimationFrame(raf);
+      observer?.disconnect();
       worker.terminate();
       workerRef.current = null;
     };

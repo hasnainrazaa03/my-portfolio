@@ -14,7 +14,7 @@ interface ErrorBoundaryState {
 
 /**
  * Generic React Error Boundary.
- * Wrap any subtree (e.g. Hero3D, the whole App) so that a render-time
+ * Wrap any subtree (e.g. the hero's FlowField, the whole App) so that a render-time
  * crash shows a friendly fallback instead of a white screen.
  *
  * Usage:

@@ -136,6 +136,29 @@ export function routeHeads(): RouteHead[] {
       type: 'website',
       noindex: true,
     },
+    // Lab prototypes: real pages so links work, kept out of search while they
+    // are prototypes.
+    {
+      path: '/lab',
+      title: `Interactive Lab | ${name}`,
+      description: 'Interactive experiments from this site: the hero flow model, the lift explorer, the job-fit tool, and two prototypes.',
+      type: 'website',
+      noindex: true,
+    },
+    {
+      path: '/lab/constellation',
+      title: `Project Constellation | ${name}`,
+      description: 'A map of selected projects and the engineering they share. Prototype.',
+      type: 'website',
+      noindex: true,
+    },
+    {
+      path: '/lab/mission-control',
+      title: `Mission Control | ${name}`,
+      description: 'A simulated orbital insertion with live telemetry, a sensor fault, and a decision to make. Prototype.',
+      type: 'website',
+      noindex: true,
+    },
     {
       path: '/privacy',
       title: `Privacy Notice | ${name}`,

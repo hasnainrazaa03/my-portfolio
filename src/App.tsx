@@ -78,6 +78,9 @@ const ResumePage = lazyWithRecovery(() => import('./components/ResumePage'), { n
 const NotFoundPage = lazyWithRecovery(() => import('./components/NotFoundPage'), { name: 'This page' });
 const FitPage = lazyWithRecovery(() => import('./components/FitPage'), { name: 'The comparison page' });
 const InsightsPage = lazyWithRecovery(() => import('./components/InsightsPage'), { name: 'Insights' });
+const LabPage = lazyWithRecovery(() => import('./components/lab/LabPage'), { name: 'The lab' });
+const ConstellationPage = lazyWithRecovery(() => import('./components/lab/ConstellationPage'), { name: 'The constellation' });
+const MissionControlPage = lazyWithRecovery(() => import('./components/lab/MissionControlPage'), { name: 'Mission Control' });
 
 /**
  * Shared shell for the stand-alone routes.
@@ -187,6 +190,15 @@ export default function App() {
   }
   if (path === '/insights' || path === '/insights/') {
     return <StandalonePage><InsightsPage /></StandalonePage>;
+  }
+  if (path === '/lab' || path === '/lab/') {
+    return <StandalonePage><LabPage /></StandalonePage>;
+  }
+  if (path === '/lab/constellation' || path === '/lab/constellation/') {
+    return <StandalonePage><ConstellationPage /></StandalonePage>;
+  }
+  if (path === '/lab/mission-control' || path === '/lab/mission-control/') {
+    return <StandalonePage><MissionControlPage /></StandalonePage>;
   }
   if (path !== '/' && path !== '/index.html') {
     return <StandalonePage><NotFoundPage /></StandalonePage>;

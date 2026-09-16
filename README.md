@@ -123,8 +123,7 @@ The chat system speaks in **first-person as Hasnain** — not a generic bot.
 ## 🚀 Feature Overview
 
 ### 🌌 Immersive Hero Section
-- **Flow solver (`/lab/flow`)** — a D2Q9 lattice-Boltzmann solver around the NACA 4412 in a Web Worker (`src/lab/flow`), with a Smagorinsky large-eddy model, sliders and typed inputs for angle, Reynolds number and speed, vorticity and speed views, and lift/drag from momentum exchange. Shows separation and vortex shedding that the hero's ideal-flow model cannot; tests assert conservation, drag, lift, shedding and the LES effect
-- **Live aerospace × AI experiment** — drag an airfoil in ideal flow; a small neural network learns the lift curve from it in the browser, with the physics and the prediction side by side (Canvas 2D, no WebGL)
+- **Live aerospace × AI experiment** — drag an airfoil in ideal flow, or switch to viscous flow: a D2Q9 lattice-Boltzmann solver in a Web Worker (`src/lab/flow`) with a Smagorinsky turbulence model, Reynolds-number and angle controls, separation and vortex shedding on screen, and a small neural network that learns the lift curve from whichever physics is running — in viscous mode from the lift the solver measures at each angle you hold
 - **Resume Engine** — One-click resume download with instant visual feedback
 
 ### 👤 About Section
@@ -432,7 +431,7 @@ Found a vulnerability? See [SECURITY.md](SECURITY.md) (or `.well-known/security.
 
 **Built:** streaming chat with source chips and curated career knowledge; project case studies with per-route heads, generated social cards and a real 404; ATS résumé view; job-description comparison (`/fit`); installable offline support; the career arc chart; Vimaan's runtime diagram.
 
-**Also built:** a browser lattice-Boltzmann flow solver (`/lab/flow`); the hero flow picture with a live-trained surrogate network (three.js removed, 127 KB → 16 KB); a daily production health check with deploy-freshness; chunk-load recovery so one unfetchable section cannot take the page down; zero npm advisories (`@vercel/node` replaced by local types); private visitor insights; live GitHub answers and case-study links in the chat; "How it works" diagrams for Manzil and Orbit; the NACA 4412 lift-curve explorer; JSON-LD per case study.
+**Also built:** the hero flow picture (with a viscous lattice-Boltzmann mode) with a live-trained surrogate network (three.js removed, 127 KB → 16 KB); a daily production health check with deploy-freshness; chunk-load recovery so one unfetchable section cannot take the page down; zero npm advisories (`@vercel/node` replaced by local types); private visitor insights; live GitHub answers and case-study links in the chat; "How it works" diagrams for Manzil and Orbit; the NACA 4412 lift-curve explorer; JSON-LD per case study.
 
 **Corrected claims:** Orbit's (then USC Ledger) "atomic transactions", "P2034 write-conflict resolution" and a race-preventing "reconciliation engine" (none exist in its code) and a dead demo link; Manzil described as "collaborative" (recipes are owner-only). Earlier: a "10x throughput" figure the evidence could not support, Vimaan's "inter-process communication" (a thread and a queue in one process) and INT8 presented as a speed gain (it was for memory). `claimRules.ts` now fails CI if any return.
 

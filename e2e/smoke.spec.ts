@@ -561,29 +561,27 @@ test.describe('visitor insights', () => {
 });
 
 /**
- * The flow solver runs in a Web Worker and paints a canvas; nothing in the
- * unit suite can exercise that, so this checks the real thing advances.
+ * The hero's viscous mode runs a lattice-Boltzmann solver in a Web Worker;
+ * nothing in the unit suite can exercise that. This checks the real thing
+ * measures lift at held angles and the network starts learning from them.
  */
-test.describe('flow solver', () => {
-  test('runs, paints, and reports lift and drag', async ({ page }) => {
-    await page.goto('/lab/flow');
-    await expect(page.getByRole('heading', { name: /Real flow around a NACA 4412/ })).toBeVisible();
-    const readout = page.getByText(/steps\/s/);
-    await expect(readout).toBeVisible({ timeout: 15_000 });
-    await page.waitForTimeout(2500);
-    const text = await readout.innerText();
-    const sps = Number(/([\d,]+) steps\/s/.exec(text)![1].replace(/,/g, ''));
-    expect(sps).toBeGreaterThan(50);
-    // The canvas is not blank: some pixels differ from the background.
-    const painted = await page.locator('canvas[role="img"]').evaluate((c: HTMLCanvasElement) => {
-      const d = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
-      let distinct = 0;
-      for (let i = 0; i < d.length; i += 4 * 97) if (Math.abs(d[i] - d[0]) + Math.abs(d[i + 1] - d[1]) + Math.abs(d[i + 2] - d[2]) > 40) distinct++;
-      return distinct;
-    });
-    expect(painted).toBeGreaterThan(20);
-    await page.getByRole('button', { name: 'Turbulent wake' }).click();
-    await expect(page.getByText(/Smagorinsky LES/)).toBeVisible();
+test.describe('hero viscous flow', () => {
+  test('measures lift at held angles and learns from them', async ({ page }) => {
+    // Each held angle needs ~800 solver steps (a couple of seconds); three of them start the learning.
+    test.setTimeout(150_000);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Viscous flow' }).click();
+    await expect(page.getByText(/Physics · lattice-Boltzmann/)).toBeVisible();
+    const slider = page.getByRole('slider', { name: /angle of attack of the airfoil/i });
+    await expect(slider).toBeVisible();
+    await expect(page.getByText(/1 of 3 to start learning/)).toBeVisible({ timeout: 40_000 });
+    await slider.focus();
+    await slider.press('End');
+    await expect(page.getByText(/2 of 3 to start learning/)).toBeVisible({ timeout: 40_000 });
+    await slider.focus();
+    await slider.press('Home');
+    await expect(page.getByText(/Learning from 3 measured angles|Model fits 3 measured angles/)).toBeVisible({ timeout: 40_000 });
+    await expect(page.getByText(/Trained on 3 measured angles/)).toBeVisible();
     await expect(page.getByText('Something went wrong.')).toHaveCount(0);
   });
 });

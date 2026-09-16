@@ -11,7 +11,7 @@
  */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, fireEvent, cleanup, act } from '@testing-library/react';
+import { render, screen, fireEvent, cleanup, act, within } from '@testing-library/react';
 import { ThemeProvider } from '../context/ThemeProvider';
 import FlowField from '../components/FlowField';
 import FlowFieldStatic from '../components/FlowFieldStatic';
@@ -178,6 +178,24 @@ describe('FlowField', () => {
     expect(screen.getByText(/AI prediction/)).toBeInTheDocument();
     frames(1600);
     expect(screen.getByText(/the surrogate now estimates lift instantly/)).toBeInTheDocument();
+  });
+});
+
+describe('viscous mode', () => {
+  it('offers the switch, and falls back with a note where there is no Worker', () => {
+    renderWith(<FlowField />);
+    const group = screen.getByRole('group', { name: 'Physics' });
+    expect(within(group).getByRole('button', { name: 'Ideal flow' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(group).getByRole('button', { name: 'Viscous flow' }));
+    expect(within(group).getByRole('button', { name: 'Viscous flow' })).toHaveAttribute('aria-pressed', 'true');
+    // jsdom has no Worker: the page says so and keeps the ideal picture.
+    expect(screen.getByText(/cannot run the solver in a background thread/)).toBeInTheDocument();
+    expect(screen.getByRole('slider', { name: /angle of attack of the airfoil/i })).toBeInTheDocument();
+  });
+
+  it('is not offered in the still modes', () => {
+    renderWith(<FlowField motion={false} />);
+    expect(screen.queryByRole('group', { name: 'Physics' })).toBeNull();
   });
 });
 

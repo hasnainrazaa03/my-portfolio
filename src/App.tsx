@@ -78,7 +78,6 @@ const ResumePage = lazyWithRecovery(() => import('./components/ResumePage'), { n
 const NotFoundPage = lazyWithRecovery(() => import('./components/NotFoundPage'), { name: 'This page' });
 const FitPage = lazyWithRecovery(() => import('./components/FitPage'), { name: 'The comparison page' });
 const InsightsPage = lazyWithRecovery(() => import('./components/InsightsPage'), { name: 'Insights' });
-const FlowLabPage = lazyWithRecovery(() => import('./components/FlowLabPage'), { name: 'The flow solver' });
 
 /**
  * Shared shell for the stand-alone routes.
@@ -188,9 +187,6 @@ export default function App() {
   }
   if (path === '/insights' || path === '/insights/') {
     return <StandalonePage><InsightsPage /></StandalonePage>;
-  }
-  if (path === '/lab/flow' || path === '/lab/flow/') {
-    return <StandalonePage><FlowLabPage /></StandalonePage>;
   }
   if (path !== '/' && path !== '/index.html') {
     return <StandalonePage><NotFoundPage /></StandalonePage>;

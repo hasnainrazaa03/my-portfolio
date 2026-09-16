@@ -131,6 +131,25 @@ describe('the lattice', () => {
   }, 60_000);
 });
 
+describe('changing the body mid-run', () => {
+  it('survives a sharp change of angle: freed cells restart as fluid at rest', () => {
+    const w = 120;
+    const h = 60;
+    const l = new Lattice(w, h);
+    l.setParams({ u0: 0.1, nu: 0.006 });
+    l.setSolid(rasterise({ designation: '4412', chord: 30, alphaDeg: 0, x0: 30, y0: 30 }, w, h));
+    l.reset();
+    l.step(400);
+    l.setSolid(rasterise({ designation: '4412', chord: 30, alphaDeg: 16, x0: 30, y0: 30 }, w, h));
+    l.step(400);
+    expect(l.diverged).toBe(false);
+    l.setSolid(rasterise({ designation: '4412', chord: 30, alphaDeg: -6, x0: 30, y0: 30 }, w, h));
+    l.step(400);
+    expect(l.diverged).toBe(false);
+    for (let c = 0; c < l.n; c++) if (!l.solid[c]) expect(l.rho[c]).toBeGreaterThan(0.5);
+  }, 30_000);
+});
+
 describe('the airfoil mask', () => {
   it('has the 4412 shape: 12% thick, cambered up, sharp trailing edge', () => {
     const { upper, lower } = nacaSection('4412');

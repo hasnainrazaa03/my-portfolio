@@ -95,9 +95,23 @@ export class Lattice {
     this.params = { ...this.params, ...p, u0: Math.min(MAX_U0, Math.max(0, p.u0 ?? this.params.u0)) };
   }
 
-  /** Mark solid cells from a mask the size of the lattice. */
+  /**
+   * Mark solid cells from a mask the size of the lattice. A cell that was
+   * solid and is now fluid (the body just rotated away from it) holds
+   * whatever populations it had when it was buried; left alone, that stale
+   * state blew the solver up on a sharp change of angle. Such cells start
+   * again as fluid at rest at unit density.
+   */
   setSolid(mask: Uint8Array): void {
     if (mask.length !== this.n) throw new Error('mask size does not match the lattice');
+    for (let c = 0; c < this.n; c++) {
+      if (this.solid[c] && !mask[c]) {
+        for (let i = 0; i < 9; i++) this.f[i * this.n + c] = equilibrium(i, 1, 0, 0);
+        this.rho[c] = 1;
+        this.ux[c] = 0;
+        this.uy[c] = 0;
+      }
+    }
     this.solid.set(mask);
   }
 

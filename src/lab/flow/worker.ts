@@ -44,6 +44,11 @@ export interface FrameMessage {
   cd: number;
   reynolds: number;
   diverged: boolean;
+  /** Times the solver blew up and restarted itself since init. */
+  restarts: number;
+  /** Steps run since the angle last changed: how settled the measurement is. */
+  stepsAtAngle: number;
+  alphaDeg: number;
 }
 
 const PALETTE: Record<Theme, { bg: number[]; neg: number[]; pos: number[]; body: number[]; hi: number[] }> = {
@@ -62,6 +67,8 @@ let vort: Float32Array | null = null;
 /** Running average of the coefficients, so the readout is legible while the wake sheds. */
 let clAvg = 0;
 let cdAvg = 0;
+let stepsAtAngle = 0;
+let restarts = 0;
 
 function rebuildBody() {
   if (!lattice) return;
@@ -76,7 +83,7 @@ function paint(buffer: ArrayBuffer): void {
   const u0 = lattice.params.u0;
   if (!vort || vort.length !== lattice.n) vort = new Float32Array(lattice.n);
   if (view === 'vorticity') lattice.vorticity(vort);
-  const vScale = 0.35 * u0;
+  const vScale = 0.22 * u0;
   // Free stream sits around 45% of the ramp so the wake reads darker and the
   // fast flow over the upper surface reads brighter.
   const sScale = 2.2 * u0;
@@ -127,14 +134,18 @@ self.onmessage = (e: MessageEvent<InMessage>) => {
       rebuildBody();
       lattice.reset();
       clAvg = cdAvg = 0;
+      stepsAtAngle = 0;
+      restarts = 0;
       return;
     }
     case 'params':
       lattice?.setParams(m.params);
       return;
     case 'angle':
+      if (m.alphaDeg === alphaDeg) return;
       alphaDeg = m.alphaDeg;
       rebuildBody();
+      stepsAtAngle = 0;
       return;
     case 'view':
       view = m.view;
@@ -145,6 +156,7 @@ self.onmessage = (e: MessageEvent<InMessage>) => {
     case 'reset':
       lattice?.reset();
       clAvg = cdAvg = 0;
+      stepsAtAngle = 0;
       return;
     case 'frame': {
       if (!lattice) return;
@@ -156,11 +168,21 @@ self.onmessage = (e: MessageEvent<InMessage>) => {
         if (!lattice.diverged) {
           lattice.step(1);
           stepsThisFrame += 1;
+          stepsAtAngle += 1;
           const { cl, cd } = lattice.coefficients(chord);
           clAvg += 0.02 * (cl - clAvg);
           cdAvg += 0.02 * (cd - cdAvg);
         }
       } while (performance.now() - start < m.budgetMs && stepsThisFrame < 12 && !lattice.diverged);
+      // Unstable at this setting: start the flow again rather than freeze. The
+      // page tells the visitor which knob to turn.
+      const diverged = lattice.diverged;
+      if (diverged) {
+        lattice.reset();
+        clAvg = cdAvg = 0;
+        stepsAtAngle = 0;
+        restarts += 1;
+      }
       const bytes = lattice.n * 4;
       const buffer = m.buffer && m.buffer.byteLength === bytes ? m.buffer : new ArrayBuffer(bytes);
       paint(buffer);
@@ -175,7 +197,10 @@ self.onmessage = (e: MessageEvent<InMessage>) => {
         cl: clAvg,
         cd: cdAvg,
         reynolds: lattice.reynoldsFor(chord),
-        diverged: lattice.diverged,
+        diverged,
+        restarts,
+        stepsAtAngle,
+        alphaDeg,
       };
       (self as unknown as Worker).postMessage(out, [buffer]);
       return;
